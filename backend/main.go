@@ -24,8 +24,8 @@ func main() {
 
 	db := models.InitializeDB()
 	models.Migrate(db)
-	router := gin.Default()
+	r := gin.Default()
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"http://localhost:3000"}
-	router.Use(cors.New(config))
+	r.Use(cors.New(config))
 }
