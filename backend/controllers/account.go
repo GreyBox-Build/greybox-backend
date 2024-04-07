@@ -205,7 +205,7 @@ func GetAuthenticatedUser(c *gin.Context) {
 		return
 	}
 	apiKey := os.Getenv("TATUM_API_KEY_TEST")
-	data, err := apis.FetchVirtualAccountDetail(user.AccountID, apiKey)
+	data, err := apis.FetchAccountBalance(user.AccountID, apiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

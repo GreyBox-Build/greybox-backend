@@ -9,3 +9,8 @@ type VirtualAccount struct {
 	AccountingCurrency string            `json:"accountingCurrency"`
 	AccountNumber      string            `json:"accountNumber"`
 }
+
+type PrivGeneration struct {
+	Index    uint   `json:"index"`
+	Mnemonic string `json:"mnemonic"`
+}

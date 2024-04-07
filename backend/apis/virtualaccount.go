@@ -11,6 +11,43 @@ import (
 	"os"
 )
 
+func GenerateCelloAddress(xpub string) (string, error) {
+	apiURL := fmt.Sprintf("https://api.tatum.io/v3/celo/address/%s"+"/%d", xpub, 1)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", apiURL, nil)
+	if err != nil {
+		return "", err
+	}
+	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+
+	req.Header.Set("x-api-key", apiKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// Parse JSON response
+	var data map[string]string
+	if err := json.Unmarshal(body, &data); err != nil {
+		return "", err
+	}
+
+	address := data["address"]
+
+	return address, nil
+}
+
 func GenerateCelloWallet() (string, string, error) {
 	apiURL := "https://api.tatum.io/v3/celo/wallet"
 	client := &http.Client{}
@@ -46,6 +83,56 @@ func GenerateCelloWallet() (string, string, error) {
 	mnemonic := data["mnemonic"]
 	xpub := data["xpub"]
 	return mnemonic, xpub, nil
+}
+
+func GeneratePrivateKey(apiURL string, apiKey string, privData serializers.PrivGeneration) (string, error) {
+	// Convert struct to JSON
+	jsonData, err := json.Marshal(privData)
+	if err != nil {
+		return "", err
+	}
+
+	// Create HTTP client
+	client := &http.Client{}
+
+	// Create HTTP request
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("x-api-key", apiKey)
+	req.Header.Set("Content-Type", "application/json")
+
+	// Send HTTP request
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	// Check for 200 status code
+	if resp.StatusCode != http.StatusOK {
+		var errorResponse struct {
+			Message string `json:"message"`
+		}
+		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
+			return "", errors.New(errorResponse.Message)
+		}
+		return "", errors.New(errorResponse.Message)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var data map[string]string
+	if err := json.Unmarshal(body, &data); err != nil {
+		return "", err
+	}
+
+	key := data["key"]
+	return key, nil
+
 }
 
 func CreateVirtualAccount(apiURL string, apiKey string, accountData serializers.VirtualAccount) error {
@@ -87,9 +174,9 @@ func CreateVirtualAccount(apiURL string, apiKey string, accountData serializers.
 	return nil
 }
 
-func FetchVirtualAccountDetail(id string, apiKey string) (map[string]interface{}, error) {
+func FetchAccountBalance(id string, apiKey string) (map[string]interface{}, error) {
 
-	url := fmt.Sprintf("https://api.tatum.io/v3/ledger/account/%s", id)
+	url := fmt.Sprintf("https://api.tatum.io/v3/ledger/account/%s"+"/balance", id)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -131,4 +218,41 @@ func FetchVirtualAccountDetail(id string, apiKey string) (map[string]interface{}
 		// Return the error message
 		return errData, fmt.Errorf(errorMessage)
 	}
+}
+
+func ActivateVirtualAccount(id string, apiKey string) error {
+
+	url := fmt.Sprintf("https://api.tatum.io/v3/ledger/account/%s"+"/activate", id)
+
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return err
+	}
+
+	// Set headers
+	req.Header.Set("x-api-key", apiKey)
+
+	// Send the HTTP request
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	// Check the status code
+	if resp.StatusCode == http.StatusOK {
+
+		return nil
+	} else if resp.StatusCode == http.StatusBadRequest {
+		return errors.New("request validation failed")
+	} else if resp.StatusCode == http.StatusUnauthorized {
+		return errors.New("subscription not active anymore")
+	} else if resp.StatusCode == http.StatusForbidden {
+		return errors.New("no such account")
+	} else if resp.StatusCode == http.StatusInternalServerError {
+		return errors.New("internal server error")
+	}
+
+	return nil
 }

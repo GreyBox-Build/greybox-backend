@@ -18,19 +18,21 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName     string `json:"first_name"`
-	LastName      string `json:"last_name"`
-	Email         string `gorm:"unique;not null" json:"email"`
-	Password      string `json:"-"`
-	Currency      string `json:"currency"`
-	Country       string `json:"country"`
-	Mnemonic      string `json:"mnemonic"`
-	Xpub          string `json:"xpub"`
-	AccountID     string `gorm:"unique" json:"account_id"`
-	AccountNumber string `json:"account_number"`
-	AccountCode   string `json:"account_code"`
-	CountryCode   string `json:"country_code"`
-	IsVerified    bool   `gorm:"default:false" json:"is_verified"`
+	FirstName      string `json:"first_name"`
+	LastName       string `json:"last_name"`
+	Email          string `gorm:"unique;not null" json:"email"`
+	Password       string `json:"-"`
+	Currency       string `json:"currency"`
+	Country        string `json:"country"`
+	Mnemonic       string `json:"mnemonic"`
+	Xpub           string `json:"xpub"`
+	AccountID      string `gorm:"unique" json:"account_id"`
+	AccountNumber  string `json:"account_number"`
+	AccountCode    string `json:"account_code"`
+	CountryCode    string `json:"country_code"`
+	IsVerified     bool   `gorm:"default:false" json:"is_verified"`
+	AccountAddress string `json:"account_address"`
+	PrivateKey     string `json:"-"`
 
 	UserImage string `json:"user_image"`
 }
