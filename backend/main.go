@@ -1,14 +1,32 @@
 package main
 
 import (
+	"backend/controllers"
+	"backend/middlewares"
+
 	"backend/models"
 	"log"
 	"time"
 
-	"github.com/gin-contrib/cors"
+	//"github.com/gin-contrib/cors"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+func CORS() gin.HandlerFunc {
+	// TO allow CORS
+	return func(c *gin.Context) {
+		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+		if c.Request.Method == "OPTIONS" {
+			c.AbortWithStatus(204)
+			return
+		}
+		c.Next()
+	}
+}
 
 func main() {
 	lagos, err := time.LoadLocation("Africa/Lagos")
@@ -25,7 +43,19 @@ func main() {
 	db := models.InitializeDB()
 	models.Migrate(db)
 	r := gin.Default()
-	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:3000"}
-	r.Use(cors.New(config))
+	//config := cors.DefaultConfig()
+	//config.AllowOrigins = []string{"http://localhost:3000"}
+	r.Use(CORS())
+
+	public := r.Group("/api/v1/user")
+	public.POST("/register", controllers.CreateAccount)
+	public.POST("/login", controllers.FetchAuthenticatedUserToken)
+	public.POST("/forget-passord", controllers.ForgetPassword)
+	public.POST("/reset-password", controllers.ResetPassword)
+
+	user := r.Group("/api/v1/auth")
+	user.Use(middlewares.JwtAuthMiddleware())
+	user.GET("/user", controllers.GetAuthenticatedUser)
+
+	r.Run(":8080")
 }

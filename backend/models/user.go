@@ -3,10 +3,14 @@ package models
 import (
 	"backend/utils/tokens"
 	"errors"
+	"fmt"
 	"html"
+	"math/rand"
 	"net/mail"
 	"strings"
 	"unicode"
+
+	"sync/atomic"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -14,27 +18,111 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Email     string `gorm:"unique;not null" json:"email"`
-	Password  string `json:"-"`
-	Currency  string `json:"currency"`
-	Country   string `json:"country"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+	Email         string `gorm:"unique;not null" json:"email"`
+	Password      string `json:"-"`
+	Currency      string `json:"currency"`
+	Country       string `json:"country"`
+	Mnemonic      string `json:"mnemonic"`
+	Xpub          string `json:"xpub"`
+	AccountID     string `gorm:"unique" json:"account_id"`
+	AccountNumber string `json:"account_number"`
+	AccountCode   string `json:"account_code"`
+	CountryCode   string `json:"country_code"`
+	IsVerified    bool   `gorm:"default:false" json:"is_verified"`
 
 	UserImage string `json:"user_image"`
+}
+
+var counter uint64
+
+// generateAccountCode generates a new account code
+func GenerateAccountCode(prefix string) string {
+	// Increment counter atomically and format it
+	num := atomic.AddUint64(&counter, 1)
+	return fmt.Sprintf("%02d_%s_%02d", num, prefix, num)
+}
+
+func GenerateAccountId() string {
+	// Generate a random string of 6 characters
+	random := randString(10)
+
+	accountId := random
+
+	// Check if account ID already exists
+	if AlreadyExists(accountId) {
+		// Generate a new random string and check again if needed
+		return GenerateAccountId()
+	}
+
+	return accountId
+}
+
+func GenerateAccountNumber() string {
+	// Generate a random string of 6 characters
+	random := RandNumber(10)
+
+	accountId := random
+
+	// Check if account ID already exists
+	if AccountNuberExists(accountId) {
+		// Generate a new random string and check again if needed
+		return GenerateAccountNumber()
+	}
+
+	return accountId
+}
+
+func randString(n int) string {
+	letters := "abcdefghijklmnopqrstuvwxyz1234567890"
+
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func RandNumber(n int) string {
+	letters := "1234567890"
+
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func AlreadyExists(id string) bool {
+	var user User
+
+	result := db.Where("account_id = ?", id).First(&user)
+
+	return result.Error == nil
+
+}
+
+func AccountNuberExists(id string) bool {
+	var user User
+
+	result := db.Where("account_number = ?", id).First(&user)
+
+	return result.Error == nil
+
 }
 
 func (u *User) PrepareGive() {
 	u.Password = ""
 }
 
-func (u *User) SaveUser() (*User, error) {
+func (u *User) SaveUser() error {
 	//var err error
 	err := db.Create(&u).Error
 	if err != nil {
-		return &User{}, err
+		return err
 	}
-	return u, nil
+	return nil
 }
 
 func (u *User) UpdateUser() {
@@ -156,4 +244,17 @@ func DeleteUserByID(userID uint) error {
 	}
 
 	return nil
+}
+
+func FindUserByEmail(email string) (User, bool) {
+	var user User
+
+	lowercaseEmail := strings.ToLower(email)
+
+	if err := db.Find(&user).Where("email = ?", lowercaseEmail).Error; err != nil {
+		fmt.Println("user:", user)
+		return user, false
+	}
+
+	return user, true
 }
