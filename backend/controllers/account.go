@@ -65,14 +65,39 @@ func CreateAccount(c *gin.Context) {
 		AccountCode:   user.AccountCode,
 		AccountNumber: user.AccountNumber,
 	}
+	address, err := apis.GenerateCelloAddress(xpub)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	user.AccountAddress = address
+	var privData serializers.PrivGeneration
+	privData.Index = 1
+	privData.Mnemonic = mneumic
+	privKey, err := apis.GeneratePrivateKey(apiURL, key, privData)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	user.PrivateKey = privKey
 	if err := apis.CreateVirtualAccount(apiURL, key, virtual); err != nil {
 		c.JSON(400, gin.H{
-			"message": err.Error(),
+			"error": err.Error(),
 		})
 		return
 	}
 
 	if err := user.SaveUser(); err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if err := apis.ActivateVirtualAccount(user.AccountID, key); err != nil {
 		c.JSON(400, gin.H{
 			"message": err.Error(),
 		})
