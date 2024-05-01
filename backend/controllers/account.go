@@ -6,6 +6,7 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -54,52 +55,64 @@ func CreateAccount(c *gin.Context) {
 	customer := map[string]string{
 		"externalId":         user.AccountID,
 		"accountingCurrency": user.Currency,
-		"customerCountry":    user.Country,
+		"customerCountry":    user.CountryCode,
 		"providerCountry":    "GH",
 	}
+
+	fmt.Println("customer: ", customer)
 	virtual := serializers.VirtualAccount{
-		Xpub:          xpub,
-		Currency:      "CELO",
-		Customer:      customer,
-		Compliant:     false,
-		AccountCode:   user.AccountCode,
-		AccountNumber: user.AccountNumber,
+		Xpub:               xpub,
+		Currency:           "CELO",
+		Customer:           customer,
+		Compliant:          false,
+		AccountCode:        user.AccountCode,
+		AccountNumber:      user.AccountNumber,
+		AccountingCurrency: user.Currency,
 	}
 	address, err := apis.GenerateCelloAddress(xpub)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "generating address failed",
 		})
 		return
 	}
 	user.AccountAddress = address
 	var privData serializers.PrivGeneration
-	privData.Index = 1
+	privData.Index = 0
 	privData.Mnemonic = mneumic
+	privData.Currency = "CELO"
+
 	privKey, err := apis.GeneratePrivateKey(apiURL, key, privData)
 	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "generating private key failed",
 		})
 		return
 	}
 	user.PrivateKey = privKey
-	if err := apis.CreateVirtualAccount(apiURL, key, virtual); err != nil {
+	id, err := apis.CreateVirtualAccount(apiURL, key, virtual)
+	if err != nil {
 		c.JSON(400, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "creating virtual account failed",
 		})
 		return
 	}
+	user.CustomerId = id
 
 	if err := user.SaveUser(); err != nil {
 		c.JSON(400, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "creating user falied",
 		})
 		return
 	}
 	if err := apis.ActivateVirtualAccount(user.AccountID, key); err != nil {
 		c.JSON(400, gin.H{
-			"message": err.Error(),
+			"error":   err.Error(),
+			"message": "activating virtual account failed",
 		})
 		return
 	}
@@ -230,15 +243,18 @@ func GetAuthenticatedUser(c *gin.Context) {
 		return
 	}
 	apiKey := os.Getenv("TATUM_API_KEY_TEST")
-	data, err := apis.FetchAccountBalance(user.AccountID, apiKey)
+	data, err := apis.FetchAccountBalance(user.CustomerId, apiKey)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"status":           "fetch authenticated user details",
-		"errors":           false,
+	authData := map[string]interface{}{
 		"personal_details": user,
 		"wallet_details":   data,
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"status": "fetch authenticated user details",
+		"errors": false,
+		"data":   authData,
 	})
 }

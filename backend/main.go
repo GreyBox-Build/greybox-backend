@@ -50,7 +50,7 @@ func main() {
 	public := r.Group("/api/v1/user")
 	public.POST("/register", controllers.CreateAccount)
 	public.POST("/login", controllers.FetchAuthenticatedUserToken)
-	public.POST("/forget-passord", controllers.ForgetPassword)
+	public.POST("/forget-password", controllers.ForgetPassword)
 	public.POST("/reset-password", controllers.ResetPassword)
 
 	user := r.Group("/api/v1/auth")

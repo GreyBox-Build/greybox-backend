@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Change Request</title>
+    <!-- Include Tailwind CSS styles -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <div class="max-w-2xl mx-auto p-6 bg-white shadow-md my-16">
+
+        <p class="text-lg">Dear {{.Name}},</p>
+
+        <p class="mt-4">We hope this email finds you well. It has come to our attention that you have requested to change your password. To proceed with this request, please follow the link below:</p>
+
+        <p class="mt-4">
+            <a href="{{.PasswordResetLink}}" class="text-blue-500 hover:underline">Change Password</a>
+        </p>
+
+        <p class="mt-4">Please note that this link is valid for a limited time for security reasons. If you did not initiate this password change request, please ignore this email, and your account will remain secure.</p>
+
+        <p class="mt-4">If you encounter any issues or need further assistance, feel free to reach out to our support team at
+            <a href="" class="text-blue-500 hover:underline">example@gmail.com</a>.</p>
+
+        <p class="mt-4">Thank you for your attention to this matter.</p>
+
+        <p class="mt-4">Best regards,<br>
+            greybox organization<br>
+            yours trully</p>
+    </div>
+
+</body>
+
+</html>

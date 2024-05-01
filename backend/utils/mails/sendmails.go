@@ -24,7 +24,7 @@ func SendForgetPasswordMail(receiver []string, name, token string) error {
 
 	// Load the email template
 	dir, _ := os.Getwd()
-	t, err := template.ParseFiles(dir + "backend/email.html")
+	t, err := template.ParseFiles(dir + "/templates/email.html")
 	if err != nil {
 		return err
 	}

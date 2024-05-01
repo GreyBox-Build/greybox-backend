@@ -22,5 +22,6 @@ func InitializeDB() *gorm.DB {
 
 func Migrate(db *gorm.DB) {
 	db.AutoMigrate(&User{})
+	db.AutoMigrate(&Token{})
 
 }

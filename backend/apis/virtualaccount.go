@@ -113,11 +113,14 @@ func GeneratePrivateKey(apiURL string, apiKey string, privData serializers.PrivG
 	// Check for 200 status code
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse struct {
-			Message string `json:"message"`
+			Message string        `json:"message"`
+			Data    []interface{} `json:"data"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
+
 			return "", errors.New(errorResponse.Message)
 		}
+
 		return "", errors.New(errorResponse.Message)
 	}
 	body, err := io.ReadAll(resp.Body)
@@ -125,21 +128,24 @@ func GeneratePrivateKey(apiURL string, apiKey string, privData serializers.PrivG
 		return "", err
 	}
 
-	var data map[string]string
+	var data map[string]interface{}
 	if err := json.Unmarshal(body, &data); err != nil {
 		return "", err
 	}
 
 	key := data["key"]
-	return key, nil
+	if str, ok := key.(string); ok {
+		return str, nil
+	}
+	return "", nil
 
 }
 
-func CreateVirtualAccount(apiURL string, apiKey string, accountData serializers.VirtualAccount) error {
+func CreateVirtualAccount(apiURL string, apiKey string, accountData serializers.VirtualAccount) (string, error) {
 	// Convert struct to JSON
 	jsonData, err := json.Marshal(accountData)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// Create HTTP client
@@ -148,7 +154,7 @@ func CreateVirtualAccount(apiURL string, apiKey string, accountData serializers.
 	// Create HTTP request
 	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Set("x-api-key", apiKey)
 	req.Header.Set("Content-Type", "application/json")
@@ -156,22 +162,33 @@ func CreateVirtualAccount(apiURL string, apiKey string, accountData serializers.
 	// Send HTTP request
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer resp.Body.Close()
 
 	// Check for 200 status code
 	if resp.StatusCode != http.StatusOK {
 		var errorResponse struct {
-			Message string `json:"message"`
+			Message string        `json:"message"`
+			Data    []interface{} `json:"data"`
 		}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
-			return errors.New(errorResponse.Message)
+			return "", errors.New(errorResponse.Message)
 		}
-		return errors.New(errorResponse.Message)
+		fmt.Println("error data: ", errorResponse)
+		return "", errors.New(errorResponse.Message)
+	}
+	var data map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return "", err
 	}
 
-	return nil
+	customerId, ok := data["id"].(string)
+	if ok {
+		return customerId, nil
+	}
+
+	return "", nil
 }
 
 func FetchAccountBalance(id string, apiKey string) (map[string]interface{}, error) {
@@ -210,10 +227,15 @@ func FetchAccountBalance(id string, apiKey string) (map[string]interface{}, erro
 		if err != nil {
 			return nil, err
 		}
+		fmt.Println("error data: ", errData)
 		// Extract the error message from the JSON response
 		errorMessage, ok := errData["message"].(string)
 		if !ok {
 			return nil, fmt.Errorf("failed to extract error message from json response")
+		}
+		errorData, ok := errData["data"].([]interface{})
+		if ok {
+			fmt.Println("error data: ", errorData)
 		}
 		// Return the error message
 		return errData, fmt.Errorf(errorMessage)

@@ -27,12 +27,14 @@ type User struct {
 	Mnemonic       string `json:"mnemonic"`
 	Xpub           string `json:"xpub"`
 	AccountID      string `gorm:"unique" json:"account_id"`
+	CustomerId     string `json:"customer_id"`
 	AccountNumber  string `json:"account_number"`
 	AccountCode    string `json:"account_code"`
 	CountryCode    string `json:"country_code"`
 	IsVerified     bool   `gorm:"default:false" json:"is_verified"`
 	AccountAddress string `json:"account_address"`
 	PrivateKey     string `json:"-"`
+	CryptoCurrency string `gorm:"default:CELO" json:"crypto_currency"`
 
 	UserImage string `json:"user_image"`
 }
@@ -97,6 +99,7 @@ func RandNumber(n int) string {
 }
 
 func AlreadyExists(id string) bool {
+	fmt.Println("id: ", id)
 	var user User
 
 	result := db.Where("account_id = ?", id).First(&user)
@@ -106,6 +109,7 @@ func AlreadyExists(id string) bool {
 }
 
 func AccountNuberExists(id string) bool {
+	fmt.Println("id: ", id)
 	var user User
 
 	result := db.Where("account_number = ?", id).First(&user)
