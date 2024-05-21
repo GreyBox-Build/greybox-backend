@@ -57,5 +57,9 @@ func main() {
 	user.Use(middlewares.JwtAuthMiddleware())
 	user.GET("/user", controllers.GetAuthenticatedUser)
 
+	trans := r.Group("/api/v1/transaction")
+	trans.Use(middlewares.JwtAuthMiddleware())
+	trans.GET("/on-ramp", controllers.RetrieveOnRampParamsV1)
+
 	r.Run(":8080")
 }
