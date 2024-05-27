@@ -36,7 +36,7 @@ func RetrieveOnRampParamsV1(c *gin.Context) {
 	data := map[string]interface{}{
 		"transaction_id":       trans.TransactionId,
 		"wallet_address":       user.AccountAddress,
-		"currency_code":        "cusd",
+		"currency_code":        "usdc(stellar)",
 		"fiat_currency_code":   strings.ToLower(user.Currency),
 		"email":                user.Email,
 		"external_customer_id": user.CustomerId,

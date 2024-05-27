@@ -48,6 +48,32 @@ func GenerateCelloAddress(xpub string) (string, error) {
 	return address, nil
 }
 
+func GenerateStellarAddress() (map[string]string, error) {
+	apiUrl := "https://api.tatum.io/v3/xlm/account"
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	req.Header.Set("x-api-key", apiKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var data map[string]string
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return data, err
+	}
+	return data, nil
+}
+
 func GenerateCelloWallet() (string, string, error) {
 	apiURL := "https://api.tatum.io/v3/celo/wallet"
 	client := &http.Client{}
@@ -175,7 +201,7 @@ func CreateVirtualAccount(apiURL string, apiKey string, accountData serializers.
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			return "", errors.New(errorResponse.Message)
 		}
-		fmt.Println("error data: ", errorResponse)
+
 		return "", errors.New(errorResponse.Message)
 	}
 	var data map[string]interface{}
@@ -227,7 +253,7 @@ func FetchAccountBalance(id string, apiKey string) (map[string]interface{}, erro
 		if err != nil {
 			return nil, err
 		}
-		fmt.Println("error data: ", errData)
+
 		// Extract the error message from the JSON response
 		errorMessage, ok := errData["message"].(string)
 		if !ok {
@@ -277,4 +303,36 @@ func ActivateVirtualAccount(id string, apiKey string) error {
 	}
 
 	return nil
+}
+
+func CreateDepositWalletXLM(accountId string) (string, error) {
+
+	apiUrl := fmt.Sprintf("https://api.tatum.io/v3/offchain/account/%s/address", accountId)
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", apiUrl, nil)
+	if err != nil {
+		return "", err
+	}
+	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	req.Header.Set("x-api-key", apiKey)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+	}
+
+	var data map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return "", err
+	}
+	address := data["address"]
+	if str, ok := address.(string); ok {
+		fmt.Println("address: ", str)
+		return str, nil
+	}
+	return "", nil
 }

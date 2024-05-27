@@ -6,7 +6,6 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -34,22 +33,15 @@ func CreateAccount(c *gin.Context) {
 	user.CountryCode = input.CountryCode
 	if err := user.BeforeSave(); err != nil {
 		c.JSON(400, gin.H{
-			"message": err.Error(),
+			"error": err.Error(),
 		})
 		return
 	}
+
 	user.AccountID = models.GenerateAccountId()
 	user.AccountNumber = models.GenerateAccountNumber()
 	user.AccountCode = models.GenerateAccountCode("GBX")
-	mneumic, xpub, err := apis.GenerateCelloWallet()
-	if err != nil {
-		c.JSON(400, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-	user.Mnemonic = mneumic
-	user.Xpub = xpub
+
 	apiURL := "https://api.tatum.io/v3/ledger/account"
 	key := os.Getenv("TATUM_API_KEY_TEST")
 	customer := map[string]string{
@@ -58,40 +50,37 @@ func CreateAccount(c *gin.Context) {
 		"customerCountry":    user.CountryCode,
 		"providerCountry":    "GH",
 	}
+	xpub, err := models.GetLatestXlmPublic()
+	if err != nil {
+		data, err := apis.GenerateStellarAddress()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating address failed",
+			})
+			return
+		}
+		xpub.Xpub = data["address"]
+		xpub.Secret = data["secret"]
+		if err := xpub.Save(); err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"message": "failed to create xpub key",
+			})
+		}
+	}
 
-	fmt.Println("customer: ", customer)
 	virtual := serializers.VirtualAccount{
-		Xpub:               xpub,
-		Currency:           "CELO",
+		Xpub:               xpub.Xpub,
+		Currency:           "XLM",
 		Customer:           customer,
 		Compliant:          false,
 		AccountCode:        user.AccountCode,
 		AccountNumber:      user.AccountNumber,
 		AccountingCurrency: user.Currency,
 	}
-	address, err := apis.GenerateCelloAddress(xpub)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "generating address failed",
-		})
-		return
-	}
-	user.AccountAddress = address
-	var privData serializers.PrivGeneration
-	privData.Index = 0
-	privData.Mnemonic = mneumic
-	privData.Currency = "CELO"
-
-	privKey, err := apis.GeneratePrivateKey(apiURL, key, privData)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "generating private key failed",
-		})
-		return
-	}
-	user.PrivateKey = privKey
+	user.Xpub = xpub.Xpub
+	user.PrivateKey = xpub.Secret
 	id, err := apis.CreateVirtualAccount(apiURL, key, virtual)
 	if err != nil {
 		c.JSON(400, gin.H{
@@ -101,6 +90,15 @@ func CreateAccount(c *gin.Context) {
 		return
 	}
 	user.CustomerId = id
+	address, err := apis.CreateDepositWalletXLM(user.CustomerId)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "creating deposit wallet failed",
+		})
+		return
+	}
+	user.AccountAddress = address
 
 	if err := user.SaveUser(); err != nil {
 		c.JSON(400, gin.H{
