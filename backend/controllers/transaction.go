@@ -5,7 +5,6 @@ import (
 	"backend/utils/tokens"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -26,21 +25,16 @@ func RetrieveOnRampParamsV1(c *gin.Context) {
 		})
 		return
 	}
-	trans, err := models.CreateTransaction(user.ID)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
+
 	data := map[string]interface{}{
-		"transaction_id":       trans.TransactionId,
 		"wallet_address":       user.AccountAddress,
-		"currency_code":        "usdc(stellar)",
-		"fiat_currency_code":   strings.ToLower(user.Currency),
+		"asset":                "CUSD",
 		"email":                user.Email,
 		"external_customer_id": user.CustomerId,
-		"api_key":              os.Getenv("MOONPAY_API_TEST_KEY"),
+		"x-client-id":          os.Getenv("X_CLIENT_ID"),
+		"x-client-secret":      os.Getenv("X_CLIENT_SECRET"),
+		"network":              "CELO",
+		"country":              user.Country,
 	}
 
 	c.JSON(200, gin.H{

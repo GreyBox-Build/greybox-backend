@@ -13,5 +13,4 @@ type VirtualAccount struct {
 type PrivGeneration struct {
 	Index    uint   `json:"index"`
 	Mnemonic string `json:"mnemonic"`
-	Currency string `json:"currency"`
 }

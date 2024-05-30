@@ -305,34 +305,34 @@ func ActivateVirtualAccount(id string, apiKey string) error {
 	return nil
 }
 
-func CreateDepositWalletXLM(accountId string) (string, error) {
+func CreateDepositWallet(accountId string) (string, string, error) {
 
 	apiUrl := fmt.Sprintf("https://api.tatum.io/v3/offchain/account/%s/address", accountId)
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", apiUrl, nil)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	apiKey := os.Getenv("TATUM_API_KEY_TEST")
 	req.Header.Set("x-api-key", apiKey)
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return "", fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+		return "", "", fmt.Errorf("API request failed with status: %d", resp.StatusCode)
 	}
 
 	var data map[string]interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return "", err
+		return "", "", err
 	}
 	address := data["address"]
-	if str, ok := address.(string); ok {
-		fmt.Println("address: ", str)
-		return str, nil
-	}
-	return "", nil
+	message := data["message"]
+	str, _ := address.(string)
+	mes, _ := message.(string)
+	return str, mes, nil
+
 }

@@ -90,7 +90,7 @@ func CreateAccount(c *gin.Context) {
 		return
 	}
 	user.CustomerId = id
-	address, err := apis.CreateDepositWalletXLM(user.CustomerId)
+	address, memo, err := apis.CreateDepositWallet(user.CustomerId)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error":   err.Error(),
@@ -99,6 +99,7 @@ func CreateAccount(c *gin.Context) {
 		return
 	}
 	user.AccountAddress = address
+	user.Memo = memo
 
 	if err := user.SaveUser(); err != nil {
 		c.JSON(400, gin.H{
@@ -120,6 +121,120 @@ func CreateAccount(c *gin.Context) {
 	})
 }
 
+func CreateAccountV2(c *gin.Context) {
+
+	var input serializers.User
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	var user models.User
+	user.FirstName = input.FirstName
+	user.Email = input.Email
+	user.Password = input.Password
+	user.LastName = input.LastName
+	user.Country = input.Country
+	user.LastName = input.LastName
+	user.Currency = input.Currency
+	user.CountryCode = input.CountryCode
+	if err := user.BeforeSave(); err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	user.AccountID = models.GenerateAccountId()
+	user.AccountNumber = models.GenerateAccountNumber()
+	user.AccountCode = models.GenerateAccountCode("GBX")
+
+	apiURL := "https://api.tatum.io/v3/ledger/account"
+	key := os.Getenv("TATUM_API_KEY_TEST")
+	customer := map[string]string{
+		"externalId":         user.AccountID,
+		"accountingCurrency": user.Currency,
+		"customerCountry":    user.CountryCode,
+		"providerCountry":    "GH",
+	}
+	meumnic, xpub, err := apis.GenerateCelloWallet()
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "generating address failed",
+		})
+		return
+	}
+
+	virtual := serializers.VirtualAccount{
+		Xpub:               xpub,
+		Currency:           "CELO",
+		Customer:           customer,
+		Compliant:          false,
+		AccountCode:        user.AccountCode,
+		AccountNumber:      user.AccountNumber,
+		AccountingCurrency: user.Currency,
+	}
+	user.Xpub = xpub
+	user.Mnemonic = meumnic
+	privURL := "https://api.tatum.io/v3/celo/wallet/priv"
+
+	privData := serializers.PrivGeneration{
+		Index:    1,
+		Mnemonic: meumnic,
+	}
+	privKey, err := apis.GeneratePrivateKey(privURL, key, privData)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "generating private key failed",
+		})
+		return
+	}
+
+	user.PrivateKey = privKey
+	id, err := apis.CreateVirtualAccount(apiURL, key, virtual)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "creating virtual account failed",
+		})
+		return
+	}
+	user.CustomerId = id
+
+	address, memo, err := apis.CreateDepositWallet(user.CustomerId)
+	user.AccountAddress = address
+	user.Memo = memo
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "creating deposit wallet failed",
+		})
+		return
+	}
+
+	if err := user.SaveUser(); err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "creating user falied",
+		})
+		return
+	}
+	if err := apis.ActivateVirtualAccount(user.AccountID, key); err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "activating virtual account failed",
+		})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"message": "created account successfuly",
+	})
+}
 func FetchAuthenticatedUserToken(c *gin.Context) {
 	var input serializers.LoginSerializer
 	if err := c.ShouldBindJSON(&input); err != nil {

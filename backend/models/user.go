@@ -34,9 +34,9 @@ type User struct {
 	IsVerified     bool   `gorm:"default:false" json:"is_verified"`
 	AccountAddress string `json:"account_address"`
 	PrivateKey     string `json:"-"`
-	CryptoCurrency string `gorm:"default:XLM" json:"crypto_currency"`
-
-	UserImage string `json:"user_image"`
+	CryptoCurrency string `gorm:"default:CELO" json:"crypto_currency"`
+	Memo           string `json:"memo"`
+	UserImage      string `json:"user_image"`
 }
 
 var counter uint64

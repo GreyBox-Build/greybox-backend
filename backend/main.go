@@ -53,6 +53,9 @@ func main() {
 	public.POST("/forget-password", controllers.ForgetPassword)
 	public.POST("/reset-password", controllers.ResetPassword)
 
+	publicV2 := r.Group("/api/v2/user")
+	publicV2.POST("/register", controllers.CreateAccountV2)
+
 	user := r.Group("/api/v1/auth")
 	user.Use(middlewares.JwtAuthMiddleware())
 	user.GET("/user", controllers.GetAuthenticatedUser)
