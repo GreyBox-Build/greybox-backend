@@ -99,7 +99,7 @@ func RandNumber(n int) string {
 }
 
 func AlreadyExists(id string) bool {
-	fmt.Println("id: ", id)
+
 	var user User
 
 	result := db.Where("account_id = ?", id).First(&user)
@@ -257,10 +257,18 @@ func FindUserByEmail(email string) (User, bool) {
 
 	lowercaseEmail := strings.ToLower(email)
 
-	if err := db.Find(&user).Where("email = ?", lowercaseEmail).Error; err != nil {
-		fmt.Println("user:", user)
+	if err := db.Where("email = ?", lowercaseEmail).First(&user).Error; err != nil {
+
 		return user, false
 	}
 
 	return user, true
+}
+
+func FindUserByAddress(address string) (User, error) {
+	var user User
+	if err := db.Where("account_address = ?", address).First(&user).Error; err != nil {
+		return user, err
+	}
+	return user, nil
 }
