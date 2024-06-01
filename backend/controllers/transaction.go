@@ -44,3 +44,7 @@ func RetrieveOnRampParamsV1(c *gin.Context) {
 	})
 
 }
+
+func GetUserTransactions(c *gin.Context) {
+
+}
