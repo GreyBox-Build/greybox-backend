@@ -63,6 +63,8 @@ func main() {
 	trans := r.Group("/api/v1/transaction")
 	trans.Use(middlewares.JwtAuthMiddleware())
 	trans.GET("/on-ramp", controllers.RetrieveOnRampParamsV1)
+	trans.GET("", controllers.GetUserTransactions)
+	trans.GET("/hash", controllers.GetTransactionsByHash)
 
 	r.Run(":8080")
 }
