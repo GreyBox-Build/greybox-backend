@@ -35,6 +35,7 @@ func RetrieveOnRampParamsV1(c *gin.Context) {
 		"x-client-secret":      os.Getenv("X_CLIENT_SECRET"),
 		"network":              "CELO",
 		"country":              user.Country,
+		"source_param":         os.Getenv("SOURCE_PARAM"),
 	}
 
 	c.JSON(200, gin.H{
