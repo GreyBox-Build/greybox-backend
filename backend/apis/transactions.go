@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -8,6 +9,18 @@ import (
 	"net/http"
 	"os"
 )
+
+type TransactionRequest struct {
+	Amount         string `json:"amount"`
+	Currency       string `json:"currency"`
+	To             string `json:"to"`
+	FeeCurrency    string `json:"feeCurrency"`
+	FromPrivateKey string `json:"-"` // Omit this field from JSON
+	Fee            struct {
+		GasPrice string `json:"gasPrice"`
+		GasLimit string `json:"gasLimit"`
+	} `json:"fee"`
+}
 
 func GetUserTransactions(chain, walletAddress, category string, pageSize uint64) (map[string]interface{}, error) {
 	url := fmt.Sprintf("https://api.tatum.io/v4/data/transactions?chain=%s&addresses=%s&transactionSubtype=%s&pageSize=%d", chain, walletAddress, category, pageSize)
@@ -68,5 +81,98 @@ func GetTransactionByHash(chain, hash string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
+	return result, nil
+}
+
+func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice, gasFee string) (string, error) {
+	url := "https://api.tatum.io/v3/celo/transaction"
+	client := &http.Client{}
+	data := TransactionRequest{
+		Amount:         amount,
+		Currency:       "CUSD",
+		To:             accountAddress,
+		FeeCurrency:    "CUSD",
+		FromPrivateKey: privKey,
+		Fee: struct {
+			GasPrice string `json:"gasPrice"`
+			GasLimit string `json:"gasLimit"`
+		}{
+			GasPrice: gasPrice,
+			GasLimit: gasFee,
+		},
+	}
+	jsonData, err := json.Marshal(&data)
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	var errMsg string
+
+	switch resp.StatusCode {
+	case 403:
+		errMsg = "failed to perform transaction. most likely insufficient funds"
+	case 400:
+		errMsg = "failed to perform transaction. validation error"
+	case 500:
+		errMsg = "server error from third party application"
+	case 401:
+		errMsg = "subscription not active"
+	default:
+		// Handle any other status codes if needed
+	}
+
+	if errMsg != "" {
+		return "", errors.New(errMsg)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var result map[string]string
+	if err = json.Unmarshal(body, &result); err != nil {
+		return "", err
+	}
+	return result["txId"], nil
+}
+
+func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]string, error) {
+	apiUrl := "https://api.tatum.io/v3/celo/gas"
+	client := &http.Client{}
+	jsonData, err := json.Marshal(map[string]interface{}{
+		"amount": amount,
+		"to":     to,
+		"from":   from,
+	})
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	var result map[string]string
+	if err = json.Unmarshal(body, &result); err != nil {
+		return nil, err
+	}
 	return result, nil
 }

@@ -3,7 +3,9 @@ package controllers
 import (
 	"backend/apis"
 	"backend/models"
+	"backend/serializers"
 	"backend/utils/tokens"
+	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -122,4 +124,93 @@ func GetTransactionsByHash(c *gin.Context) {
 		"data":   transactions,
 		"status": "retrieved transactions successfully",
 	})
+}
+
+func OffRampTransaction(c *gin.Context) {
+	var input serializers.OffRampForm
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  err.Error(),
+			"errors": true,
+		})
+		return
+	}
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	var trans models.Transaction
+	trans.UserID = userId
+	trans.Amount = input.Amount
+	trans.User = user
+	trans.Chain = input.Chain
+	trans.Address = input.AccountAddress
+	trans.Status = "pending"
+	trans.TransactionSubType = "outgoing"
+
+	amount, accountAddress, Chain := input.Amount, input.AccountAddress, input.Chain
+
+	switch strings.ToLower(Chain) {
+	case "celo":
+		resultChan := make(chan map[string]string)
+		errChan := make(chan error)
+
+		go func() {
+			result, err := apis.CalculateEstimatedFeeCelo(amount, accountAddress, user.AccountAddress)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			resultChan <- result
+		}()
+
+		select {
+		case result := <-resultChan:
+			// Handle the result from CalculateEstimatedFeeCelo
+			price, err := strconv.ParseInt(result["gasPrice"], 10, 64)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			gasPrice := models.WeiToGwei(big.NewInt(price))
+			trans.TransFee = result["gasFee"]
+			txHash, err := apis.PerformTransactionCelo(amount, accountAddress, user.PrivateKey, gasPrice.String(), result["gasFee"])
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			trans.Hash = txHash
+			trans.Status = "completed"
+			if err := trans.SaveTransaction(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				return
+			}
+			data := map[string]interface{}{
+				"transaction_hash": txHash,
+			}
+			c.JSON(
+				http.StatusOK,
+				gin.H{
+					"data":   data,
+					"status": "transaction perform successfully",
+				},
+			)
+			return
+
+		case err := <-errChan:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
+
+	}
+	c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid chain"})
+
 }
