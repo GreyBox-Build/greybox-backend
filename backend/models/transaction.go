@@ -1,6 +1,8 @@
 package models
 
 import (
+	"math/big"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -19,6 +21,13 @@ type Transaction struct {
 	Address            string `json:"address"`
 	BlockNumber        uint   `json:"block_number"`
 	TransactionId      string `json:"transaction_id"`
+	TransFee           string `json:"trans_fee"`
+}
+
+// WeiToGwei converts Wei to Gwei.
+func WeiToGwei(wei *big.Int) *big.Int {
+	gwei := new(big.Int).Div(wei, big.NewInt(1e9))
+	return gwei
 }
 
 func CreateTransaction(userId uint) (*Transaction, error) {
@@ -44,4 +53,8 @@ func CreateTransaction(userId uint) (*Transaction, error) {
 		return nil, err
 	}
 	return transaction, nil
+}
+
+func (t *Transaction) SaveTransaction() error {
+	return db.Create(t).Error
 }
