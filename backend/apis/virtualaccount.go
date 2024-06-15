@@ -9,7 +9,24 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 )
+
+type Result struct {
+	Chain                  string `json:"chain"`
+	Address                string `json:"address"`
+	Balance                string `json:"balance"`
+	TokenAddress           string `json:"tokenAddress"`
+	LastUpdatedBlockNumber int64  `json:"lastUpdatedBlockNumber"`
+	Type                   string `json:"type"`
+	TokenId                string `json:"tokenId,omitempty"`
+}
+
+type Response struct {
+	Result   []Result `json:"result"`
+	PrevPage string   `json:"prevPage"`
+	NextPage string   `json:"nextPage"`
+}
 
 func GenerateCelloAddress(xpub string) (string, error) {
 	apiURL := fmt.Sprintf("https://api.tatum.io/v3/celo/address/%s"+"/%d", xpub, 1)
@@ -335,4 +352,36 @@ func CreateDepositWallet(accountId string) (string, string, error) {
 	mes, _ := message.(string)
 	return str, mes, nil
 
+}
+
+func FetchWalletBalance(address, chain string, pageSize int32) (float32, error) {
+	tokenType := "fungible"
+	apiUrl := fmt.Sprintf("https://api.tatum.io/v4/data/balances?chain=%s&addresses=%s&excludeMetadata=%t&tokenTypes=%s&pageSize=%d", chain, address, true, tokenType, 10)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return 0, err
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+
+	defer resp.Body.Close()
+
+	var data Response
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		return 0, err
+	}
+	var balance float32
+	for _, result := range data.Result {
+		balance1, err := strconv.ParseFloat(result.Balance, 32)
+		if err != nil {
+			return 0, err
+		}
+		balance = float32(balance1)
+
+	}
+	return balance, nil
 }

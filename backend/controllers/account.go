@@ -8,6 +8,7 @@ import (
 	"backend/utils/tokens"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -318,11 +319,15 @@ func GetAuthenticatedUser(c *gin.Context) {
 		})
 		return
 	}
-	apiKey := os.Getenv("TATUM_API_KEY_TEST")
-	data, err := apis.FetchAccountBalance(user.CustomerId, apiKey)
+	balance, err := apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
 		return
+	}
+	data := map[string]float32{
+		"balance": balance,
 	}
 	authData := map[string]interface{}{
 		"personal_details": user,
