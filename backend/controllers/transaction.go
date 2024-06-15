@@ -161,7 +161,7 @@ func OffRampTransaction(c *gin.Context) {
 
 	switch strings.ToLower(Chain) {
 	case "celo":
-		resultChan := make(chan map[string]string)
+		resultChan := make(chan map[string]interface{})
 		errChan := make(chan error)
 
 		go func() {
@@ -176,22 +176,23 @@ func OffRampTransaction(c *gin.Context) {
 		select {
 		case result := <-resultChan:
 			// Handle the result from CalculateEstimatedFeeCelo
-			price, err := strconv.ParseInt(result["gasPrice"], 10, 64)
+			gprice, _ := result["gasPrice"].(string)
+			price, err := strconv.ParseInt(gprice, 10, 64)
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "conversion failed for conversion of gas price"})
 				return
 			}
 			gasPrice := models.WeiToGwei(big.NewInt(price))
-			trans.TransFee = result["gasFee"]
-			txHash, err := apis.PerformTransactionCelo(amount, accountAddress, user.PrivateKey, gasPrice.String(), result["gasFee"])
+			trans.TransFee, _ = result["gasLimit"].(float64)
+			txHash, err := apis.PerformTransactionCelo(amount, accountAddress, user.PrivateKey, gasPrice.String(), result["gasLimit"].(float64))
 			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "transaction failed"})
 				return
 			}
 			trans.Hash = txHash
 			trans.Status = "completed"
 			if err := trans.SaveTransaction(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "saving transaction info failed"})
 				return
 			}
 			data := map[string]interface{}{
@@ -200,6 +201,7 @@ func OffRampTransaction(c *gin.Context) {
 			c.JSON(
 				http.StatusOK,
 				gin.H{
+					"errors": false,
 					"data":   data,
 					"status": "transaction perform successfully",
 				},
@@ -207,7 +209,8 @@ func OffRampTransaction(c *gin.Context) {
 			return
 
 		case err := <-errChan:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "gas price could not be calculated"})
+			return
 		}
 
 	}

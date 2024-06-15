@@ -9,19 +9,19 @@ import (
 
 type Transaction struct {
 	gorm.Model
-	UserID             uint   `gorm:"index" json:"user_id"`
-	User               User   `gorm:"foreignKey:UserID" json:"user"`
-	Amount             string `json:"amount"`
-	Status             string `json:"status"`
-	Chain              string `gorm:"default:celo" json:"chain"`
-	Hash               string `json:"hash"`
-	TransactionSubType string `json:"transaction_sub_type"`
-	TransactionType    string `json:"transaction_type"`
-	TransactionIndex   uint   `json:"transaction_index"`
-	Address            string `json:"address"`
-	BlockNumber        uint   `json:"block_number"`
-	TransactionId      string `json:"transaction_id"`
-	TransFee           string `json:"trans_fee"`
+	UserID             uint    `gorm:"index" json:"user_id"`
+	User               User    `gorm:"foreignKey:UserID" json:"user"`
+	Amount             string  `json:"amount"`
+	Status             string  `json:"status"`
+	Chain              string  `gorm:"default:celo" json:"chain"`
+	Hash               string  `json:"hash"`
+	TransactionSubType string  `json:"transaction_sub_type"`
+	TransactionType    string  `json:"transaction_type"`
+	TransactionIndex   uint    `json:"transaction_index"`
+	Address            string  `json:"address"`
+	BlockNumber        uint    `json:"block_number"`
+	TransactionId      string  `json:"transaction_id"`
+	TransFee           float64 `json:"trans_fee"`
 }
 
 // WeiToGwei converts Wei to Gwei.

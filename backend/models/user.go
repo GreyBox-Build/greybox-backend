@@ -24,8 +24,8 @@ type User struct {
 	Password       string `json:"-"`
 	Currency       string `json:"currency"`
 	Country        string `json:"country"`
-	Mnemonic       string `json:"mnemonic"`
-	Xpub           string `json:"xpub"`
+	Mnemonic       string `json:"-"`
+	Xpub           string `json:"-"`
 	AccountID      string `gorm:"unique" json:"account_id"`
 	CustomerId     string `json:"customer_id"`
 	AccountNumber  string `json:"account_number"`
@@ -37,6 +37,7 @@ type User struct {
 	CryptoCurrency string `gorm:"default:CELO" json:"crypto_currency"`
 	Memo           string `json:"memo"`
 	UserImage      string `json:"user_image"`
+	SignatureId    string `json:"-"`
 }
 
 var counter uint64
