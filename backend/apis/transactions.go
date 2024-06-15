@@ -15,7 +15,7 @@ type TransactionRequest struct {
 	Currency       string `json:"currency"`
 	To             string `json:"to"`
 	FeeCurrency    string `json:"feeCurrency"`
-	FromPrivateKey string `json:"-"` // Omit this field from JSON
+	FromPrivateKey string `json:"fromPrivateKey"` // Omit this field from JSON
 	Fee            struct {
 		GasPrice string `json:"gasPrice"`
 		GasLimit string `json:"gasLimit"`
@@ -53,7 +53,7 @@ func GetUserTransactions(chain, walletAddress, category string, pageSize uint64)
 	return result, nil
 }
 
-func GetTransactionByHash(chain, hash string) (map[string]interface{}, error) {
+func GetTransactionByHash(chain, hash string) ([]map[string]interface{}, error) {
 	url := fmt.Sprintf("https://api.tatum.io/v4/data/transactions/hash?hash=%s&chain=%s", hash, chain)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -75,7 +75,7 @@ func GetTransactionByHash(chain, hash string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	var result map[string]interface{}
+	var result []map[string]interface{}
 	err = json.Unmarshal(body, &result)
 	if err != nil {
 		return nil, err
@@ -84,10 +84,11 @@ func GetTransactionByHash(chain, hash string) (map[string]interface{}, error) {
 	return result, nil
 }
 
-func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice, gasFee string) (string, error) {
+func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, gasFee float64) (string, error) {
 	url := "https://api.tatum.io/v3/celo/transaction"
 	client := &http.Client{}
-	data := TransactionRequest{
+
+	newData := TransactionRequest{
 		Amount:         amount,
 		Currency:       "CUSD",
 		To:             accountAddress,
@@ -98,10 +99,12 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice, gasFee st
 			GasLimit string `json:"gasLimit"`
 		}{
 			GasPrice: gasPrice,
-			GasLimit: gasFee,
+			GasLimit: fmt.Sprintf("%f", gasFee),
 		},
 	}
-	jsonData, err := json.Marshal(&data)
+
+	// Convert the struct to JSON format
+	jsonData, err := json.Marshal(&newData)
 	if err != nil {
 		return "", err
 	}
@@ -111,6 +114,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice, gasFee st
 	}
 
 	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", err
@@ -130,7 +134,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice, gasFee st
 	default:
 		// Handle any other status codes if needed
 	}
-
+	fmt.Println("status code transact: ", resp.StatusCode)
 	if errMsg != "" {
 		return "", errors.New(errMsg)
 	}
@@ -145,10 +149,10 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice, gasFee st
 	return result["txId"], nil
 }
 
-func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]string, error) {
+func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]interface{}, error) {
 	apiUrl := "https://api.tatum.io/v3/celo/gas"
 	client := &http.Client{}
-	jsonData, err := json.Marshal(map[string]interface{}{
+	jsonData, err := json.Marshal(map[string]string{
 		"amount": amount,
 		"to":     to,
 		"from":   from,
@@ -161,6 +165,7 @@ func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]string, erro
 		return nil, err
 	}
 	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -170,7 +175,12 @@ func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]string, erro
 	if err != nil {
 		return nil, err
 	}
-	var result map[string]string
+	fmt.Println("status code: ", resp.StatusCode)
+	if resp.StatusCode != 200 {
+		return nil, errors.New("failed to calculate estimated fee")
+	}
+	var result map[string]interface{}
+
 	if err = json.Unmarshal(body, &result); err != nil {
 		return nil, err
 	}

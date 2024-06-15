@@ -65,6 +65,7 @@ func main() {
 	trans.GET("/on-ramp", controllers.RetrieveOnRampParamsV1)
 	trans.GET("", controllers.GetUserTransactions)
 	trans.GET("/hash", controllers.GetTransactionsByHash)
+	trans.POST("/off-ramp", controllers.OffRampTransaction)
 
 	r.Run(":8080")
 }
