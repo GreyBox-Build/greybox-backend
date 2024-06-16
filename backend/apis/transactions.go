@@ -107,7 +107,7 @@ func GetTransactionByHash(chain, hash string) ([]map[string]interface{}, error) 
 	return result, nil
 }
 
-func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, gasFee float64) (string, error) {
+func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, gasFee float64) (string, int, error) {
 	url := "https://api.tatum.io/v3/celo/transaction"
 	client := &http.Client{}
 
@@ -134,18 +134,18 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 	// Convert the struct to JSON format
 	jsonData, err := json.Marshal(&newData)
 	if err != nil {
-		return "", err
+		return "", 500, err
 	}
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return "", err
+		return "", 500, err
 	}
 
 	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", err
+		return "", 500, err
 	}
 	defer resp.Body.Close()
 	var errMsg string
@@ -156,16 +156,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 
 	case 400:
 		errMsg = "failed to perform transaction. validation error"
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return "", err
-		}
-		var result map[string]interface{}
-		// Unmarshal the JSON response into a map
-		if err = json.Unmarshal(body, &result); err != nil {
-			return "", err
-		}
-		fmt.Println("error data: ", result)
+
 	case 500:
 		errMsg = "server error from third party application"
 	case 401:
@@ -173,19 +164,19 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 	default:
 		// Handle any other status codes if needed
 	}
-	fmt.Println("status code transact: ", resp.StatusCode)
+
 	if errMsg != "" {
-		return "", errors.New(errMsg)
+		return "", resp.StatusCode, errors.New(errMsg)
 	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return "", 500, err
 	}
 	var result map[string]string
 	if err = json.Unmarshal(body, &result); err != nil {
-		return "", err
+		return "", 500, err
 	}
-	return result["txId"], nil
+	return result["txId"], resp.StatusCode, nil
 }
 
 func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]interface{}, error) {
