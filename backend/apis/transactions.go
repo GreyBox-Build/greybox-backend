@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 )
 
 type TransactionRequest struct {
@@ -20,6 +21,28 @@ type TransactionRequest struct {
 		GasPrice string `json:"gasPrice"`
 		GasLimit string `json:"gasLimit"`
 	} `json:"fee"`
+}
+
+type ErrorResponse struct {
+	ErrorCode  string `json:"errorCode"`
+	Message    string `json:"message"`
+	StatusCode int    `json:"statusCode"`
+	Data       []Data `json:"data"`
+}
+
+type Data struct {
+	Target      Target      `json:"target"`
+	Value       int         `json:"value"`
+	Property    string      `json:"property"`
+	Constraints Constraints `json:"constraints"`
+}
+
+type Target struct {
+	Property int `json:"property"`
+}
+
+type Constraints struct {
+	Min string `json:"min"`
 }
 
 func GetUserTransactions(chain, walletAddress, category string, pageSize uint64) (map[string]interface{}, error) {
@@ -88,6 +111,11 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 	url := "https://api.tatum.io/v3/celo/transaction"
 	client := &http.Client{}
 
+	wholeNum := int(gasFee)
+
+	// Convert int to string
+	strNum := strconv.Itoa(wholeNum)
+
 	newData := TransactionRequest{
 		Amount:         amount,
 		Currency:       "CUSD",
@@ -99,7 +127,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 			GasLimit string `json:"gasLimit"`
 		}{
 			GasPrice: gasPrice,
-			GasLimit: fmt.Sprintf("%f", gasFee),
+			GasLimit: strNum,
 		},
 	}
 
@@ -125,8 +153,19 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 	switch resp.StatusCode {
 	case 403:
 		errMsg = "failed to perform transaction. most likely insufficient funds"
+
 	case 400:
 		errMsg = "failed to perform transaction. validation error"
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", err
+		}
+		var result map[string]interface{}
+		// Unmarshal the JSON response into a map
+		if err = json.Unmarshal(body, &result); err != nil {
+			return "", err
+		}
+		fmt.Println("error data: ", result)
 	case 500:
 		errMsg = "server error from third party application"
 	case 401:
@@ -175,7 +214,7 @@ func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]interface{},
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("status code: ", resp.StatusCode)
+
 	if resp.StatusCode != 200 {
 		return nil, errors.New("failed to calculate estimated fee")
 	}

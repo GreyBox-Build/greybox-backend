@@ -214,6 +214,6 @@ func OffRampTransaction(c *gin.Context) {
 		}
 
 	}
-	c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid chain"})
+	c.JSON(400, gin.H{"error": "invalid chain network supplied"})
 
 }
