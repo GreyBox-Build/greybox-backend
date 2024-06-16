@@ -26,7 +26,7 @@ type User struct {
 	Country        string `json:"country"`
 	Mnemonic       string `json:"-"`
 	Xpub           string `json:"-"`
-	AccountID      string `gorm:"unique" json:"account_id"`
+	AccountID      string `json:"account_id"`
 	CustomerId     string `json:"customer_id"`
 	AccountNumber  string `json:"account_number"`
 	AccountCode    string `json:"account_code"`
