@@ -159,8 +159,8 @@ func (m *MasterWallet) PrecalculatePumpAddresses() ([]string, int, error) {
 	client := &http.Client{}
 
 	var startIndex uint64
-	if m.IndexFrom == 0 {
-		startIndex = m.IndexFrom
+	if m.IndexTo == 0 {
+		startIndex = m.IndexTo
 	} else {
 		startIndex = m.IndexTo + 1
 	}
