@@ -26,7 +26,7 @@ type User struct {
 	Country        string `json:"country"`
 	Mnemonic       string `json:"-"`
 	Xpub           string `json:"-"`
-	AccountID      string `gorm:"unique" json:"account_id"`
+	AccountID      string `json:"account_id"`
 	CustomerId     string `json:"customer_id"`
 	AccountNumber  string `json:"account_number"`
 	AccountCode    string `json:"account_code"`
@@ -38,6 +38,7 @@ type User struct {
 	Memo           string `json:"memo"`
 	UserImage      string `json:"user_image"`
 	SignatureId    string `json:"-"`
+	TokenAddress   string `json:"token_address"`
 }
 
 var counter uint64
@@ -136,7 +137,7 @@ func (u *User) UpdateUser() {
 	db.Save(&u)
 }
 
-func (u *User) BeforeSave() error {
+func (u *User) BeforeSaveDetail() error {
 	if !ValidatePassword(u.Password) {
 		return errors.New("password must have at least 8 characters, have at least a digit and at least an Upper case letter")
 	}

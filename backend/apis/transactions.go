@@ -23,6 +23,20 @@ type TransactionRequest struct {
 	} `json:"fee"`
 }
 
+type TransactionRequestV2 struct {
+	Chain            string `json:"chain"`
+	CustodialAddress string `json:"custodialAddress"`
+	Recipient        string `json:"recipient"`
+	ContractType     uint32 `json:"contractType"`
+	TokenAddress     string `json:"tokenAddress"`
+	Amount           string `json:"amount"`
+	FromPrivateKey   string `json:"fromPrivateKey"`
+	Fee              struct {
+		GasPrice string `json:"gasPrice"`
+		GasLimit string `json:"gasLimit"`
+	} `json:"fee"`
+}
+
 type ErrorResponse struct {
 	ErrorCode  string `json:"errorCode"`
 	Message    string `json:"message"`
@@ -215,4 +229,77 @@ func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]interface{},
 		return nil, err
 	}
 	return result, nil
+}
+
+func PerformTransactionCeloV2(amount, accountAddress, privKey, custodialAddress, tokenAddress, gasPrice string, gasFee float64) (string, int, error) {
+	url := "https://api.tatum.io/v3/blockchain/sc/custodial/transfer"
+	client := &http.Client{}
+
+	wholeNum := int(gasFee)
+
+	// Convert int to string
+	strNum := strconv.Itoa(wholeNum)
+
+	newData := TransactionRequestV2{
+		Chain:            "CELO",
+		CustodialAddress: custodialAddress,
+		Recipient:        accountAddress,
+		ContractType:     0,
+		TokenAddress:     tokenAddress,
+		Amount:           amount,
+		FromPrivateKey:   privKey,
+		Fee: struct {
+			GasPrice string `json:"gasPrice"`
+			GasLimit string `json:"gasLimit"`
+		}{
+			GasPrice: gasPrice,
+			GasLimit: strNum,
+		},
+	}
+	// Convert the struct to JSON format
+	jsonData, err := json.Marshal(&newData)
+	if err != nil {
+		return "", 500, err
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", 500, err
+	}
+	// Set the request headers
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", 500, err
+	}
+	defer resp.Body.Close()
+	var errMsg string
+
+	switch resp.StatusCode {
+	case 403:
+		errMsg = "failed to perform transaction. most likely insufficient funds"
+
+	case 400:
+		errMsg = "failed to perform transaction. validation error"
+
+	case 500:
+		errMsg = "server error from third party application"
+	case 401:
+		errMsg = "subscription not active"
+	default:
+		// Handle any other status codes if needed
+	}
+
+	if errMsg != "" {
+		return "", resp.StatusCode, errors.New(errMsg)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", 500, err
+	}
+	var result map[string]string
+	if err = json.Unmarshal(body, &result); err != nil {
+		return "", 500, err
+	}
+	return result["txId"], resp.StatusCode, nil
 }

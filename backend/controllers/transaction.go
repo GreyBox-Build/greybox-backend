@@ -217,3 +217,100 @@ func OffRampTransaction(c *gin.Context) {
 	c.JSON(400, gin.H{"error": "invalid chain network supplied"})
 
 }
+
+func OffRampTransactionV2(c *gin.Context) {
+	var input serializers.OffRampForm
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  err.Error(),
+			"errors": true,
+		})
+		return
+	}
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	var trans models.Transaction
+	trans.UserID = userId
+	trans.Amount = input.Amount
+	trans.User = user
+	trans.Chain = input.Chain
+	trans.Address = input.AccountAddress
+	trans.Status = "pending"
+	trans.TransactionSubType = "outgoing"
+
+	amount, accountAddress, Chain := input.Amount, input.AccountAddress, input.Chain
+	userAddress, err := models.GetWalletAddress(user.AccountAddress)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "failed to get user wallet address"})
+		return
+	}
+
+	switch strings.ToLower(Chain) {
+	case "celo":
+		resultChan := make(chan map[string]interface{})
+		errChan := make(chan error)
+
+		go func() {
+			result, err := apis.CalculateEstimatedFeeCelo(amount, accountAddress, user.AccountAddress)
+			if err != nil {
+				errChan <- err
+				return
+			}
+			resultChan <- result
+		}()
+
+		select {
+		case result := <-resultChan:
+			// Handle the result from CalculateEstimatedFeeCelo
+			gprice, _ := result["gasPrice"].(string)
+			price, err := strconv.ParseInt(gprice, 10, 64)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "conversion failed for conversion of gas price"})
+				return
+			}
+			gasPrice := models.WeiToGwei(big.NewInt(price))
+			trans.TransFee, _ = result["gasLimit"].(float64)
+			txHash, code, err := apis.PerformTransactionCeloV2(amount, accountAddress, userAddress.MasterWallet.PrivateKey, userAddress.MasterWallet.PublicAddress, user.TokenAddress, gasPrice.String(), result["gasLimit"].(float64))
+			if err != nil {
+				c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
+				return
+			}
+			trans.Hash = txHash
+			trans.Status = "completed"
+			if err := trans.SaveTransaction(); err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "saving transaction info failed"})
+				return
+			}
+			data := map[string]interface{}{
+				"transaction_hash": txHash,
+			}
+			c.JSON(
+				http.StatusOK,
+				gin.H{
+					"errors": false,
+					"data":   data,
+					"status": "transaction perform successfully",
+				},
+			)
+			return
+
+		case err := <-errChan:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "gas price could not be calculated"})
+			return
+		}
+
+	}
+	c.JSON(400, gin.H{"error": "invalid chain network supplied"})
+
+}

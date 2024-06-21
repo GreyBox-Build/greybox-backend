@@ -25,5 +25,7 @@ func Migrate(db *gorm.DB) {
 	db.AutoMigrate(&Token{})
 	db.AutoMigrate(&Transaction{})
 	db.AutoMigrate(&XlmPublic{})
+	db.AutoMigrate(&MasterWallet{})
+	db.AutoMigrate(&WalletAddress{})
 
 }
