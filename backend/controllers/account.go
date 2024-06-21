@@ -6,6 +6,7 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -32,7 +33,7 @@ func CreateAccount(c *gin.Context) {
 	user.LastName = input.LastName
 	user.Currency = input.Currency
 	user.CountryCode = input.CountryCode
-	if err := user.BeforeSave(); err != nil {
+	if err := user.BeforeSaveDetail(); err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
 		})
@@ -141,7 +142,7 @@ func CreateAccountV2(c *gin.Context) {
 	user.LastName = input.LastName
 	user.Currency = input.Currency
 	user.CountryCode = input.CountryCode
-	if err := user.BeforeSave(); err != nil {
+	if err := user.BeforeSaveDetail(); err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
 		})
@@ -292,7 +293,7 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 	user.Password = requestData.Password
-	if err := user.BeforeSave(); err != nil {
+	if err := user.BeforeSaveDetail(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -319,12 +320,16 @@ func GetAuthenticatedUser(c *gin.Context) {
 		})
 		return
 	}
-	balance, err := apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
+	balance, tokenAddress, err := apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
 		})
 		return
+	}
+	if user.TokenAddress == "" {
+		user.TokenAddress = tokenAddress
+		user.UpdateUser()
 	}
 	data := map[string]float32{
 		"balance": balance,
@@ -338,4 +343,116 @@ func GetAuthenticatedUser(c *gin.Context) {
 		"errors": false,
 		"data":   authData,
 	})
+}
+
+func CreateAccountV3(c *gin.Context) {
+
+	var input serializers.User
+
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	var user models.User
+	user.FirstName = input.FirstName
+	user.Email = input.Email
+	user.Password = input.Password
+	user.LastName = input.LastName
+	user.Country = input.Country
+	user.LastName = input.LastName
+	user.Currency = input.Currency
+	user.CountryCode = input.CountryCode
+	if err := user.BeforeSaveDetail(); err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	user.CryptoCurrency = "CELO"
+	WalletAddress, err := models.FindActiveAddress(user.CryptoCurrency)
+	if err != nil {
+		master, err := models.FetchMasterWallet(user.CryptoCurrency)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		wallets, code, err := master.PrecalculatePumpAddresses()
+		if err != nil {
+			c.JSON(code, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		if err := models.BulkCreateWalletAddresses(wallets, master.ID); err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		txData, err := master.ActivatePumpAddreses()
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		hash, _ := txData["txId"].(string)
+		fmt.Println("hash: ", hash)
+		resp, err := master.ResultAddressActivation(hash, user.CryptoCurrency)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		var validAddresses []map[string]uint32
+		for _, valid := range resp.Valid {
+			instance := map[string]uint32{
+				valid.Address: uint32(valid.Index),
+			}
+			validAddresses = append(validAddresses, instance)
+		}
+		if err := models.BulkUpdateWalletAddresses(validAddresses); err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		WalletAddress, err := models.FindActiveAddress(user.CryptoCurrency)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		user.AccountAddress = WalletAddress.PublicAddress
+		if err := user.SaveUser(); err != nil {
+			c.JSON(500, gin.H{
+				"error":   err.Error(),
+				"message": "creating user failed",
+			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"message": "created account successfuly",
+		})
+		return
+
+	}
+	user.AccountAddress = WalletAddress.PublicAddress
+	if err := user.SaveUser(); err != nil {
+		c.JSON(500, gin.H{
+			"error":   err.Error(),
+			"message": "creating user failed",
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"message": "created account successfuly",
+	})
+
 }
