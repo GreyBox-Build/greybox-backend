@@ -131,12 +131,16 @@ func (m *MasterWallet) ResultAddressActivation(txId, chain string) (AddressRespo
 		return AddressResponse{}, err
 	}
 	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
 		return AddressResponse{}, err
 	}
 	defer resp.Body.Close()
 	result := AddressResponse{}
+	if resp.StatusCode != 200 {
+		return AddressResponse{}, fmt.Errorf("failed to get result of activation addresses with status response:%d", resp.StatusCode)
+	}
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return AddressResponse{}, err
@@ -169,9 +173,9 @@ func (m *MasterWallet) PrecalculatePumpAddresses() ([]string, int, error) {
 		"chain": m.WalletChain,
 		"owner": m.PublicAddress,
 		"from":  startIndex,
-		"to":    m.IndexTo + IndexTo,
+		"to":    m.IndexTo + IndexTo + 1,
 	}
-	m.IndexTo += IndexTo
+	m.IndexTo += IndexTo + 1
 
 	if err := m.UpdateMasterWallet(); err != nil {
 		return nil, 500, err
