@@ -24,6 +24,7 @@ type TransactionRequest struct {
 }
 
 type TransactionRequestV2 struct {
+	FeeCurrency      string `json:"feeCurrency"`
 	Chain            string `json:"chain"`
 	CustodialAddress string `json:"custodialAddress"`
 	Recipient        string `json:"recipient"`
@@ -241,6 +242,7 @@ func PerformTransactionCeloV2(amount, accountAddress, privKey, custodialAddress,
 	strNum := strconv.Itoa(wholeNum)
 
 	newData := TransactionRequestV2{
+		FeeCurrency:      "CELO",
 		Chain:            "CELO",
 		CustodialAddress: custodialAddress,
 		Recipient:        accountAddress,
@@ -291,6 +293,17 @@ func PerformTransactionCeloV2(amount, accountAddress, privKey, custodialAddress,
 	}
 
 	if errMsg != "" {
+		errBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", resp.StatusCode, err
+		}
+		var errData map[string]interface{}
+		err = json.Unmarshal(errBody, &errData)
+		if err != nil {
+			return "", resp.StatusCode, err
+		}
+		fmt.Println("Error data:", errData)
+
 		return "", resp.StatusCode, errors.New(errMsg)
 	}
 	body, err := io.ReadAll(resp.Body)

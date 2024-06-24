@@ -281,7 +281,7 @@ func OffRampTransactionV2(c *gin.Context) {
 			}
 			gasPrice := models.WeiToGwei(big.NewInt(price))
 			trans.TransFee, _ = result["gasLimit"].(float64)
-			txHash, code, err := apis.PerformTransactionCeloV2(amount, accountAddress, userAddress.MasterWallet.PrivateKey, userAddress.MasterWallet.PublicAddress, user.TokenAddress, gasPrice.String(), result["gasLimit"].(float64))
+			txHash, code, err := apis.PerformTransactionCeloV2(amount, accountAddress, userAddress.MasterWallet.PrivateKey, user.AccountAddress, user.TokenAddress, gasPrice.String(), result["gasLimit"].(float64))
 			if err != nil {
 				c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
 				return
