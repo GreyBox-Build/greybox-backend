@@ -363,6 +363,10 @@ func FetchWalletBalance(address, chain string, pageSize int32) (float32, string,
 	if err != nil {
 		return 0, "", err
 	}
+	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	req.Header.Add("x-api-key", apiKey)
+	req.Header.Set("Content-type","application/json")
+	
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, "", err
