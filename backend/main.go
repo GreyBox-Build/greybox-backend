@@ -56,10 +56,6 @@ func main() {
 	publicV2 := r.Group("/api/v2/user")
 	publicV2.POST("/register", controllers.CreateAccountV2)
 
-	publicV3 := r.Group("/api/v3/user")
-	//publicV3.Use(middlewares.JwtAuthMiddleware())
-	publicV3.POST("/register", controllers.CreateAccountV3)
-
 	user := r.Group("/api/v1/auth")
 	user.Use(middlewares.JwtAuthMiddleware())
 	user.GET("/user", controllers.GetAuthenticatedUser)
@@ -71,8 +67,5 @@ func main() {
 	trans.GET("/hash", controllers.GetTransactionsByHash)
 	trans.POST("/off-ramp", controllers.OffRampTransaction)
 
-	transV2 := r.Group("/api/v2/transaction")
-	//transV2.Use(middlewares.JwtAuthMiddleware())
-	transV2.POST("/off-ramp", controllers.OffRampTransactionV2)
 	r.Run(":8080")
 }
