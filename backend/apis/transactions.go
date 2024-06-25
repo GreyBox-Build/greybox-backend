@@ -122,10 +122,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 	url := "https://api.tatum.io/v3/celo/transaction"
 	client := &http.Client{}
 
-	wholeNum := int(gasFee)
-
-	// Convert int to string
-	_ := strconv.Itoa(wholeNum)
+	
 
 	newData := TransactionRequest{
 		Amount:         amount,
