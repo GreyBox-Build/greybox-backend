@@ -381,7 +381,7 @@ func FetchWalletBalance(address, chain string, pageSize int32) (float32, string,
 		if err != nil {
 			return 0, "", err
 		}
-		balance = float32(balance1)
+		balance += float32(balance1)
 		tokenAddress = result.TokenAddress
 
 	}
