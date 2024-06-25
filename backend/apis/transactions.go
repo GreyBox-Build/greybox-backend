@@ -17,10 +17,6 @@ type TransactionRequest struct {
 	To             string `json:"to"`
 	FeeCurrency    string `json:"feeCurrency"`
 	FromPrivateKey string `json:"fromPrivateKey"` // Omit this field from JSON
-	Fee            struct {
-		GasPrice string `json:"gasPrice"`
-		GasLimit string `json:"gasLimit"`
-	} `json:"fee"`
 }
 
 type TransactionRequestV2 struct {
@@ -129,21 +125,14 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 	wholeNum := int(gasFee)
 
 	// Convert int to string
-	strNum := strconv.Itoa(wholeNum)
+	_ := strconv.Itoa(wholeNum)
 
 	newData := TransactionRequest{
 		Amount:         amount,
 		Currency:       "CUSD",
 		To:             accountAddress,
 		FeeCurrency:    "CUSD",
-		FromPrivateKey: privKey,
-		Fee: struct {
-			GasPrice string `json:"gasPrice"`
-			GasLimit string `json:"gasLimit"`
-		}{
-			GasPrice: gasPrice,
-			GasLimit: strNum,
-		},
+		FromPrivateKey: privKey
 	}
 
 	// Convert the struct to JSON format
