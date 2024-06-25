@@ -131,7 +131,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 		Amount:         amount,
 		Currency:       "CUSD",
 		To:             accountAddress,
-		FeeCurrency:    "CUSD",
+		FeeCurrency:    "CELO",
 		FromPrivateKey: privKey
 	}
 
