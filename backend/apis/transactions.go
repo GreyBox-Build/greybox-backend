@@ -132,7 +132,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, ga
 		Currency:       "CUSD",
 		To:             accountAddress,
 		FeeCurrency:    "CELO",
-		FromPrivateKey: privKey
+		FromPrivateKey: privKey,
 	}
 
 	// Convert the struct to JSON format
