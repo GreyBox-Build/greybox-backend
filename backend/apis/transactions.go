@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	
 )
 
 type TransactionRequest struct {
@@ -57,7 +56,14 @@ type Constraints struct {
 }
 
 func GetUserTransactions(chain, walletAddress, category string, pageSize uint64) (map[string]interface{}, error) {
-	url := fmt.Sprintf("https://api.tatum.io/v4/data/transactions?chain=%s&addresses=%s&transactionSubtype=%s&pageSize=%d", chain, walletAddress, category, pageSize)
+	url := ""
+	switch category {
+	case "":
+		url = fmt.Sprintf("https://api.tatum.io/v4/data/transactions?chain=%s&addresses=%s&pageSize=%d", chain, walletAddress, pageSize)
+	default:
+		url = fmt.Sprintf("https://api.tatum.io/v4/data/transactions?chain=%s&addresses=%s&transactionSubtype=%s&pageSize=%d", chain, walletAddress, category, pageSize)
+	}
+
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
@@ -118,11 +124,9 @@ func GetTransactionByHash(chain, hash string) ([]map[string]interface{}, error) 
 	return result, nil
 }
 
-func PerformTransactionCelo(amount, accountAddress, privKey, gasPrice string, gasFee float64) (string, int, error) {
+func PerformTransactionCelo(amount, accountAddress, privKey string) (string, int, error) {
 	url := "https://api.tatum.io/v3/celo/transaction"
 	client := &http.Client{}
-
-	
 
 	newData := TransactionRequest{
 		Amount:         amount,
