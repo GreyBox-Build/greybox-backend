@@ -5,7 +5,6 @@ import (
 	"backend/models"
 	"backend/serializers"
 	"backend/utils/tokens"
-	"math/big"
 	"net/http"
 	"os"
 	"strconv"
@@ -93,7 +92,7 @@ func GetUserTransactions(c *gin.Context) {
 		return
 
 	}
-	transactions, err := apis.GetUserTransactions(strings.ToLower(user.CryptoCurrency), user.AccountAddress, "zero-transfer", 50)
+	transactions, err := apis.GetUserTransactions(strings.ToLower(user.CryptoCurrency), user.AccountAddress, "", 50)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": err.Error(),
@@ -161,59 +160,31 @@ func OffRampTransaction(c *gin.Context) {
 
 	switch strings.ToLower(Chain) {
 	case "celo":
-		resultChan := make(chan map[string]interface{})
-		errChan := make(chan error)
 
-		go func() {
-			result, err := apis.CalculateEstimatedFeeCelo(amount, accountAddress, user.AccountAddress)
-			if err != nil {
-				errChan <- err
-				return
-			}
-			resultChan <- result
-		}()
-
-		select {
-		case result := <-resultChan:
-			// Handle the result from CalculateEstimatedFeeCelo
-			gprice, _ := result["gasPrice"].(string)
-			price, err := strconv.ParseInt(gprice, 10, 64)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "conversion failed for conversion of gas price"})
-				return
-			}
-			gasPrice := models.WeiToGwei(big.NewInt(price))
-			trans.TransFee, _ = result["gasLimit"].(float64)
-			txHash, code, err := apis.PerformTransactionCelo(amount, accountAddress, user.PrivateKey, gasPrice.String(), result["gasLimit"].(float64))
-			if err != nil {
-				c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
-				return
-			}
-			trans.Hash = txHash
-			trans.Status = "completed"
-			if err := trans.SaveTransaction(); err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "saving transaction info failed"})
-				return
-			}
-			data := map[string]interface{}{
-				"transaction_hash": txHash,
-			}
-			c.JSON(
-				http.StatusOK,
-				gin.H{
-					"errors": false,
-					"data":   data,
-					"status": "transaction perform successfully",
-				},
-			)
-			return
-
-		case err := <-errChan:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "gas price could not be calculated"})
+		txHash, code, err := apis.PerformTransactionCelo(amount, accountAddress, user.PrivateKey)
+		if err != nil {
+			c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
 			return
 		}
+		trans.Hash = txHash
+		trans.Status = "completed"
+		if err := trans.SaveTransaction(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "saving transaction info failed"})
+			return
+		}
+		data := map[string]interface{}{
+			"transaction_hash": txHash,
+		}
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"errors": false,
+				"data":   data,
+				"status": "transaction perform successfully",
+			},
+		)
+		return
 
 	}
-	c.JSON(400, gin.H{"error": "invalid chain network supplied"})
 
 }
