@@ -128,8 +128,10 @@ func GenerateCelloWallet() (string, string, error) {
 	return mnemonic, xpub, nil
 }
 
-func GeneratePrivateKey(apiURL string, apiKey string, privData serializers.PrivGeneration) (string, error) {
-	// Convert struct to JSON
+func GeneratePrivateKey(privData serializers.PrivGeneration) (string, error) {
+	privURL := "https://api.tatum.io/v3/celo/wallet/priv"
+	key := os.Getenv("TATUM_API_KEY_TEST")
+
 	jsonData, err := json.Marshal(privData)
 	if err != nil {
 		return "", err
@@ -139,11 +141,11 @@ func GeneratePrivateKey(apiURL string, apiKey string, privData serializers.PrivG
 	client := &http.Client{}
 
 	// Create HTTP request
-	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", privURL, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("x-api-key", apiKey)
+	req.Header.Set("x-api-key", key)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Send HTTP request
@@ -176,8 +178,8 @@ func GeneratePrivateKey(apiURL string, apiKey string, privData serializers.PrivG
 		return "", err
 	}
 
-	key := data["key"]
-	if str, ok := key.(string); ok {
+	privkey := data["key"]
+	if str, ok := privkey.(string); ok {
 		return str, nil
 	}
 	return "", nil
@@ -365,8 +367,8 @@ func FetchWalletBalance(address, chain string, pageSize int32) (float32, string,
 	}
 	apiKey := os.Getenv("TATUM_API_KEY_TEST")
 	req.Header.Add("x-api-key", apiKey)
-	req.Header.Set("Content-type","application/json")
-	
+	req.Header.Set("Content-type", "application/json")
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return 0, "", err
@@ -385,9 +387,47 @@ func FetchWalletBalance(address, chain string, pageSize int32) (float32, string,
 		if err != nil {
 			return 0, "", err
 		}
-		balance += float32(balance1)
+		balance = float32(balance1)
 		tokenAddress = result.TokenAddress
 
 	}
 	return balance, tokenAddress, nil
+}
+
+func GenerateXlmAccount() (map[string]string, int, error) {
+	apiUrl := "https://api.tatum.io/v3/xlm/account"
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return nil, 500, err
+	}
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, 500, err
+	}
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case 200:
+		var data map[string]string
+		err := json.NewDecoder(resp.Body).Decode(&data)
+		if err != nil {
+			return nil, 500, err
+		}
+		return data, 200, nil
+	case 400:
+		return nil, 400, errors.New("bad Request. Validation Error")
+	case 401:
+		return nil, 401, errors.New("unauthorized")
+	case 500:
+		return nil, 500, errors.New("internal Server Error")
+	default:
+		return nil, 403, errors.New("unable to communicate with blockchain")
+	}
+
 }

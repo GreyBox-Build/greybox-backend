@@ -1,6 +1,7 @@
 package apis
 
 import (
+	"backend/serializers"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -220,4 +221,59 @@ func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]interface{},
 		return nil, err
 	}
 	return result, nil
+}
+
+func PerformTransactionXLM(data serializers.TransferXLM) (map[string]string, int, error) {
+	apiUrl := "https://api.tatum.io/v3/xlm/transaction"
+	client := &http.Client{}
+	requestData, err := json.Marshal(data)
+	if err != nil {
+		return nil, 500, err
+	}
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(requestData))
+	if err != nil {
+		return nil, 500, err
+	}
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, 500, err
+	}
+
+	defer resp.Body.Close()
+
+	errMsg := ""
+	switch resp.StatusCode {
+	case 200:
+		respData := map[string]string{}
+		if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+			return nil, 500, err
+		}
+		return respData, resp.StatusCode, nil
+
+	case 400:
+		errMsg = "validation error making request"
+		return nil, 400, fmt.Errorf(errMsg)
+	case 401:
+		errMsg = "subscription not active anymore"
+		return nil, 401, fmt.Errorf(errMsg)
+	case 403:
+		errMsg = "failed to perform operation"
+		failedResponse := map[string]interface{}{}
+		if err := json.NewDecoder(resp.Body).Decode(&failedResponse); err != nil {
+			return nil, 500, err
+		}
+		errorMessage, _ := failedResponse["message"].(string)
+		mesage := map[string]string{
+			"message": errorMessage,
+		}
+		return mesage, resp.StatusCode, fmt.Errorf(errMsg)
+	default:
+		errMsg = "internal server error from Third Party application"
+		return nil, 500, fmt.Errorf(errMsg)
+
+	}
+
 }

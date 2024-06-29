@@ -47,11 +47,18 @@ func main() {
 	//config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(CORS())
 
+	chains := r.Group("/api/v1/chains")
+	{
+		chains.GET("", controllers.FetchChain)
+	}
+
 	public := r.Group("/api/v1/user")
-	public.POST("/register", controllers.CreateAccount)
-	public.POST("/login", controllers.FetchAuthenticatedUserToken)
-	public.POST("/forget-password", controllers.ForgetPassword)
-	public.POST("/reset-password", controllers.ResetPassword)
+	{
+		public.POST("/register", controllers.CreateAccount)
+		public.POST("/login", controllers.FetchAuthenticatedUserToken)
+		public.POST("/forget-password", controllers.ForgetPassword)
+		public.POST("/reset-password", controllers.ResetPassword)
+	}
 
 	publicV2 := r.Group("/api/v2/user")
 	publicV2.POST("/register", controllers.CreateAccountV2)

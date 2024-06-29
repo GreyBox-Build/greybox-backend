@@ -17,7 +17,6 @@ func SendForgetPasswordMail(receiver []string, name, token string) error {
 	// Create a new message
 	message := gomail.NewMessage()
 
-	// Set sender and recipient
 	message.SetHeader("From", from)
 	message.SetHeader("To", receiver...)
 	message.SetHeader("Subject", "Password Change Request")

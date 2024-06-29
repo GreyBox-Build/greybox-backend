@@ -1,13 +1,16 @@
 package controllers
 
 import (
+	//"backend/apis"
 	"backend/apis"
 	"backend/models"
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
+	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -148,43 +151,56 @@ func CreateAccountV2(c *gin.Context) {
 		return
 	}
 
-	meumnic, xpub, err := apis.GenerateCelloWallet()
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "generating cello wallet failed",
-		})
-		return
-	}
-	address, err := apis.GenerateCelloAddress(xpub)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "generating address failed",
-		})
-		return
-	}
-	user.AccountAddress = address
+	user.CryptoCurrency = input.Chain
+	switch input.Chain {
+	case serializers.Chains.Celo:
+		meumnic, xpub, err := apis.GenerateCelloWallet()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating cello wallet failed",
+			})
+			return
+		}
+		address, err := apis.GenerateCelloAddress(xpub)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating address failed",
+			})
+			return
+		}
+		user.AccountAddress = address
+		user.Xpub = xpub
+		user.Mnemonic = meumnic
+		privData := serializers.PrivGeneration{
+			Index:    1,
+			Mnemonic: meumnic,
+		}
+		privKey, err := apis.GeneratePrivateKey(privData)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating private key failed",
+			})
+			return
+		}
 
-	user.Xpub = xpub
-	user.Mnemonic = meumnic
-	privURL := "https://api.tatum.io/v3/celo/wallet/priv"
+		user.PrivateKey = privKey
+	case serializers.Chains.Stellar:
+		data, code, err := apis.GenerateXlmAccount()
+		if err != nil {
+			c.JSON(code, gin.H{
+				"error":   err.Error(),
+				"message": "generating address failed",
+			})
+			return
+		}
+		address, secret := data["address"], data["secret"]
+		user.AccountAddress = address
+		user.PrivateKey = secret
 
-	privData := serializers.PrivGeneration{
-		Index:    1,
-		Mnemonic: meumnic,
 	}
-	key := os.Getenv("TATUM_API_KEY_TEST")
-	privKey, err := apis.GeneratePrivateKey(privURL, key, privData)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "generating private key failed",
-		})
-		return
-	}
-
-	user.PrivateKey = privKey
 
 	if err := user.SaveUser(); err != nil {
 		c.JSON(400, gin.H{
@@ -342,4 +358,26 @@ func GetAuthenticatedUser(c *gin.Context) {
 		"errors": false,
 		"data":   authData,
 	})
+}
+
+func FetchChain(c *gin.Context) {
+
+	root, _ := os.Getwd()
+
+	jsonFilePath := filepath.Join(root, "/templates", "/chains.json")
+
+	jsonData, err := os.ReadFile(jsonFilePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var data []serializers.Data
+	err = json.Unmarshal(jsonData, &data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": data, "status": "fetched accepted chains", "errors": false})
 }

@@ -1,0 +1,14 @@
+[
+    {
+        "chain":"CELO",
+        "name":"celo",
+        "image_url":"https://grey-box.s3.amazonaws.com/chains/celo.jpg",
+        "availableToken":"CUSD"
+    },
+    {
+        "chain":"XLM",
+        "name":"stellar",
+        "image_url":"https://grey-box.s3.amazonaws.com/chains/stellar.png",
+        "availableToken":"USDC"
+    }
+]

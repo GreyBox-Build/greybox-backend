@@ -158,8 +158,8 @@ func OffRampTransaction(c *gin.Context) {
 
 	amount, accountAddress, Chain := input.Amount, input.AccountAddress, input.Chain
 
-	switch strings.ToLower(Chain) {
-	case "celo":
+	switch strings.ToUpper(Chain) {
+	case serializers.Chains.Celo:
 
 		txHash, code, err := apis.PerformTransactionCelo(amount, accountAddress, user.PrivateKey)
 		if err != nil {
@@ -174,6 +174,38 @@ func OffRampTransaction(c *gin.Context) {
 		}
 		data := map[string]interface{}{
 			"transaction_hash": txHash,
+		}
+		c.JSON(
+			http.StatusOK,
+			gin.H{
+				"errors": false,
+				"data":   data,
+				"status": "transaction perform successfully",
+			},
+		)
+		return
+	case serializers.Chains.Stellar:
+		transferData := serializers.TransferXLM{
+			Amount:        amount,
+			To:            accountAddress,
+			FromSecret:    user.PrivateKey,
+			Initialize:    false,
+			Token:         "USDC",
+			IssuerAccount: user.AccountAddress,
+		}
+		txData, code, err := apis.PerformTransactionXLM(transferData)
+		if err != nil {
+			c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
+			return
+		}
+		trans.Hash = txData["txId"]
+		trans.Status = "completed"
+		if err := trans.SaveTransaction(); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "saving transaction into db failed"})
+			return
+		}
+		data := map[string]interface{}{
+			"transaction_hash": trans.Hash,
 		}
 		c.JSON(
 			http.StatusOK,
