@@ -37,3 +37,21 @@ type Data struct {
 	ImageURL       string `json:"image_url"`
 	AvailableToken string `json:"availableToken"`
 }
+
+type Account struct {
+	ID            string `json:"id"`
+	AccountID     string `json:"account_id"`
+	Sequence      string `json:"sequence"`
+	SubentryCount int    `json:"subentry_count"`
+	Balances      []struct {
+		Balance            string `json:"balance"`
+		Limit              string `json:"limit"`
+		BuyingLiabilities  string `json:"buying_liabilities"`
+		SellingLiabilities string `json:"selling_liabilities"`
+		AssetType          string `json:"asset_type"`
+		AssetCode          string `json:"asset_code"`
+		AssetIssuer        string `json:"asset_issuer"`
+	} `json:"balances"`
+	Signers []map[string]interface{} `json:"signers"`
+	Data    map[string]interface{}   `json:"data"`
+}

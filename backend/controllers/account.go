@@ -335,17 +335,27 @@ func GetAuthenticatedUser(c *gin.Context) {
 		})
 		return
 	}
-	balance, tokenAddress, err := apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
+	var balance float32
+	switch user.CryptoCurrency {
+	case serializers.Chains.Celo:
+		balance, err = apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+	case serializers.Chains.Stellar:
+		balance, err = apis.FetchAccountBalanceXLM(user.AccountAddress)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
 	}
-	if user.TokenAddress == "" {
-		user.TokenAddress = tokenAddress
-		user.UpdateUser()
-	}
+
 	data := map[string]float32{
 		"balance": balance,
 	}

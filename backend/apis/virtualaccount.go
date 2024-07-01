@@ -356,14 +356,14 @@ func CreateDepositWallet(accountId string) (string, string, error) {
 
 }
 
-func FetchWalletBalance(address, chain string, pageSize int32) (float32, string, error) {
+func FetchWalletBalance(address, chain string, pageSize int32) (float32, error) {
 	tokenType := "fungible"
 	apiUrl := fmt.Sprintf("https://api.tatum.io/v4/data/balances?chain=%s&addresses=%s&excludeMetadata=%t&tokenTypes=%s&pageSize=%d", chain, address, true, tokenType, 10)
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", apiUrl, nil)
 	if err != nil {
-		return 0, "", err
+		return 0, err
 	}
 	apiKey := os.Getenv("TATUM_API_KEY_TEST")
 	req.Header.Add("x-api-key", apiKey)
@@ -371,27 +371,25 @@ func FetchWalletBalance(address, chain string, pageSize int32) (float32, string,
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return 0, "", err
+		return 0, err
 	}
 
 	defer resp.Body.Close()
 
 	var data Response
 	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		return 0, "", err
+		return 0, err
 	}
 	var balance float32
-	var tokenAddress string
 	for _, result := range data.Result {
 		balance1, err := strconv.ParseFloat(result.Balance, 32)
 		if err != nil {
-			return 0, "", err
+			return 0, err
 		}
 		balance = float32(balance1)
-		tokenAddress = result.TokenAddress
 
 	}
-	return balance, tokenAddress, nil
+	return balance, nil
 }
 
 func GenerateXlmAccount() (map[string]string, int, error) {
@@ -428,6 +426,56 @@ func GenerateXlmAccount() (map[string]string, int, error) {
 		return nil, 500, errors.New("internal Server Error")
 	default:
 		return nil, 403, errors.New("unable to communicate with blockchain")
+	}
+
+}
+
+func FetchAccountBalanceXLM(address string) (float32, error) {
+	apiUrl := fmt.Sprintf("https://api.tatum.io/v3/xlm/account/%s", address)
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("content-type", "application/json")
+	req.Header.Add("accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+
+	defer resp.Body.Close()
+	respData := serializers.Account{}
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		return 0, err
+	}
+	switch resp.StatusCode {
+	case 400:
+		return 0, errors.New("bad request")
+	case 500:
+		return 0, errors.New("internal server error")
+	case 401:
+		return 0, errors.New("subscription might not be active again")
+	case 403:
+		return 0, errors.New("unable to communicate with blockchain")
+
+	case 404:
+		return 0, nil
+	default:
+		amount := 0.0
+		for _, balance := range respData.Balances {
+			if balance.AssetType != "native" {
+				a, _ := strconv.ParseFloat(balance.Balance, 32)
+				amount += a
+			}
+
+		}
+		return float32(amount), nil
 	}
 
 }
