@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -338,7 +337,7 @@ func GetAuthenticatedUser(c *gin.Context) {
 	var balance float32
 	switch user.CryptoCurrency {
 	case serializers.Chains.Celo:
-		balance, err = apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
+		balance, err = apis.FetchAccountBalanceCUSD(user.AccountAddress)
 		if err != nil {
 			c.JSON(500, gin.H{
 				"error": err.Error(),

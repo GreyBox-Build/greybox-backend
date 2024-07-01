@@ -479,3 +479,47 @@ func FetchAccountBalanceXLM(address string) (float32, error) {
 	}
 
 }
+
+func FetchAccountBalanceCUSD(address string) (float32, error) {
+	apiUrl := fmt.Sprintf("https://api.tatum.io/v3/celo/account/balance/%s", address)
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return 0, err
+	}
+
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("content-type", "application/json")
+	req.Header.Add("accept", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return 0, err
+	}
+
+	defer resp.Body.Close()
+
+	respData := map[string]string{}
+	switch resp.StatusCode {
+	case 400:
+		return 0, errors.New("bad request")
+	case 500:
+		return 0, errors.New("internal server error")
+	case 401:
+		return 0, errors.New("subscription might not be active again")
+	case 403:
+		return 0, errors.New("unable to communicate with blockchain")
+
+	case 404:
+		return 0, nil
+	default:
+		if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+			return 0, err
+		}
+		amount, _ := strconv.ParseFloat(respData["cUsd"], 32)
+		return float32(amount), nil
+	}
+
+}
