@@ -269,6 +269,7 @@ func PerformTransactionXLM(data serializers.TransferXLM) (map[string]string, int
 		mesage := map[string]string{
 			"message": errorMessage,
 		}
+		fmt.Println(mesage)
 		return mesage, resp.StatusCode, fmt.Errorf(errMsg)
 	default:
 		errMsg = "internal server error from Third Party application"
@@ -276,4 +277,38 @@ func PerformTransactionXLM(data serializers.TransferXLM) (map[string]string, int
 
 	}
 
+}
+
+func GetUserTransactionXLM(address, pagination string) ([]serializers.TransactionXLM, error) {
+
+	apiUrl := fmt.Sprintf("https://api.tatum.io/v3/xlm/account/tx/%s", address)
+
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return []serializers.TransactionXLM{}, err
+	}
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return []serializers.TransactionXLM{}, err
+	}
+	defer resp.Body.Close()
+
+	fmt.Println("status code: ", resp.StatusCode)
+	switch resp.StatusCode {
+	case 200:
+		respData := []serializers.TransactionXLM{}
+		if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+			return []serializers.TransactionXLM{}, err
+		}
+		for _, data := range respData {
+			serializers.DecodeXDR(data.EnvelopeXDR)
+		}
+
+		return respData, nil
+	default:
+		return []serializers.TransactionXLM{}, errors.New("failed to get user transactions")
+	}
 }

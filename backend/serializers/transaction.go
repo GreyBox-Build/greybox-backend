@@ -1,5 +1,14 @@
 package serializers
 
+import (
+	"bytes"
+	"encoding/base64"
+	"fmt"
+	"time"
+
+	"github.com/stellar/go/xdr"
+)
+
 type OffRampForm struct {
 	Amount         string `json:"amount"`
 	AccountAddress string `json:"account_address"`
@@ -13,4 +22,66 @@ type TransferXLM struct {
 	Initialize    bool   `json:"initialize"`
 	Token         string `json:"token"`
 	IssuerAccount string `json:"issuerAccount"`
+	FromAccount   string `json:"fromAccount"`
+}
+
+type Transaction struct {
+	Chain              string `json:"chain"`
+	Hash               string `json:"hash"`
+	Address            string `json:"address"`
+	BlockNumber        int    `json:"blockNumber"`
+	TransactionIndex   int    `json:"transactionIndex"`
+	TransactionType    string `json:"transactionType"`
+	TransactionSubtype string `json:"transactionSubtype"`
+	Amount             string `json:"amount"`
+	Timestamp          int64  `json:"timestamp"`
+	TokenAddress       string `json:"tokenAddress,omitempty"`
+	CounterAddress     string `json:"counterAddress"`
+	TokenId            string `json:"tokenId,omitempty"`
+}
+
+type Result struct {
+	Result   []Transaction `json:"result"`
+	PrevPage string        `json:"prevPage"`
+	NextPage string        `json:"nextPage"`
+}
+
+type TransactionXLM struct {
+	ID                    string    `json:"id"`
+	PagingToken           string    `json:"paging_token"`
+	Successful            bool      `json:"successful"`
+	Hash                  string    `json:"hash"`
+	Ledger                int       `json:"ledger"`
+	CreatedAt             time.Time `json:"created_at"`
+	SourceAccount         string    `json:"source_account"`
+	SourceAccountSequence string    `json:"source_account_sequence"`
+	FeePaid               int       `json:"fee_paid"`
+	FeeCharged            string    `json:"fee_charged"`
+	MaxFee                string    `json:"max_fee"`
+	OperationCount        int       `json:"operation_count"`
+	EnvelopeXDR           string    `json:"envelope_xdr"`
+	ResultXDR             string    `json:"result_xdr"`
+	ResultMetaXDR         string    `json:"result_meta_xdr"`
+	FeeMetaXDR            string    `json:"fee_meta_xdr"`
+	Memo                  string    `json:"memo"`
+	MemoType              string    `json:"memo_type"`
+	Signatures            []string  `json:"signatures"`
+}
+
+func DecodeXDR(xdrString string) (*xdr.TransactionEnvelope, error) {
+	// Decode the base64 XDR string
+	raw, err := base64.StdEncoding.DecodeString(xdrString)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode base64 string: %v", err)
+	}
+
+	// Decode the raw XDR data into a TransactionEnvelope
+	newRaw := bytes.NewReader(raw)
+	// var txEnvelope xdr.TransactionEnvelope
+	var txEnvelope xdr.TransactionEnvelope
+	if _, err := xdr.Unmarshal(newRaw, &txEnvelope); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal XDR: %v", err)
+	}
+	fmt.Println("envelope: ", &txEnvelope)
+	return &txEnvelope, nil
 }

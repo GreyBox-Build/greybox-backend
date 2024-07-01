@@ -76,6 +76,24 @@ func GetUserTransactions(c *gin.Context) {
 		})
 		return
 	}
+	if user.CryptoCurrency == "XLM" {
+		if len(pageSize) == 0 {
+			pageSize = "10"
+		}
+		trans, err := apis.GetUserTransactionXLM(user.AccountAddress, pageSize)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"errors": false,
+			"data":   trans,
+			"status": "retrieved transactions successfully",
+		})
+		return
+	}
 	if len(category) != 0 || page != 0 {
 		transactions, err := apis.GetUserTransactions(strings.ToLower(user.CryptoCurrency), user.AccountAddress, category, uint64(page))
 		if err != nil {
@@ -155,9 +173,7 @@ func OffRampTransaction(c *gin.Context) {
 	trans.Address = input.AccountAddress
 	trans.Status = "pending"
 	trans.TransactionSubType = "outgoing"
-
 	amount, accountAddress, Chain := input.Amount, input.AccountAddress, input.Chain
-
 	switch strings.ToUpper(Chain) {
 	case serializers.Chains.Celo:
 
@@ -189,9 +205,10 @@ func OffRampTransaction(c *gin.Context) {
 			Amount:        amount,
 			To:            accountAddress,
 			FromSecret:    user.PrivateKey,
-			Initialize:    false,
+			Initialize:    true,
 			Token:         "USDC",
 			IssuerAccount: user.AccountAddress,
+			FromAccount:   user.AccountAddress,
 		}
 		txData, code, err := apis.PerformTransactionXLM(transferData)
 		if err != nil {
