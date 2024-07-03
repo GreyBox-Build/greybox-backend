@@ -4,6 +4,7 @@ import (
 	"backend/apis"
 	"backend/models"
 	"backend/serializers"
+	"backend/utils/signing"
 	"backend/utils/tokens"
 	"net/http"
 	"os"
@@ -48,7 +49,6 @@ func RetrieveOnRampParamsV1(c *gin.Context) {
 	case serializers.Chains.Stellar:
 		data["asset"] = "USDC"
 		data["network"] = "XLM"
-		data["moonpay_test_key"] = os.Getenv("MOONPAY_TEST_KEY")
 	}
 
 	c.JSON(200, gin.H{
@@ -244,5 +244,26 @@ func OffRampTransaction(c *gin.Context) {
 		return
 
 	}
+
+}
+
+func SignUrl(c *gin.Context) {
+	var input serializers.SignUrl
+	var err error
+	var signedUrl string
+	if err = c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	signedUrl, err = signing.GenerateSignedURL(input.Url, os.Getenv("MOONPAY_API_TEST_KEY"))
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	// fmt.Println(signedUrl)
+	c.JSON(200, gin.H{
+		"signedUrl": signedUrl,
+	})
 
 }

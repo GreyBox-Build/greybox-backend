@@ -61,18 +61,25 @@ func main() {
 	}
 
 	publicV2 := r.Group("/api/v2/user")
-	publicV2.POST("/register", controllers.CreateAccountV2)
+	{
+		publicV2.POST("/register", controllers.CreateAccountV2)
+	}
 
 	user := r.Group("/api/v1/auth")
-	user.Use(middlewares.JwtAuthMiddleware())
-	user.GET("/user", controllers.GetAuthenticatedUser)
+	{
+		user.Use(middlewares.JwtAuthMiddleware())
+		user.GET("/user", controllers.GetAuthenticatedUser)
+	}
 
 	trans := r.Group("/api/v1/transaction")
-	trans.Use(middlewares.JwtAuthMiddleware())
-	trans.GET("/on-ramp", controllers.RetrieveOnRampParamsV1)
-	trans.GET("", controllers.GetUserTransactions)
-	trans.GET("/hash", controllers.GetTransactionsByHash)
-	trans.POST("/off-ramp", controllers.OffRampTransaction)
+	{
+		trans.Use(middlewares.JwtAuthMiddleware())
+		trans.GET("/on-ramp", controllers.RetrieveOnRampParamsV1)
+		trans.GET("", controllers.GetUserTransactions)
+		trans.GET("/hash", controllers.GetTransactionsByHash)
+		trans.POST("/off-ramp", controllers.OffRampTransaction)
+		trans.POST("/sign-url", controllers.SignUrl)
+	}
 
 	r.Run(":8080")
 }

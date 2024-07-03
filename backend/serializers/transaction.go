@@ -85,3 +85,7 @@ func DecodeXDR(xdrString string) (*xdr.TransactionEnvelope, error) {
 	fmt.Println("envelope: ", &txEnvelope)
 	return &txEnvelope, nil
 }
+
+type SignUrl struct {
+	Url string `json:"url"`
+}
