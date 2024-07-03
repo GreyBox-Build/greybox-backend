@@ -34,12 +34,21 @@ func RetrieveOnRampParamsV1(c *gin.Context) {
 		"wallet_address":       user.AccountAddress,
 		"asset":                "CUSD",
 		"email":                user.Email,
-		"external_customer_id": user.CustomerId,
-		"x-client-id":          os.Getenv("X_CLIENT_ID"),
-		"x-client-secret":      os.Getenv("X_CLIENT_SECRET"),
+		"external_customer_id": user.ID,
 		"network":              "CELO",
 		"country":              user.Country,
 		"source_param":         os.Getenv("SOURCE_PARAM"),
+	}
+	switch user.CryptoCurrency {
+	case serializers.Chains.Celo:
+		data["asset"] = "CUSD"
+		data["network"] = "CELO"
+		data["x-client-id"] = os.Getenv("X_CLIENT_ID")
+		data["x-client-secret"] = os.Getenv("X_CLIENT_SECRET")
+	case serializers.Chains.Stellar:
+		data["asset"] = "USDC"
+		data["network"] = "XLM"
+		data["moonpay_test_key"] = os.Getenv("MOONPAY_TEST_KEY")
 	}
 
 	c.JSON(200, gin.H{
