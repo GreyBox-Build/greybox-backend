@@ -1,12 +1,7 @@
 package serializers
 
 import (
-	"bytes"
-	"encoding/base64"
-	"fmt"
 	"time"
-
-	"github.com/stellar/go/xdr"
 )
 
 type OffRampForm struct {
@@ -66,24 +61,6 @@ type TransactionXLM struct {
 	Memo                  string    `json:"memo"`
 	MemoType              string    `json:"memo_type"`
 	Signatures            []string  `json:"signatures"`
-}
-
-func DecodeXDR(xdrString string) (*xdr.TransactionEnvelope, error) {
-	// Decode the base64 XDR string
-	raw, err := base64.StdEncoding.DecodeString(xdrString)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode base64 string: %v", err)
-	}
-
-	// Decode the raw XDR data into a TransactionEnvelope
-	newRaw := bytes.NewReader(raw)
-	// var txEnvelope xdr.TransactionEnvelope
-	var txEnvelope xdr.TransactionEnvelope
-	if _, err := xdr.Unmarshal(newRaw, &txEnvelope); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal XDR: %v", err)
-	}
-	fmt.Println("envelope: ", &txEnvelope)
-	return &txEnvelope, nil
 }
 
 type SignUrl struct {

@@ -96,9 +96,16 @@ func GetUserTransactions(c *gin.Context) {
 			})
 			return
 		}
+		decodTrans, err := apis.DecodeTransactionDataXLM(trans)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
 		c.JSON(200, gin.H{
 			"errors": false,
-			"data":   trans,
+			"data":   decodTrans,
 			"status": "retrieved transactions successfully",
 		})
 		return
@@ -138,18 +145,47 @@ func GetUserTransactions(c *gin.Context) {
 func GetTransactionsByHash(c *gin.Context) {
 	hash := c.Query("hash")
 	chain := c.Query("chain")
-	transactions, err := apis.GetTransactionByHash(chain, hash)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
+	switch strings.ToUpper(chain) {
+	case serializers.Chains.Celo:
+		transactions, err := apis.GetTransactionByHash(strings.ToLower(chain), hash)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"errors": false,
+			"data":   transactions,
+			"status": "retrieved transactions successfully",
 		})
 		return
+	case serializers.Chains.Stellar:
+		trans := []serializers.TransactionXLM{}
+		transaction, err := apis.GetTransactionByHashXLM(hash)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		trans = append(trans, transaction)
+		decodTrans, err := apis.DecodeTransactionDataXLM(trans)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		c.JSON(200, gin.H{
+			"errors": false,
+			"data":   decodTrans,
+			"status": "retrieved transactions successfully",
+		})
+		return
+
 	}
-	c.JSON(200, gin.H{
-		"errors": false,
-		"data":   transactions,
-		"status": "retrieved transactions successfully",
-	})
+
 }
 
 func OffRampTransaction(c *gin.Context) {

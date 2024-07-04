@@ -2,6 +2,7 @@ package apis
 
 import (
 	"backend/serializers"
+	"backend/utils/tokens"
 	"bytes"
 	"encoding/json"
 	"errors"
@@ -304,11 +305,71 @@ func GetUserTransactionXLM(address, pagination string) ([]serializers.Transactio
 			return []serializers.TransactionXLM{}, err
 		}
 		for _, data := range respData {
-			serializers.DecodeXDR(data.EnvelopeXDR)
+			tokens.DecodeXDR(data.EnvelopeXDR)
 		}
 
 		return respData, nil
 	default:
 		return []serializers.TransactionXLM{}, errors.New("failed to get user transactions")
 	}
+}
+
+func DecodeTransactionDataXLM(data []serializers.TransactionXLM) (serializers.Result, error) {
+	var t []serializers.Transaction
+	for _, v := range data {
+		txEnvelope, err := tokens.DecodeXDR(v.EnvelopeXDR)
+		if err != nil {
+			return serializers.Result{}, err
+		}
+		amount := tokens.GetAssociatedAmount(txEnvelope)
+		tType := tokens.IsIncomingOrOutgoing(txEnvelope, v.ID)
+		transType := tokens.GetTransactionAssetType(txEnvelope)
+		tData := serializers.Transaction{
+			Hash:               v.Hash,
+			Chain:              "stellar",
+			Address:            v.SourceAccount,
+			BlockNumber:        v.Ledger,
+			TransactionIndex:   0,
+			TransactionType:    transType,
+			Amount:             amount,
+			Timestamp:          v.CreatedAt.Unix(),
+			TokenAddress:       "",
+			CounterAddress:     "",
+			TransactionSubtype: tType,
+		}
+		t = append(t, tData)
+	}
+	result := serializers.Result{
+		Result:   t,
+		PrevPage: "0",
+		NextPage: "0",
+	}
+	return result, nil
+}
+
+func GetTransactionByHashXLM(hash string) (serializers.TransactionXLM, error) {
+	apiUrl := fmt.Sprintf("https://api.tatum.io/v3/xlm/transaction/%s", hash)
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		return serializers.TransactionXLM{}, err
+	}
+	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Set("Content-type", "application/json")
+	resp, err := client.Do(req)
+	if err != nil {
+		return serializers.TransactionXLM{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return serializers.TransactionXLM{}, errors.New("failed to get user transactions")
+	}
+
+	respData := serializers.TransactionXLM{}
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		return serializers.TransactionXLM{}, err
+	}
+
+	return respData, nil
 }
