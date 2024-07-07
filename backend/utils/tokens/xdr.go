@@ -26,25 +26,25 @@ func DecodeXDR(xdrString string) (*xdr.TransactionEnvelope, error) {
 }
 
 func GetAssociatedAmount(txEnvelope *xdr.TransactionEnvelope) string {
+	const stroopsPerLumen = 10000000
 	tx := txEnvelope.V1.Tx
 	for _, op := range tx.Operations {
 		switch op.Body.Type {
 		case xdr.OperationTypePayment:
 			paymentOp := op.Body.MustPaymentOp()
-			return fmt.Sprintf("%d", paymentOp.Amount)
+			return fmt.Sprintf("%.7f", float64(paymentOp.Amount)/stroopsPerLumen)
 		case xdr.OperationTypePathPaymentStrictReceive:
 			pathPaymentOp := op.Body.MustPathPaymentStrictReceiveOp()
-			return fmt.Sprintf("%d", pathPaymentOp.DestAmount)
+			return fmt.Sprintf("%.7f", float64(pathPaymentOp.DestAmount)/stroopsPerLumen)
 		case xdr.OperationTypeCreateAccount:
 			createAccountOp := op.Body.MustCreateAccountOp()
-			return fmt.Sprintf("%d", createAccountOp.StartingBalance)
+			return fmt.Sprintf("%.7f", float64(createAccountOp.StartingBalance)/stroopsPerLumen)
 		// Add other operation types as needed
 		default:
-			return "0"
+			return "0.0000000"
 		}
-
 	}
-	return "0"
+	return "0.0000000"
 }
 
 // IsIncomingOrOutgoing determines if the transaction is incoming or outgoing for the given account

@@ -330,12 +330,12 @@ func DecodeTransactionDataXLM(data []serializers.TransactionXLM) (serializers.Re
 			Address:            v.SourceAccount,
 			BlockNumber:        v.Ledger,
 			TransactionIndex:   0,
-			TransactionType:    transType,
+			TransactionType:    tType,
 			Amount:             amount,
 			Timestamp:          v.CreatedAt.Unix(),
 			TokenAddress:       "",
 			CounterAddress:     "",
-			TransactionSubtype: tType,
+			TransactionSubtype: transType,
 		}
 		t = append(t, tData)
 	}

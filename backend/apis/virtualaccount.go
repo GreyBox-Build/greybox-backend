@@ -451,6 +451,7 @@ func FetchAccountBalanceXLM(address string) (float32, error) {
 
 	defer resp.Body.Close()
 	respData := serializers.Account{}
+	fmt.Println("code: ", resp.StatusCode)
 	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
 		return 0, err
 	}
@@ -469,6 +470,7 @@ func FetchAccountBalanceXLM(address string) (float32, error) {
 	default:
 		amount := 0.0
 		for _, balance := range respData.Balances {
+			fmt.Println("balance: ", balance.Balance, balance.AssetType)
 			if balance.AssetType != "native" {
 				a, _ := strconv.ParseFloat(balance.Balance, 32)
 				amount += a

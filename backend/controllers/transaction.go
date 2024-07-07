@@ -250,7 +250,7 @@ func OffRampTransaction(c *gin.Context) {
 			Amount:        amount,
 			To:            accountAddress,
 			FromSecret:    user.PrivateKey,
-			Initialize:    true,
+			Initialize:    false,
 			Token:         "USDC",
 			IssuerAccount: user.AccountAddress,
 			FromAccount:   user.AccountAddress,
