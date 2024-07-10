@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./docker/api
+      dockerfile: dockerfile
+   
+    env_file:
+      - ./backend/.env
+    container_name: boa-backend
+    ports:
+      - "8080:8080"
+    restart: always
+    volumes:
+      - api_volume:/usr/src/app/
+    
+
+  nginx: 
+    restart: always
+    container_name: nginx
+    build:
+        context: .
+        dockerfile: ./docker/nginx/dockerfile
+    ports:
+        - 80:80
+        - 443:443
+    volumes:
+        
+        - ./docker/nginx/development:/etc/nginx/conf.d              
+    depends_on: 
+        - boa-backend
+
+    command: ["nginx", "-g", "daemon off;"]
+
+
+volumes:
+  api_volume:
