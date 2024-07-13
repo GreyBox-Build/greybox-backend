@@ -1,18 +1,20 @@
+# Use the latest Golang image
 FROM golang:latest
 
 # Set the working directory inside the container
 WORKDIR /app
 
 # Pre-copy/cache go.mod and go.sum for pre-downloading dependencies
-COPY backend/go.mod backend/go.sum ./
+COPY ../../backend/go.mod ../../backend/go.sum ./
 RUN go mod download && go mod verify
 
 # Copy the rest of the backend folder files to the working directory
-COPY backend /app
+COPY ../../backend /app
 
 # Build the Go application
 RUN go build -v -o main .
 
 # Command to run the application
 CMD ["/app/main"]
+
 
