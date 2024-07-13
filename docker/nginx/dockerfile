@@ -1,8 +1,8 @@
-FROM nginx
+# Use the latest nginx image
+FROM nginx:latest
 
 # Remove the default nginx configuration file
 RUN rm /etc/nginx/conf.d/default.conf
-
 
 # Expose port 80 to allow outside access
 EXPOSE 80

@@ -29,7 +29,7 @@ services:
         
         - ./docker/nginx/development:/etc/nginx/conf.d              
     depends_on: 
-        - boa-backend
+        - api
 
     command: ["nginx", "-g", "daemon off;"]
 
