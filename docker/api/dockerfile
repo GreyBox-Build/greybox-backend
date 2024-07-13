@@ -7,7 +7,7 @@ COPY go.mod ./
 COPY go.sum ./
 RUN go mod download && go mod verify
 
-COPY ./app /app
+COPY ./app /backend
 RUN go build -v -o main .
 
 CMD ["/app/main"]
