@@ -3,8 +3,8 @@ name: "greybox-api"
 services:
   api:
     build:
-      context: ./docker/api
-      dockerfile: dockerfile
+      context: .
+      dockerfile: docker/api/dockerfile
    
     env_file:
       - ./backend/.env
