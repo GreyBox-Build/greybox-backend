@@ -13,7 +13,7 @@ services:
     restart: always
     volumes:
       - ./backend:/app  # This maps the backend source code to the container
-      - sqlite_db:./backend/test.db
+      - sqlite_db:/app/test.db
     
   nginx: 
     restart: always
