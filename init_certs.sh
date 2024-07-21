@@ -8,7 +8,8 @@ docker-compose stop nginx
 
 for domain in "${domains[@]}"; do
   docker-compose run --rm --entrypoint "\
-    certbot certonly --webroot -w /var/www/certbot \
+    certbot certonly --standalone \
+    --preferred-challenges http \
     --email $email \
     --agree-tos \
     --no-eff-email \

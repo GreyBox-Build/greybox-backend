@@ -7,7 +7,7 @@ services:
       dockerfile: docker/api/dockerfile
     env_file:
       - ./backend/.env
-    container_name: boa-backend
+    container_name: api
     ports:
       - "8080:8080"
     restart: always
