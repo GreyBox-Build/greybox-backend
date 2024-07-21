@@ -17,7 +17,7 @@ services:
     
   nginx: 
     restart: always
-    container_name: nginx
+    container_name: nginx-server
     build:
       context: .
       dockerfile: ./docker/nginx/dockerfile
