@@ -1,20 +1,18 @@
 FROM golang:latest
 
+
 WORKDIR /app
 
-# Copy go.mod and go.sum to the working directory
-COPY ../../backend/go.mod ../../backend/go.sum ./
-
-# Download and verify the dependencies
+COPY ./backend/go.mod ./backend/go.sum ./
 RUN go mod download && go mod verify
 
-# Copy the backend directory contents to the working directory
-COPY ../../backend/ /app
+COPY ./backend/ /app
 
-# Build the Go application
-RUN go build -v -o main main.go
 
-# Command to run the Go application
-CMD ["/app/main"]
+RUN go build -v -o main .
+
+
+CMD ["/main"]
+
 
 
