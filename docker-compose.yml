@@ -12,7 +12,7 @@ services:
       - "8080:8080"
     restart: always
     volumes:
-      - ./backend:/app  # This maps the backend source code to the container
+      - api_volume:/usr/src/app/  # This maps the backend source code to the container
       - sqlite_db:/usr/src/app/test.db
     
   nginx: 
@@ -41,3 +41,4 @@ services:
     
 volumes:
   sqlite_db:
+  api_volume:
