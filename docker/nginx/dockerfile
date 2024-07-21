@@ -22,11 +22,12 @@ FROM nginx:latest
 # Remove the default nginx configuration file
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy the template nginx configuration file
-COPY ./nginx/default.conf.template /etc/nginx/conf.d/default.conf.template
+# Copy the custom nginx configuration file
+COPY ./docker/nginx/development/default.conf.template /etc/nginx/conf.d/default.conf.template
 
 # Replace placeholders with environment variables
 RUN envsubst < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf
+
 
 # Copy the build output from the previous stage to NGINX's html directory
 COPY --from=build /app/build /usr/share/nginx/html
