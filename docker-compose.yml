@@ -12,7 +12,8 @@ services:
       - "8080:8080"
     restart: always
     volumes:
-      - api_volume:/usr/src/app/
+      - ./backend:/app  # This maps the backend source code to the container
+      - sqlite_db:/app/test.db
     
   nginx: 
     restart: always
@@ -39,4 +40,4 @@ services:
     entrypoint: /bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'
     
 volumes:
-  api_volume:
+  sqlite_db:
