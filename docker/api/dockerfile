@@ -12,7 +12,7 @@ COPY ./backend/ /app
 RUN go build -v -o main .
 
 
-CMD ["/main"]
+CMD ["./main"]
 
 
 
