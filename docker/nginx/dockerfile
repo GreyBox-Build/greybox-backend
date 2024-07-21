@@ -1,8 +1,29 @@
-# Use the latest nginx image
+# Stage 1: Build the React application
+FROM node:14-alpine AS build
+
+# Set working directory
+WORKDIR /app
+
+# Copy package.json and yarn.lock to the working directory
+COPY ./frontend/package.json yarn.lock ./
+
+# Install dependencies
+RUN yarn install
+
+# Copy the rest of the application code
+COPY ./frontend .
+
+# Build the React application
+RUN yarn build
+
+# Stage 2: Serve the React application with NGINX
 FROM nginx:latest
 
 # Remove the default nginx configuration file
 RUN rm /etc/nginx/conf.d/default.conf
+
+# Copy the build output from the previous stage to NGINX's html directory
+COPY --from=build /app/build /usr/share/nginx/html
 
 # Expose port 80 to allow outside access
 EXPOSE 80
