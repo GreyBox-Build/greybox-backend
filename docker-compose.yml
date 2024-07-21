@@ -28,7 +28,6 @@ services:
       - ./docker/nginx/development:/etc/nginx/conf.d
     depends_on: 
       - api
-      - certbot
     command: ["nginx", "-g", "daemon off;"]
     
     
