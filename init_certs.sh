@@ -4,7 +4,7 @@ domains=(apis.greyboxpay.com wallet.greyboxpay.com)
 email="fortuneosho@gmail.com" 
 
 # Stopping Nginx before generating certificates
-docker-compose stop nginx
+#docker-compose stop nginx
 
 for domain in "${domains[@]}"; do
   docker-compose run --rm --entrypoint "\
@@ -17,4 +17,4 @@ for domain in "${domains[@]}"; do
 done
 
 # Restart Nginx
-docker-compose up -d nginx
+#docker-compose up -d nginx
