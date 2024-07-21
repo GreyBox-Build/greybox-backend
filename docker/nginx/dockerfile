@@ -14,7 +14,7 @@ WORKDIR /app
 COPY ./frontend .
 
 # Build the React application
-RUN yarn build
+#RUN yarn build
 
 # Stage 2: Serve the React application with NGINX
 FROM nginx:latest
