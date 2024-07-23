@@ -228,7 +228,6 @@ func OffRampTransaction(c *gin.Context) {
 			return
 		}
 		trans.Hash = txHash
-		trans.Status = "completed"
 		if err := trans.SaveTransaction(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "saving transaction info failed"})
 			return
@@ -261,7 +260,6 @@ func OffRampTransaction(c *gin.Context) {
 			return
 		}
 		trans.Hash = txData["txId"]
-		trans.Status = "completed"
 		if err := trans.SaveTransaction(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(), "message": "saving transaction into db failed"})
 			return
@@ -300,6 +298,29 @@ func SignUrl(c *gin.Context) {
 	// fmt.Println(signedUrl)
 	c.JSON(200, gin.H{
 		"signedUrl": signedUrl,
+	})
+
+}
+
+func KMStransactionVerification(c *gin.Context) {
+	transId := c.Param("transaction_id")
+	trans, err := models.GetTransactionByHash(transId)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	trans.Status = "completed"
+	data := map[string]string{
+		"transaction_hash": trans.Hash,
+	}
+	if err := trans.SaveTransaction(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{
+		"errors": false,
+		"data":   data,
+		"status": "retrieved transactions successfully",
 	})
 
 }

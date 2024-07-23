@@ -79,6 +79,7 @@ func main() {
 		trans.GET("/hash", controllers.GetTransactionsByHash)
 		trans.POST("/off-ramp", controllers.OffRampTransaction)
 		trans.POST("/sign-url", controllers.SignUrl)
+		trans.GET("/verify/:transaction_id", controllers.KMStransactionVerification)
 	}
 
 	r.Run(":8080")

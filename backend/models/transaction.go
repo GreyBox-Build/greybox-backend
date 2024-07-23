@@ -58,3 +58,12 @@ func CreateTransaction(userId uint) (*Transaction, error) {
 func (t *Transaction) SaveTransaction() error {
 	return db.Create(t).Error
 }
+
+func GetTransactionByHash(hash string) (*Transaction, error) {
+	var transaction Transaction
+	err := db.Where("hash = ?", hash).First(&transaction).Error
+	if err != nil {
+		return nil, err
+	}
+	return &transaction, nil
+}

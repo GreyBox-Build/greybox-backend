@@ -29,8 +29,17 @@ services:
     depends_on: 
       - api
     command: ["nginx", "-g", "daemon off;"]
-    
-    
+
+  kms:
+    image: tatumio/tatum-kms
+    container_name: kms-server
+    environment:
+      - KMS_LOCAL_STORAGE_DIR=/kms
+    volumes:
+      - kms_data:/kms
+    restart: always
+
 volumes:
   sqlite_db:
   api_volume:
+  kms_data: 
