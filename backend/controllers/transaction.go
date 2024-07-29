@@ -6,8 +6,10 @@ import (
 	"backend/serializers"
 	"backend/utils/signing"
 	"backend/utils/tokens"
+	"encoding/json"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -323,4 +325,26 @@ func KMStransactionVerification(c *gin.Context) {
 		"status": "retrieved transactions successfully",
 	})
 
+}
+
+func FetchChain(c *gin.Context) {
+
+	root, _ := os.Getwd()
+
+	jsonFilePath := filepath.Join(root, "/templates", "/chains.json")
+
+	jsonData, err := os.ReadFile(jsonFilePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var data []serializers.Data
+	err = json.Unmarshal(jsonData, &data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": data, "status": "fetched accepted chains", "errors": false})
 }
