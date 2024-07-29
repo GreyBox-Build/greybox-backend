@@ -26,19 +26,15 @@ type User struct {
 	Country        string `json:"country"`
 	Mnemonic       string `json:"-"`
 	Xpub           string `json:"-"`
-	AccountID      string `json:"account_id"`
-	CustomerId     string `json:"customer_id"`
-	AccountNumber  string `json:"account_number"`
-	AccountCode    string `json:"account_code"`
 	CountryCode    string `json:"country_code"`
 	IsVerified     bool   `gorm:"default:false" json:"is_verified"`
 	AccountAddress string `json:"account_address"`
 	PrivateKey     string `json:"-"`
 	CryptoCurrency string `gorm:"default:CELO" json:"crypto_currency"`
-	Memo           string `json:"memo"`
 	UserImage      string `json:"user_image"`
 	SignatureId    string `json:"-"`
 	TokenAddress   string `json:"token_address"`
+	Index          uint64 `json:"-"`
 }
 
 var counter uint64

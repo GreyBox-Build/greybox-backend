@@ -10,13 +10,13 @@ COPY ./frontend/package.json ./
 COPY ./frontend/yarn.lock ./
 
 # Install dependencies
-RUN yarn install
+#RUN yarn install
 
 # Copy the rest of the application code
 COPY ./frontend .
 COPY ./frontend/.env .env
 # Build the React application
-RUN yarn build
+#RUN yarn build
 
 # Stage 2: Serve the React application with NGINX
 FROM nginx:latest

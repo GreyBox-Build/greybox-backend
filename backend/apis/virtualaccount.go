@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 )
 
@@ -26,6 +27,25 @@ type Response struct {
 	Result   []Result `json:"result"`
 	PrevPage string   `json:"prevPage"`
 	NextPage string   `json:"nextPage"`
+}
+
+type ManagedWallet struct {
+	SignatureId string `json:"signatureId"`
+}
+
+type PrivateKeyKMS struct {
+	PrivateKey string `json:"privateKey"`
+}
+
+type Wallet struct {
+	Mnemonic string `json:"mnemonic"`
+	Xpub     string `json:"xpub"`
+	Testnet  bool   `json:"testnet"`
+	Chain    string `json:"chain"`
+}
+
+type Address struct {
+	Address string `json:"address"`
 }
 
 func GenerateCelloAddress(xpub string) (string, error) {
@@ -523,5 +543,70 @@ func FetchAccountBalanceCUSD(address string) (float32, error) {
 		amount, _ := strconv.ParseFloat(respData["cUsd"], 32)
 		return float32(amount), nil
 	}
+
+}
+
+func StorePrivateKeyManagedWallet(asset string) (ManagedWallet, error) {
+	cmd := exec.Command("tatum-kms", "storemanagedprivatekey", asset)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return ManagedWallet{}, fmt.Errorf("failed to execute command: %w", err)
+	}
+	stringOutput := string(output)
+	var wallet ManagedWallet
+	if err := json.Unmarshal([]byte(stringOutput), &wallet); err != nil {
+		return ManagedWallet{}, fmt.Errorf("failed to parse JSON response: %w", err)
+	}
+	privateKeyCMD := exec.Command("tatum-kms", "storemanagedprivatekey", asset)
+	_, err = privateKeyCMD.CombinedOutput()
+	if err != nil {
+		return ManagedWallet{}, fmt.Errorf("failed to execute command: %w", err)
+	}
+	return wallet, nil
+}
+
+func GetPrivateKeyManagedWallet(signatureId string, index uint64) (PrivateKeyKMS, error) {
+	stringIndex := strconv.FormatUint(index, 10)
+
+	cmd := exec.Command("tatum-kms", "getprivatekey", signatureId, stringIndex)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return PrivateKeyKMS{}, fmt.Errorf("failed to execute command: %w", err)
+	}
+	stringOutput := string(output)
+	var privKey PrivateKeyKMS
+	if err := json.Unmarshal([]byte(stringOutput), &privKey); err != nil {
+		return PrivateKeyKMS{}, fmt.Errorf("failed to parse JSON response: %w", err)
+	}
+	return privKey, nil
+}
+
+func GetManagedWallet(signatureId string) (Wallet, error) {
+	cmd := exec.Command("tatum-kms", "getmanagedwallet", signatureId)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return Wallet{}, fmt.Errorf("failed to execute command: %w", err)
+	}
+	stringOutput := string(output)
+	var wallet Wallet
+	if err := json.Unmarshal([]byte(stringOutput), &wallet); err != nil {
+		return Wallet{}, fmt.Errorf("failed to parse JSON response: %w", err)
+	}
+	return wallet, nil
+}
+
+func GetManagedWalletAddress(signatureId string, index uint64) (Address, error) {
+	stringIndex := strconv.FormatUint(index, 10)
+	cmd := exec.Command("tatum-kms", "getaddress", signatureId, stringIndex)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return Address{}, fmt.Errorf("failed to execute command: %w", err)
+	}
+	stringOutput := string(output)
+	var address Address
+	if err := json.Unmarshal([]byte(stringOutput), &address); err != nil {
+		return Address{}, fmt.Errorf("failed to parse JSON response: %w", err)
+	}
+	return address, nil
 
 }

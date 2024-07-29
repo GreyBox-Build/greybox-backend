@@ -39,10 +39,12 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	gin.SetMode(gin.ReleaseMode)
 
 	db := models.InitializeDB()
 	models.Migrate(db)
 	r := gin.Default()
+
 	//config := cors.DefaultConfig()
 	//config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(CORS())
@@ -54,10 +56,11 @@ func main() {
 
 	public := r.Group("/api/v1/user")
 	{
-		public.POST("/register", controllers.CreateAccount)
 		public.POST("/login", controllers.FetchAuthenticatedUserToken)
 		public.POST("/forget-password", controllers.ForgetPassword)
 		public.POST("/reset-password", controllers.ResetPassword)
+		public.POST("master-wallet", controllers.CreateMasterWallet)
+		public.GET("/master-wallet", controllers.FetchMasterWallet)
 	}
 
 	publicV2 := r.Group("/api/v2/user")

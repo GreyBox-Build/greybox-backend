@@ -15,115 +15,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateAccount(c *gin.Context) {
-
-	var input serializers.User
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-	var user models.User
-	user.FirstName = input.FirstName
-	user.Email = input.Email
-	user.Password = input.Password
-	user.LastName = input.LastName
-	user.Country = input.Country
-	user.LastName = input.LastName
-	user.Currency = input.Currency
-	user.CountryCode = input.CountryCode
-	if err := user.BeforeSaveDetail(); err != nil {
-		c.JSON(400, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	user.AccountID = models.GenerateAccountId()
-	user.AccountNumber = models.GenerateAccountNumber()
-	user.AccountCode = models.GenerateAccountCode("GBX")
-
-	apiURL := "https://api.tatum.io/v3/ledger/account"
-	key := os.Getenv("TATUM_API_KEY_TEST")
-	customer := map[string]string{
-		"externalId":         user.AccountID,
-		"accountingCurrency": user.Currency,
-		"customerCountry":    user.CountryCode,
-		"providerCountry":    "GH",
-	}
-	xpub, err := models.GetLatestXlmPublic()
-	if err != nil {
-		data, err := apis.GenerateStellarAddress()
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating address failed",
-			})
-			return
-		}
-		xpub.Xpub = data["address"]
-		xpub.Secret = data["secret"]
-		if err := xpub.Save(); err != nil {
-			c.JSON(500, gin.H{
-				"error":   err.Error(),
-				"message": "failed to create xpub key",
-			})
-		}
-	}
-
-	virtual := serializers.VirtualAccount{
-		Xpub:               xpub.Xpub,
-		Currency:           "XLM",
-		Customer:           customer,
-		Compliant:          false,
-		AccountCode:        user.AccountCode,
-		AccountNumber:      user.AccountNumber,
-		AccountingCurrency: user.Currency,
-	}
-	user.Xpub = xpub.Xpub
-	user.PrivateKey = xpub.Secret
-	id, err := apis.CreateVirtualAccount(apiURL, key, virtual)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "creating virtual account failed",
-		})
-		return
-	}
-	user.CustomerId = id
-	address, memo, err := apis.CreateDepositWallet(user.CustomerId)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "creating deposit wallet failed",
-		})
-		return
-	}
-	user.AccountAddress = address
-	user.Memo = memo
-
-	if err := user.SaveUser(); err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "creating user falied",
-		})
-		return
-	}
-	if err := apis.ActivateVirtualAccount(user.AccountID, key); err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "activating virtual account failed",
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"message": "created account successfuly",
-	})
-}
-
 func CreateAccountV2(c *gin.Context) {
 
 	var input serializers.User
@@ -149,62 +40,62 @@ func CreateAccountV2(c *gin.Context) {
 		})
 		return
 	}
-
 	user.CryptoCurrency = input.Chain
+	masterWallet, err := models.FetchMasterWallet(input.Chain)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	user.SignatureId = masterWallet.SignatureId
+	user.Index = masterWallet.CurrentIndex + 1
+	masterWallet.TotalAddressesGenerated += 1
+
+	privData, err := apis.GetPrivateKeyManagedWallet(masterWallet.SignatureId, user.Index)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	user.PrivateKey = privData.PrivateKey
+	addressData, err := apis.GetManagedWalletAddress(masterWallet.SignatureId, user.Index)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	user.AccountAddress = addressData.Address
 	switch input.Chain {
 	case serializers.Chains.Celo:
-		meumnic, xpub, err := apis.GenerateCelloWallet()
+		user.CryptoCurrency = serializers.Chains.Celo
+		walletData, err := apis.GetManagedWallet(masterWallet.SignatureId)
 		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating cello wallet failed",
+			c.JSON(500, gin.H{
+				"error": err.Error(),
 			})
 			return
 		}
-		address, err := apis.GenerateCelloAddress(xpub)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating address failed",
-			})
-			return
-		}
-		user.AccountAddress = address
-		user.Xpub = xpub
-		user.Mnemonic = meumnic
-		privData := serializers.PrivGeneration{
-			Index:    1,
-			Mnemonic: meumnic,
-		}
-		privKey, err := apis.GeneratePrivateKey(privData)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating private key failed",
-			})
-			return
-		}
+		user.Xpub = walletData.Xpub
+		user.Mnemonic = walletData.Mnemonic
 
-		user.PrivateKey = privKey
 	case serializers.Chains.Stellar:
-		data, code, err := apis.GenerateXlmAccount()
-		if err != nil {
-			c.JSON(code, gin.H{
-				"error":   err.Error(),
-				"message": "generating address failed",
-			})
-			return
-		}
-		address, secret := data["address"], data["secret"]
-		user.AccountAddress = address
-		user.PrivateKey = secret
-
+		user.CryptoCurrency = serializers.Chains.Stellar
 	}
 
 	if err := user.SaveUser(); err != nil {
-		c.JSON(400, gin.H{
+		c.JSON(500, gin.H{
 			"error":   err.Error(),
 			"message": "creating user falied",
+		})
+		return
+	}
+	masterWallet.TotalAddressActivated += 1
+	if err := masterWallet.UpdateMasterWallet(); err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
 		})
 		return
 	}
@@ -389,4 +280,93 @@ func FetchChain(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": data, "status": "fetched accepted chains", "errors": false})
+}
+
+func CreateMasterWallet(c *gin.Context) {
+	var input serializers.MasterWalletForm
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	var wallet models.MasterWallet
+	signature, err := apis.StorePrivateKeyManagedWallet(input.Asset)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	wallet.SignatureId = signature.SignatureId
+	privKey, err := apis.GetPrivateKeyManagedWallet(signature.SignatureId, 0)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	wallet.PrivateKey = privKey.PrivateKey
+	switch input.Asset {
+	case serializers.Chains.Celo:
+		walletData, err := apis.GetManagedWallet(wallet.SignatureId)
+		if err != nil {
+			c.JSON(500, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		wallet.XpublicAddress = walletData.Xpub
+		wallet.Mnemonic = walletData.Mnemonic
+
+		wallet.WalletChain = serializers.Chains.Celo
+
+	case serializers.Chains.Stellar:
+		wallet.WalletChain = serializers.Chains.Stellar
+	}
+	walletAddress, err := apis.GetManagedWalletAddress(wallet.SignatureId, 0)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	wallet.PublicAddress = walletAddress.Address
+	if err := wallet.CreateMasterWallet(); err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	data := map[string]interface{}{
+		"account_address": wallet.PublicAddress,
+		"asset":           wallet.WalletChain,
+	}
+	c.JSON(200, gin.H{
+		"status": "created master wallet",
+		"data":   data,
+		"errors": false,
+	})
+
+}
+
+func FetchMasterWallet(c *gin.Context) {
+	chain := c.Query("chain")
+	wallet, err := models.FetchMasterWallet(chain)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	data := map[string]interface{}{
+		"account_address": wallet.PublicAddress,
+		"asset":           wallet.WalletChain,
+	}
+	c.JSON(200, gin.H{
+		"status": "fetched master wallet",
+		"data":   data,
+		"errors": false,
+	})
+
 }
