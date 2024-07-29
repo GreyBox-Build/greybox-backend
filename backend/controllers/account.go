@@ -1,16 +1,14 @@
 package controllers
 
 import (
-	//"backend/apis"
 	"backend/apis"
 	"backend/models"
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
-	"encoding/json"
 	"net/http"
 	"os"
-	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,62 +38,49 @@ func CreateAccountV2(c *gin.Context) {
 		})
 		return
 	}
-	user.CryptoCurrency = input.Chain
-	masterWallet, err := models.FetchMasterWallet(input.Chain)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	user.SignatureId = masterWallet.SignatureId
-	user.Index = masterWallet.CurrentIndex + 1
-	masterWallet.TotalAddressesGenerated += 1
 
-	privData, err := apis.GetPrivateKeyManagedWallet(masterWallet.SignatureId, user.Index)
+	meumnic, xpub, err := apis.GenerateCelloWallet()
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "generating cello wallet failed",
 		})
 		return
 	}
-	user.PrivateKey = privData.PrivateKey
-	addressData, err := apis.GetManagedWalletAddress(masterWallet.SignatureId, user.Index)
+	address, err := apis.GenerateCelloAddress(xpub)
 	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "generating address failed",
 		})
 		return
 	}
-	user.AccountAddress = addressData.Address
-	switch input.Chain {
-	case serializers.Chains.Celo:
-		user.CryptoCurrency = serializers.Chains.Celo
-		walletData, err := apis.GetManagedWallet(masterWallet.SignatureId)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		user.Xpub = walletData.Xpub
-		user.Mnemonic = walletData.Mnemonic
+	user.AccountAddress = address
 
-	case serializers.Chains.Stellar:
-		user.CryptoCurrency = serializers.Chains.Stellar
+	user.Xpub = xpub
+	user.Mnemonic = meumnic
+	privURL := "https://api.tatum.io/v3/celo/wallet/priv"
+
+	privData := serializers.PrivGeneration{
+		Index:    1,
+		Mnemonic: meumnic,
 	}
+	key := os.Getenv("TATUM_API_KEY_TEST")
+	privKey, err := apis.GeneratePrivateKey(privURL, key, privData)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "generating private key failed",
+		})
+		return
+	}
+
+	user.PrivateKey = privKey
 
 	if err := user.SaveUser(); err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(400, gin.H{
 			"error":   err.Error(),
 			"message": "creating user falied",
-		})
-		return
-	}
-	masterWallet.TotalAddressActivated += 1
-	if err := masterWallet.UpdateMasterWallet(); err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
 		})
 		return
 	}
@@ -225,25 +210,12 @@ func GetAuthenticatedUser(c *gin.Context) {
 		})
 		return
 	}
-	var balance float32
-	switch user.CryptoCurrency {
-	case serializers.Chains.Celo:
-		balance, err = apis.FetchAccountBalanceCUSD(user.AccountAddress)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
-	case serializers.Chains.Stellar:
-		balance, err = apis.FetchAccountBalanceXLM(user.AccountAddress)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
+	balance, err := apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": err.Error(),
+		})
+		return
 	}
 
 	data := map[string]float32{
@@ -258,115 +230,4 @@ func GetAuthenticatedUser(c *gin.Context) {
 		"errors": false,
 		"data":   authData,
 	})
-}
-
-func FetchChain(c *gin.Context) {
-
-	root, _ := os.Getwd()
-
-	jsonFilePath := filepath.Join(root, "/templates", "/chains.json")
-
-	jsonData, err := os.ReadFile(jsonFilePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
-
-	var data []serializers.Data
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"data": data, "status": "fetched accepted chains", "errors": false})
-}
-
-func CreateMasterWallet(c *gin.Context) {
-	var input serializers.MasterWalletForm
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	var wallet models.MasterWallet
-	signature, err := apis.StorePrivateKeyManagedWallet(input.Asset)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	wallet.SignatureId = signature.SignatureId
-	privKey, err := apis.GetPrivateKeyManagedWallet(signature.SignatureId, 0)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	wallet.PrivateKey = privKey.PrivateKey
-	switch input.Asset {
-	case serializers.Chains.Celo:
-		walletData, err := apis.GetManagedWallet(wallet.SignatureId)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		wallet.XpublicAddress = walletData.Xpub
-		wallet.Mnemonic = walletData.Mnemonic
-
-		wallet.WalletChain = serializers.Chains.Celo
-
-	case serializers.Chains.Stellar:
-		wallet.WalletChain = serializers.Chains.Stellar
-	}
-	walletAddress, err := apis.GetManagedWalletAddress(wallet.SignatureId, 0)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	wallet.PublicAddress = walletAddress.Address
-	if err := wallet.CreateMasterWallet(); err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	data := map[string]interface{}{
-		"account_address": wallet.PublicAddress,
-		"asset":           wallet.WalletChain,
-	}
-	c.JSON(200, gin.H{
-		"status": "created master wallet",
-		"data":   data,
-		"errors": false,
-	})
-
-}
-
-func FetchMasterWallet(c *gin.Context) {
-	chain := c.Query("chain")
-	wallet, err := models.FetchMasterWallet(chain)
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-	data := map[string]interface{}{
-		"account_address": wallet.PublicAddress,
-		"asset":           wallet.WalletChain,
-	}
-	c.JSON(200, gin.H{
-		"status": "fetched master wallet",
-		"data":   data,
-		"errors": false,
-	})
-
 }

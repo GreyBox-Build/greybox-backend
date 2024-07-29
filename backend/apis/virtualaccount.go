@@ -148,9 +148,7 @@ func GenerateCelloWallet() (string, string, error) {
 	return mnemonic, xpub, nil
 }
 
-func GeneratePrivateKey(privData serializers.PrivGeneration) (string, error) {
-	privURL := "https://api.tatum.io/v3/celo/wallet/priv"
-	key := os.Getenv("TATUM_API_KEY_TEST")
+func GeneratePrivateKey(privURL, key string, privData serializers.PrivGeneration) (string, error) {
 
 	jsonData, err := json.Marshal(privData)
 	if err != nil {

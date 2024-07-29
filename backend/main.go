@@ -59,8 +59,6 @@ func main() {
 		public.POST("/login", controllers.FetchAuthenticatedUserToken)
 		public.POST("/forget-password", controllers.ForgetPassword)
 		public.POST("/reset-password", controllers.ResetPassword)
-		public.POST("master-wallet", controllers.CreateMasterWallet)
-		public.GET("/master-wallet", controllers.FetchMasterWallet)
 	}
 
 	publicV2 := r.Group("/api/v2/user")
