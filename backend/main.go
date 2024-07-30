@@ -83,5 +83,11 @@ func main() {
 		trans.GET("/verify/:transaction_id", controllers.KMStransactionVerification)
 	}
 
+	notification := r.Group("/api/v1/notification")
+	{
+		//notification.Use(middlewares.JwtAuthMiddleware())
+		notification.POST("/register-hmac", controllers.RegisterHmac)
+	}
+
 	r.Run(":8080")
 }
