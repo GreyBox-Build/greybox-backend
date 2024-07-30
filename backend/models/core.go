@@ -26,15 +26,15 @@ type AddressResponse struct {
 type MasterWallet struct {
 	gorm.Model
 	PublicAddress           string `json:"public_address"`
-	PrivateKey              string `json:"private_key"`
-	Mnemonic                string `json:"mnemonic"`
-	XpublicAddress          string `json:"xpublic_address"`
+	PrivateKey              string `json:"-"`
+	Mnemonic                string `json:"-"`
+	XpublicAddress          string `json:"-"`
 	IsSetup                 bool   `json:"is_setup"`
 	CurrentIndex            uint64 `json:"currrent_index"`
-	TotalAddressesGenerated uint64 `json:"total_addresses_generated"`
+	TotalAddressesGenerated uint64 `json:"-"`
 	WalletChain             string `gorm:"default:CELO" json:"wallet_chain"`
-	TotalAddressActivated   uint64 `json:"total_address_activated"`
-	SignatureId             string `json:"signature_id"`
+	TotalAddressActivated   uint64 `json:"-"`
+	SignatureId             string `json:"-"`
 }
 
 type WalletAddress struct {

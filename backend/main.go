@@ -49,6 +49,8 @@ func main() {
 	//config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(CORS())
 
+	r.Use(middlewares.AllowedHosts([]string{"localhost:8080", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
+
 	chains := r.Group("/api/v1/chains")
 	{
 		chains.GET("", controllers.FetchChain)
@@ -87,6 +89,13 @@ func main() {
 	{
 		//notification.Use(middlewares.JwtAuthMiddleware())
 		notification.POST("/register-hmac", controllers.RegisterHmac)
+	}
+
+	master := r.Group("/api/v1")
+	{
+		master.POST("/master-wallet", controllers.GenerateMasterWallet)
+		master.GET("/master-wallet", controllers.GetMasterWallet)
+
 	}
 
 	r.Run(":8080")
