@@ -66,3 +66,14 @@ type TransactionXLM struct {
 type SignUrl struct {
 	Url string `json:"url"`
 }
+
+type Bank struct {
+	CountryCode   string `json:"CountryCode"`
+	BankName      string `json:"BankName"`
+	AccountNumber string `json:"AccountNumber"`
+	AccountName   string `json:"AccountName"`
+}
+
+type BanksStruct struct {
+	Banks []Bank `json:"Banks"`
+}

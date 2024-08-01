@@ -272,3 +272,48 @@ func AmountToReceive(c *gin.Context) {
 	}
 
 }
+
+func GetDestinationBankAccount(c *gin.Context) {
+	countryCode := c.Query("countryCode")
+	root, _ := os.Getwd()
+
+	jsonFilePath := filepath.Join(root, "/templates", "/bankaccount.json")
+
+	jsonData, err := os.ReadFile(jsonFilePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var data serializers.BanksStruct
+	err = json.Unmarshal(jsonData, &data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+		return
+	}
+	for _, bank := range data.Banks {
+		if bank.CountryCode == countryCode {
+			c.JSON(200, gin.H{
+				"errors": false,
+				"status": "fetch destination bank successfully",
+				"data":   bank,
+			})
+			return
+		}
+	}
+	c.JSON(400, gin.H{"error": "no available bank found for region: " + countryCode})
+}
+
+func GenerateReference(c *gin.Context) {
+	reference := models.GenerateRequestReference()
+	ref := map[string]string{
+		"reference": reference,
+	}
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "reference generated successfully",
+		"data":   ref,
+	})
+}
+
+func OnRampV2(c *gin.Context)

@@ -35,4 +35,3 @@ services:
 volumes:
   sqlite_db:
   api_volume:
-  kms_data: 

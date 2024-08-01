@@ -101,6 +101,8 @@ func main() {
 	{
 		transV2.Use(middlewares.JwtAuthMiddleware())
 		transV2.GET("/equivalent-amount", controllers.AmountToReceive)
+		transV2.GET("/destination-bank", controllers.GetDestinationBankAccount)
+		transV2.GET("/reference", controllers.GenerateReference)
 	}
 
 	r.Run(":8080")

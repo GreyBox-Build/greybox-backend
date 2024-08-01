@@ -2,6 +2,7 @@ package models
 
 import (
 	"math/big"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -26,6 +27,40 @@ type Transaction struct {
 	CounterAddress     string  `json:"counter_address"`
 	TokenId            *string `json:"token_id"`
 	Asset              string  `json:"asset"`
+}
+
+type DepositRequest struct {
+	gorm.Model
+	UserID        uint      `gorm:"index" json:"user_id"`
+	User          User      `gorm:"foreignKey:UserID" json:"user"`
+	Status        string    `json:"status"`
+	Ref           string    `json:"ref"`
+	CountryCode   string    `json:"country_code"`
+	DepositBank   string    `json:"deposit_bank"`
+	AccountNumber string    `json:"account_number"`
+	ConfirmedAt   time.Time `json:"confirmed_at"`
+	VerifiedById  uint      `json:"verified_by_id"`
+	VerifiedBy    User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
+	Currency      string    `json:"currency"`
+	Amount        string    `json:"amount"`
+	ProposedAsset string    `json:"proposed_asset"`
+}
+
+type WithdrawalRequest struct {
+	gorm.Model
+	UserID        uint      `gorm:"index" json:"user_id"`
+	User          User      `gorm:"foreignKey:UserID" json:"user"`
+	Status        string    `json:"status"`
+	CryptoAmount  string    `json:"amount"`
+	Chain         string    `json:"chain"`
+	Hash          string    `json:"hash"`
+	Address       string    `json:"address"`
+	BankName      string    `json:"bank_name"`
+	AccountName   string    `json:"account_name"`
+	AccountNumber string    `json:"account_number"`
+	ConfirmedAt   time.Time `json:"confirmed_at"`
+	VerifiedById  uint      `json:"verified_by_id"`
+	VerifiedBy    User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
 }
 
 // WeiToGwei converts Wei to Gwei.
@@ -71,6 +106,7 @@ func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 	}
 	return &transaction, nil
 }
+
 func GetTransactionsByUserID(userId uint, chain string) ([]*Transaction, error) {
 	var transactions []*Transaction
 	err := db.Where("user_id = ? AND chain = ?", userId, chain).Order("created_at desc").Find(&transactions).Error
@@ -78,4 +114,8 @@ func GetTransactionsByUserID(userId uint, chain string) ([]*Transaction, error) 
 		return nil, err
 	}
 	return transactions, nil
+}
+
+func GenerateRequestReference() string {
+	return uuid.New().String()
 }
