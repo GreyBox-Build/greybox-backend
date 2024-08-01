@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 )
 
@@ -543,93 +542,5 @@ func FetchAccountBalanceCUSD(address string) (float32, error) {
 		amount, _ := strconv.ParseFloat(respData["cUsd"], 32)
 		return float32(amount), nil
 	}
-
-}
-
-func StorePrivateKeyManagedWallet(asset string) (ManagedWallet, error) {
-	dir, _ := os.Getwd()
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run --env-file %s/.env -v $(pwd):/wallet/.tatumrc tatumio/tatum-kms storemanagedprivatekey %s", dir, asset))
-
-	// Wait for the command to finish and get the output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return ManagedWallet{}, fmt.Errorf("failed to execute command: %s Error: %w", output, err)
-	}
-
-	stringOutput := string(output)
-	fmt.Println("output: ", stringOutput)
-
-	// Unmarshal the JSON response into the ManagedWallet struct
-	var wallet ManagedWallet
-	if err := json.Unmarshal([]byte(stringOutput), &wallet); err != nil {
-		return ManagedWallet{}, fmt.Errorf("failed to parse JSON response: %w", err)
-	}
-
-	// Return the ManagedWallet struct
-	fmt.Println("creating managed wallet")
-
-	return wallet, nil
-}
-
-func GetPrivateKeyManagedWallet(signatureId string, index uint64) (PrivateKeyKMS, error) {
-	fmt.Println("second part")
-	stringIndex := strconv.FormatUint(index, 10)
-	dir, _ := os.Getwd()
-
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run --env-file %s/.env -v $(pwd):/wallet/.tatumrc tatumio/tatum-kms getprivatekey %s %s", dir, signatureId, stringIndex))
-
-	// Wait for the command to finish and get the output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return PrivateKeyKMS{}, fmt.Errorf("failed to execute command: %s Error: %w", output, err)
-	}
-	stringOutput := string(output)
-	var privKey PrivateKeyKMS
-	if err := json.Unmarshal([]byte(stringOutput), &privKey); err != nil {
-		return PrivateKeyKMS{}, fmt.Errorf("failed to parse JSON response: %w", err)
-	}
-	fmt.Println("get private key")
-	return privKey, nil
-
-}
-
-func GetManagedWallet(signatureId string) (Wallet, error) {
-	// Execute the command and capture the output
-	dir, _ := os.Getwd()
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run --env-file %s/.env -v $(pwd):/wallet/.tatumrc tatumio/tatum-kms getmanagedwallet %s", dir, signatureId))
-
-	// Wait for the command to finish and get the output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return Wallet{}, fmt.Errorf("failed to execute command: %w", err)
-	}
-	stringOutput := string(output)
-	var wallet Wallet
-	if err := json.Unmarshal([]byte(stringOutput), &wallet); err != nil {
-		return Wallet{}, fmt.Errorf("failed to parse JSON response: %w", err)
-	}
-	fmt.Println("get managed wallet")
-	return wallet, nil
-}
-
-func GetManagedWalletAddress(signatureId string, index uint64) (Address, error) {
-	dir, _ := os.Getwd()
-	stringIndex := strconv.FormatUint(index, 10)
-	cmd := exec.Command("bash", "-c", fmt.Sprintf("docker run --env-file %s/.env -v $(pwd):/wallet/.tatumrc tatumio/tatum-kms getaddress %s %s", dir, signatureId, stringIndex))
-
-	// Create a pipe for the command's standard input
-
-	// Wait for the command to finish and get the output
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return Address{}, fmt.Errorf("failed to execute command: %s Error: %w", output, err)
-	}
-	stringOutput := string(output)
-	var address Address
-	if err := json.Unmarshal([]byte(stringOutput), &address); err != nil {
-		return Address{}, fmt.Errorf("failed to parse JSON response: %w", err)
-	}
-	fmt.Println("get managed wallet address")
-	return address, nil
 
 }

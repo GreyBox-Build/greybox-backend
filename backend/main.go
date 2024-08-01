@@ -39,7 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	gin.SetMode(gin.ReleaseMode)
+	//gin.SetMode(gin.ReleaseMode)
 
 	db := models.InitializeDB()
 	models.Migrate(db)
@@ -82,7 +82,6 @@ func main() {
 		trans.GET("/hash", controllers.GetTransactionsByHash)
 		trans.POST("/off-ramp", controllers.OffRampTransaction)
 		trans.POST("/sign-url", controllers.SignUrl)
-		trans.GET("/verify/:transaction_id", controllers.KMStransactionVerification)
 	}
 
 	notification := r.Group("/api/v1/notification")
@@ -93,9 +92,15 @@ func main() {
 
 	master := r.Group("/api/v1")
 	{
-		master.POST("/master-wallet", controllers.GenerateMasterWallet)
+		//master.POST("/master-wallet", controllers.GenerateMasterWallet)
 		master.GET("/master-wallet", controllers.GetMasterWallet)
 
+	}
+
+	transV2 := r.Group("/api/v2/transaction")
+	{
+		transV2.Use(middlewares.JwtAuthMiddleware())
+		transV2.GET("/equivalent-amount", controllers.AmountToReceive)
 	}
 
 	r.Run(":8080")

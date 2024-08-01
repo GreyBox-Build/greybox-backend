@@ -126,7 +126,7 @@ func GetTransactionByHash(chain, hash string) ([]map[string]interface{}, error) 
 	return result, nil
 }
 
-func PerformTransactionCelo(amount, accountAddress, privKey string) (string, int, error) {
+func PerformTransactionCelo(amount, accountAddress, privKey string, isNative bool) (string, int, error) {
 	url := "https://api.tatum.io/v3/celo/transaction"
 	client := &http.Client{}
 
@@ -136,6 +136,9 @@ func PerformTransactionCelo(amount, accountAddress, privKey string) (string, int
 		To:             accountAddress,
 		FeeCurrency:    "CELO",
 		FromPrivateKey: privKey,
+	}
+	if isNative {
+		newData.Currency = "CELO"
 	}
 
 	// Convert the struct to JSON format

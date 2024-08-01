@@ -6,8 +6,8 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
+	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -95,6 +95,14 @@ func CreateAccountV2(c *gin.Context) {
 			"message": "creating user falied",
 		})
 		return
+	}
+	if user.CryptoCurrency == "CELO" {
+		go func() {
+			err := apis.CreateNotificationSubscription(user.AccountAddress, input.Chain)
+			if err != nil {
+				fmt.Println("Error creating notification subscription:", err)
+			}
+		}()
 	}
 
 	c.JSON(200, gin.H{
@@ -222,13 +230,45 @@ func GetAuthenticatedUser(c *gin.Context) {
 		})
 		return
 	}
-	balance, err := apis.FetchWalletBalance(user.AccountAddress, strings.ToLower(user.CryptoCurrency), 10)
-	if err != nil {
-		c.JSON(500, gin.H{
+
+	balanceChan := make(chan float32)
+	errorChan := make(chan error)
+	switch user.CryptoCurrency {
+	case serializers.Chains.Celo:
+		go func() {
+			balance, err := apis.FetchAccountBalanceCUSD(user.AccountAddress)
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			balanceChan <- balance
+		}()
+	case serializers.Chains.Stellar:
+		go func() {
+			balance, err := apis.FetchAccountBalanceXLM(user.AccountAddress)
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			balanceChan <- balance
+		}()
+	}
+
+	// Wait for balance or error
+	var balance float32
+	select {
+	case balance = <-balanceChan:
+		// Balance successfully retrieved
+	case err = <-errorChan:
+		// Error occurred while fetching balance
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
 	}
+
+	user.PreviousBalance = balance
+	user.UpdateUser()
 
 	data := map[string]float32{
 		"balance": balance,

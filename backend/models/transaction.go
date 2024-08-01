@@ -22,6 +22,10 @@ type Transaction struct {
 	BlockNumber        uint    `json:"block_number"`
 	TransactionId      string  `json:"transaction_id"`
 	TransFee           float64 `json:"trans_fee"`
+	Description        string  `json:"description"`
+	CounterAddress     string  `json:"counter_address"`
+	TokenId            *string `json:"token_id"`
+	Asset              string  `json:"asset"`
 }
 
 // WeiToGwei converts Wei to Gwei.
@@ -59,11 +63,19 @@ func (t *Transaction) SaveTransaction() error {
 	return db.Create(t).Error
 }
 
-func GetTransactionByHash(hash string) (*Transaction, error) {
+func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 	var transaction Transaction
-	err := db.Where("hash = ?", hash).First(&transaction).Error
+	err := db.Where("hash = ? AND chain = ?", hash, chain).First(&transaction).Error
 	if err != nil {
 		return nil, err
 	}
 	return &transaction, nil
+}
+func GetTransactionsByUserID(userId uint, chain string) ([]*Transaction, error) {
+	var transactions []*Transaction
+	err := db.Where("user_id = ? AND chain = ?", userId, chain).Order("created_at desc").Find(&transactions).Error
+	if err != nil {
+		return nil, err
+	}
+	return transactions, nil
 }

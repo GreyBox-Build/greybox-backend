@@ -18,23 +18,24 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Email          string `gorm:"unique;not null" json:"email"`
-	Password       string `json:"-"`
-	Currency       string `json:"currency"`
-	Country        string `json:"country"`
-	Mnemonic       string `json:"-"`
-	Xpub           string `json:"-"`
-	CountryCode    string `json:"country_code"`
-	IsVerified     bool   `gorm:"default:false" json:"is_verified"`
-	AccountAddress string `json:"account_address"`
-	PrivateKey     string `json:"-"`
-	CryptoCurrency string `gorm:"default:CELO" json:"crypto_currency"`
-	UserImage      string `json:"user_image"`
-	SignatureId    string `json:"-"`
-	TokenAddress   string `json:"token_address"`
-	Index          uint64 `json:"-"`
+	FirstName       string  `json:"first_name"`
+	LastName        string  `json:"last_name"`
+	Email           string  `gorm:"unique;not null" json:"email"`
+	Password        string  `json:"-"`
+	Currency        string  `json:"currency"`
+	Country         string  `json:"country"`
+	Mnemonic        string  `json:"-"`
+	Xpub            string  `json:"-"`
+	CountryCode     string  `json:"country_code"`
+	IsVerified      bool    `gorm:"default:false" json:"is_verified"`
+	AccountAddress  string  `json:"account_address"`
+	PrivateKey      string  `json:"-"`
+	CryptoCurrency  string  `gorm:"default:CELO" json:"crypto_currency"`
+	UserImage       string  `json:"user_image"`
+	SignatureId     string  `json:"-"`
+	TokenAddress    string  `json:"token_address"`
+	Index           uint64  `json:"-"`
+	PreviousBalance float32 `json:"-"`
 }
 
 var counter uint64

@@ -61,6 +61,7 @@ func CreateNotificationSubscription(address, chain string) error {
 		return err
 	}
 	defer resp.Body.Close()
+	fmt.Printf("status code: %d", resp.StatusCode)
 	switch resp.StatusCode {
 	case 201:
 		return nil
