@@ -31,19 +31,21 @@ type Transaction struct {
 
 type DepositRequest struct {
 	gorm.Model
-	UserID        uint      `gorm:"index" json:"user_id"`
-	User          User      `gorm:"foreignKey:UserID" json:"user"`
-	Status        string    `json:"status"`
-	Ref           string    `json:"ref"`
-	CountryCode   string    `json:"country_code"`
-	DepositBank   string    `json:"deposit_bank"`
-	AccountNumber string    `json:"account_number"`
-	ConfirmedAt   time.Time `json:"confirmed_at"`
-	VerifiedById  uint      `json:"verified_by_id"`
-	VerifiedBy    User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
-	Currency      string    `json:"currency"`
-	Amount        string    `json:"amount"`
-	ProposedAsset string    `json:"proposed_asset"`
+	UserID          uint      `gorm:"index" json:"user_id"`
+	User            User      `gorm:"foreignKey:UserID" json:"user"`
+	Status          string    `json:"status"`
+	Ref             string    `json:"ref"`
+	CountryCode     string    `json:"country_code"`
+	DepositBank     string    `json:"deposit_bank"`
+	AccountNumber   string    `json:"account_number"`
+	ConfirmedAt     time.Time `json:"confirmed_at"`
+	VerifiedById    uint      `json:"verified_by_id"`
+	VerifiedBy      User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
+	Currency        string    `json:"currency"`
+	FiatAmount      string    `json:"fiat_amount"`
+	ProposedAsset   string    `json:"proposed_asset"`
+	AccountName     string    `json:"account_name"`
+	AssetEquivalent string    `json:"asset_equivalent"`
 }
 
 type WithdrawalRequest struct {
@@ -61,6 +63,22 @@ type WithdrawalRequest struct {
 	ConfirmedAt   time.Time `json:"confirmed_at"`
 	VerifiedById  uint      `json:"verified_by_id"`
 	VerifiedBy    User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
+}
+
+func (d *DepositRequest) SaveDepositRequest() error {
+	return db.Create(d).Error
+}
+
+func (d *DepositRequest) UpdateDepositRequest() error {
+	return db.Save(d).Error
+}
+
+func (w *WithdrawalRequest) SaveWithdrawalRequest() error {
+	return db.Create(w).Error
+}
+
+func (w *WithdrawalRequest) UpdateWithdrawalRequest() error {
+	return db.Save(w).Error
 }
 
 // WeiToGwei converts Wei to Gwei.

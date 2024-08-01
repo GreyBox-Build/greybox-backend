@@ -72,6 +72,7 @@ func main() {
 	{
 		user.Use(middlewares.JwtAuthMiddleware())
 		user.GET("/user", controllers.GetAuthenticatedUser)
+		user.POST("/make-admin", controllers.MakeAdmin)
 	}
 
 	trans := r.Group("/api/v1/transaction")
@@ -103,6 +104,7 @@ func main() {
 		transV2.GET("/equivalent-amount", controllers.AmountToReceive)
 		transV2.GET("/destination-bank", controllers.GetDestinationBankAccount)
 		transV2.GET("/reference", controllers.GenerateReference)
+		transV2.POST("/on-ramp", controllers.OnRampV2)
 	}
 
 	r.Run(":8080")

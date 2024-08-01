@@ -36,6 +36,7 @@ type User struct {
 	TokenAddress    string  `json:"token_address"`
 	Index           uint64  `json:"-"`
 	PreviousBalance float32 `json:"-"`
+	Role            string  `gorm:"default:Customer" json:"role"`
 }
 
 var counter uint64
@@ -270,4 +271,12 @@ func FindUserByAddress(address string) (User, error) {
 		return user, err
 	}
 	return user, nil
+}
+
+func FindAdmins() ([]User, error) {
+	var users []User
+	if err := db.Where("role = ?", "Admin").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }

@@ -77,3 +77,15 @@ type Bank struct {
 type BanksStruct struct {
 	Banks []Bank `json:"Banks"`
 }
+
+type OnRamp struct {
+	FiatAmount    string `json:"amount"`
+	Asset         string `json:"asset"`
+	CountryCode   string `json:"countryCode"`
+	Ref           string `json:"ref"`
+	BankName      string `json:"bankName"`
+	AccountNumber string `json:"accountNumber"`
+	AccountName   string `json:"accountName"`
+	Currency      string `json:"currency"`
+	AssetAmount   string `json:"assetAmount"`
+}

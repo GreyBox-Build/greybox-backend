@@ -5,6 +5,7 @@ import (
 	"backend/models"
 	"backend/serializers"
 	"backend/utils"
+	"backend/utils/mails"
 	"backend/utils/signing"
 	"backend/utils/tokens"
 	"encoding/json"
@@ -316,4 +317,68 @@ func GenerateReference(c *gin.Context) {
 	})
 }
 
-func OnRampV2(c *gin.Context)
+func OnRampV2(c *gin.Context) {
+	var input serializers.OnRamp
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	var deposit models.DepositRequest
+	deposit.UserID = user.ID
+	deposit.User = user
+	deposit.FiatAmount = input.FiatAmount
+	deposit.Currency = input.Currency
+	deposit.DepositBank = input.BankName
+	deposit.Ref = input.Ref
+	deposit.AccountNumber = input.AccountNumber
+	deposit.AccountName = input.AccountName
+	deposit.AssetEquivalent = input.AssetAmount
+	deposit.Status = "pending"
+	deposit.ProposedAsset = input.Asset
+	if err = deposit.SaveDepositRequest(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	go func() {
+		var adminEmails []string
+		admins, err := models.FindAdmins()
+		if err != nil {
+			return
+		}
+		for _, admin := range admins {
+			adminEmails = append(adminEmails, admin.Email)
+		}
+		onRamp := serializers.AdminOnRampSerializer{
+			Name:          "Admin",
+			BankName:      input.BankName,
+			AccountName:   input.AccountName,
+			AccountNumber: input.AccountNumber,
+			Amount:        input.FiatAmount,
+			Currency:      input.Currency,
+			Ref:           input.Ref,
+		}
+		_ = mails.AdminOnRampMail(adminEmails, onRamp)
+	}()
+	// fmt.Println(deposit)
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "deposit request submitted successfully",
+		"data":   deposit,
+	})
+
+}

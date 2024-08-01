@@ -19,16 +19,14 @@ func InitializeDB() *gorm.DB {
 
 		host := os.Getenv("DB_HOST")
 
-		port := os.Getenv("DB_PORT") // Default PostgreSQL port
+		port := os.Getenv("DB_PORT")
 
 		user := os.Getenv("DB_USER")
 		password := os.Getenv("DB_PASSWORD")
-		dbname := os.Getenv("DB_NAME") // Strip the leading '/'
+		dbname := os.Getenv("DB_NAME")
 
-		// Create the DSN
 		dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Africa/Lagos", host, user, password, dbname, port)
 
-		// Connect to the database
 		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 		if err != nil {
 			log.Fatalf("Failed to connect to PostgreSQL database: %v", err)
@@ -53,5 +51,7 @@ func Migrate(db *gorm.DB) {
 	db.AutoMigrate(&XlmPublic{})
 	db.AutoMigrate(&MasterWallet{})
 	db.AutoMigrate(&WalletAddress{})
+	db.AutoMigrate(&DepositRequest{})
+	db.AutoMigrate(&WithdrawalRequest{})
 
 }

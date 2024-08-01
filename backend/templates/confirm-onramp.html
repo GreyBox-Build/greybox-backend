@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreyBox Onramp Confirmation</title>
+    <!-- Include Tailwind CSS styles -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <div class="max-w-2xl mx-auto p-6 bg-white shadow-md my-16">
+
+        <p class="text-lg">Dear {{.Name}},</p>
+
+        <p class="mt-4">We hope this email finds you well. It has come to our attention that a user has made an ON-RAMP request</p>
+
+        <p class="mt-4">
+            The details can be found below:
+        </p>
+
+        <p class="mt-4">Bank Name: {{.BankName}}</p>
+        <p class="mt-4">Account Name: {{.AccountName}}</p>
+        <p class="mt-4">Acount Number: {{.AccountNumber}}</p>
+        <p class="mt-4">Amount: {{.Currency}} {{.Amount}}</p>
+        <p class="mt-4">Description Reference: {{.Ref}}</p>
+
+        <p class="mt-4">Can you confirm if this transaction is valid? ,If you encounter any issues or need further assistance, feel free to reach out to our support team at
+            <a href="" class="text-blue-500 hover:underline">example@gmail.com</a>.</p>
+
+        <p class="mt-4">Thank you for your attention to this matter.</p>
+
+        <p class="mt-4">Best regards,<br>
+            greybox organization<br>
+            yours trully</p>
+    </div>
+
+</body>
+
+</html>

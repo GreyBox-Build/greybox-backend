@@ -8,6 +8,7 @@ import (
 	"backend/utils/tokens"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
@@ -369,5 +370,35 @@ func GetMasterWallet(c *gin.Context) {
 		"status": "fetched master wallet succesfully",
 		"errors": false,
 		"data":   masterWallet,
+	})
+}
+
+func MakeAdmin(c *gin.Context) {
+	var input serializers.AdminForm
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	key := os.Getenv("ADMIN_KEY")
+	if key != input.Key {
+		c.JSON(400, gin.H{
+			"error": "invalid admin key",
+		})
+		return
+	}
+	user, ok := models.FindUserByEmail(input.UserEmail)
+	if !ok {
+		c.JSON(400, gin.H{
+			"error": "could not find user with such email",
+		})
+		return
+	}
+	user.Role = "Admin"
+	user.UpdateUser()
+	c.JSON(200, gin.H{
+		"status": "user is now an admin",
+		"errors": false,
 	})
 }

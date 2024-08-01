@@ -55,3 +55,8 @@ type Account struct {
 	Signers []map[string]interface{} `json:"signers"`
 	Data    map[string]interface{}   `json:"data"`
 }
+
+type AdminForm struct {
+	Key       string `json:"key"`
+	UserEmail string `json:"user_email"`
+}
