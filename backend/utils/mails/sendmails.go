@@ -16,7 +16,7 @@ func SendMail(header string, message *gomail.Message, receiver []string) error {
 	password := os.Getenv("EMAIL_PASSWORD")
 	message.SetHeader("From", from)
 	message.SetHeader("To", receiver...)
-	message.SetHeader("Subject", "Password Change Request")
+	message.SetHeader("Subject", header)
 	// Create a new dialer
 	dialer := gomail.NewDialer("smtp.gmail.com", 465, from, password)
 	dialer.TLSConfig = &tls.Config{InsecureSkipVerify: true}
@@ -66,9 +66,44 @@ func AdminOnRampMail(receiver []string, data serializers.AdminOnRampSerializer) 
 	var body bytes.Buffer
 	t.Execute(&body, data)
 
-	// Attach the HTML body to the email
 	message.SetBody("text/html", body.String())
 	if err := SendMail("OnRamp Request", message, receiver); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func AdminOffRampMail(receiver []string, data serializers.AdminOffRampSerializer) error {
+	message := gomail.NewMessage()
+	dir, _ := os.Getwd()
+	t, err := template.ParseFiles(dir + "/templates/verify-offramp.html")
+	if err != nil {
+		return err
+	}
+	var body bytes.Buffer
+	t.Execute(&body, data)
+
+	message.SetBody("text/html", body.String())
+	if err := SendMail("OffRamp Confirmation", message, receiver); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func UserOffRampMail(receiver []string, data serializers.UserOffRampMail) error {
+	message := gomail.NewMessage()
+	dir, _ := os.Getwd()
+	t, err := template.ParseFiles(dir + "/templates/user-offramp.html")
+	if err != nil {
+		return err
+	}
+	var body bytes.Buffer
+	t.Execute(&body, data)
+
+	message.SetBody("text/html", body.String())
+	if err := SendMail("OffRamp Notification", message, receiver); err != nil {
 		return err
 	}
 

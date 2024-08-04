@@ -6,7 +6,6 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -97,14 +96,14 @@ func CreateAccountV2(c *gin.Context) {
 		})
 		return
 	}
-	if user.CryptoCurrency == "CELO" {
-		go func() {
-			err := apis.CreateNotificationSubscription(user.AccountAddress, input.Chain)
-			if err != nil {
-				fmt.Println("Error creating notification subscription:", err)
-			}
-		}()
-	}
+	//if user.CryptoCurrency == "CELO" {
+	//	go func() {
+	//		err := apis.CreateNotificationSubscription(user.AccountAddress, input.Chain)
+	//		if err != nil {
+	//			fmt.Println("Error creating notification subscription:", err)
+	//		}
+	//	}()
+	//}
 
 	c.JSON(200, gin.H{
 		"message": "created account successfuly",

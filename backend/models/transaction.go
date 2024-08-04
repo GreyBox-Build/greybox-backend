@@ -50,19 +50,23 @@ type DepositRequest struct {
 
 type WithdrawalRequest struct {
 	gorm.Model
-	UserID        uint      `gorm:"index" json:"user_id"`
-	User          User      `gorm:"foreignKey:UserID" json:"user"`
-	Status        string    `json:"status"`
-	CryptoAmount  string    `json:"amount"`
-	Chain         string    `json:"chain"`
-	Hash          string    `json:"hash"`
-	Address       string    `json:"address"`
-	BankName      string    `json:"bank_name"`
-	AccountName   string    `json:"account_name"`
-	AccountNumber string    `json:"account_number"`
-	ConfirmedAt   time.Time `json:"confirmed_at"`
-	VerifiedById  uint      `json:"verified_by_id"`
-	VerifiedBy    User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
+	UserID         uint      `gorm:"index" json:"user_id"`
+	User           User      `gorm:"foreignKey:UserID" json:"user"`
+	Status         string    `json:"status"`
+	CryptoAmount   string    `json:"amount"`
+	Chain          string    `json:"chain"`
+	Hash           string    `json:"hash"`
+	Address        string    `json:"address"`
+	BankName       string    `json:"bank_name"`
+	AccountName    string    `json:"account_name"`
+	AccountNumber  string    `json:"account_number"`
+	ConfirmedAt    time.Time `json:"confirmed_at"`
+	VerifiedById   uint      `json:"verified_by_id"`
+	VerifiedBy     User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
+	BankRef        string    `json:"bank_ref"`
+	Asset          string    `json:"asset"`
+	EquivalentFiat string    `json:"fiat_equivalent"`
+	FiatCurrency   string    `json:"fiat_currency"`
 }
 
 func (d *DepositRequest) SaveDepositRequest() error {
@@ -136,4 +140,86 @@ func GetTransactionsByUserID(userId uint, chain string) ([]*Transaction, error) 
 
 func GenerateRequestReference() string {
 	return uuid.New().String()
+}
+
+func FilterDepositRequests(ref, currency, fiatAmount, accountNumber, status, countryCode, cryptoAsset string) ([]DepositRequest, error) {
+	var depositRequests []DepositRequest
+
+	query := db.Model(&DepositRequest{})
+
+	if ref != "" {
+		query = query.Where("ref = ?", ref)
+	}
+	if currency != "" {
+		query = query.Where("currency = ?", currency)
+	}
+	if fiatAmount != "" {
+		query = query.Where("fiat_amount = ?", fiatAmount)
+	}
+	if accountNumber != "" {
+		query = query.Where("account_number = ?", accountNumber)
+	}
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if countryCode != "" {
+		query = query.Where("country_code = ?", countryCode)
+	}
+	if cryptoAsset != "" {
+		query = query.Where("proposed_asset = ?", cryptoAsset)
+	}
+
+	err := query.Find(&depositRequests).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return depositRequests, nil
+}
+
+func FilterWithdrawalRequests(status, chain, hash, address, accountNumber string) ([]WithdrawalRequest, error) {
+	var withdrawalRequests []WithdrawalRequest
+
+	query := db.Model(&WithdrawalRequest{})
+
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+	if chain != "" {
+		query = query.Where("chain = ?", chain)
+	}
+	if hash != "" {
+		query = query.Where("hash = ?", hash)
+	}
+	if address != "" {
+		query = query.Where("address = ?", address)
+	}
+	if accountNumber != "" {
+		query = query.Where("account_number = ?", accountNumber)
+	}
+
+	err := query.Find(&withdrawalRequests).Error
+	if err != nil {
+		return nil, err
+	}
+
+	return withdrawalRequests, nil
+}
+
+func GetDepositRequest(id int) (*DepositRequest, error) {
+	var depositRequest DepositRequest
+	err := db.First(&depositRequest, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &depositRequest, nil
+}
+
+func GetWithdrawalRequest(id int) (*WithdrawalRequest, error) {
+	var withdrawalRequest WithdrawalRequest
+	err := db.First(&withdrawalRequest, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &withdrawalRequest, nil
 }

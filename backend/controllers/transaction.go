@@ -9,6 +9,7 @@ import (
 	"backend/utils/signing"
 	"backend/utils/tokens"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -380,5 +381,388 @@ func OnRampV2(c *gin.Context) {
 		"status": "deposit request submitted successfully",
 		"data":   deposit,
 	})
+
+}
+
+func FetchOnRampRequests(c *gin.Context) {
+	ref := c.Query("ref")
+	currency := c.Query("currency")
+	fiatAmount := c.Query("fiat_amount")
+	AccountNumber := c.Query("account_number")
+	status := c.Query("status")
+	countryCode := c.Query("country_code")
+	cryptoAsset := c.Query("crypto_asset")
+	requests, err := models.FilterDepositRequests(ref, currency, fiatAmount, AccountNumber, status, countryCode, cryptoAsset)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	// fmt.Println(requests)
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "requests fetched successfully",
+		"data":   requests,
+	})
+}
+
+func FetchOffRampRequests(c *gin.Context) {
+	chain := c.Query("chain")
+	hash := c.Query("hash")
+	address := c.Query("address")
+	AccountNumber := c.Query("account_number")
+	status := c.Query("status")
+
+	requests, err := models.FilterWithdrawalRequests(status, chain, hash, address, AccountNumber)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	// fmt.Println(requests)
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "requests fetched successfully",
+		"data":   requests,
+	})
+}
+
+func GetOnRampRequest(c *gin.Context) {
+	id := c.Param("id")
+	intId, _ := strconv.Atoi(id)
+	deposit, err := models.GetDepositRequest(intId)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "request fetched successfully",
+		"data":   deposit,
+	})
+}
+
+func GetOffRampRequest(c *gin.Context) {
+	id := c.Param("id")
+	intId, _ := strconv.Atoi(id)
+	withdrawal, err := models.GetWithdrawalRequest(intId)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "request fetched successfully",
+		"data":   withdrawal,
+	})
+}
+
+func VerifyOnRamp(c *gin.Context) {
+	id := c.Param("id")
+	intId, _ := strconv.Atoi(id)
+	deposit, err := models.GetDepositRequest(intId)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	var input serializers.OnRampAction
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	user, err := models.GetUserByID(deposit.UserID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	masterWallet, err := models.FetchMasterWallet(user.CryptoCurrency)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	nativeAmount := utils.PreformDepositofNativeCalculation("USD", deposit.AssetEquivalent)
+	switch input.Action {
+	case "Approve":
+		deposit.Status = "Approved"
+		var transaction models.Transaction
+		switch user.CryptoCurrency {
+		case "CELO":
+			txHash, code, err := apis.PerformTransactionCelo(deposit.AssetEquivalent, user.AccountAddress, masterWallet.PrivateKey, false)
+			if err != nil {
+				c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
+				return
+			}
+			transaction.Hash = txHash
+			transaction.Chain = "CELO"
+			go func() {
+				hash, _, err := apis.PerformTransactionCelo(nativeAmount, user.AccountAddress, masterWallet.PrivateKey, true)
+				if err != nil {
+					panic(err)
+				}
+				var nativeTrans models.Transaction
+				nativeTrans.Address = user.AccountAddress
+				nativeTrans.CounterAddress = masterWallet.PublicAddress
+				nativeTrans.Amount = nativeAmount
+				nativeTrans.UserID = user.ID
+				nativeTrans.User = user
+				nativeTrans.Hash = hash
+				nativeTrans.Description = "On-Ramp Deposit of Gas Fees"
+				nativeTrans.TransactionId = hash
+				nativeTrans.TransactionType = "native"
+				nativeTrans.TransactionSubType = "Deposit"
+				nativeTrans.Chain = "CELO"
+				nativeTrans.Asset = "CELO"
+				if err := nativeTrans.SaveTransaction(); err != nil {
+					panic(err)
+				}
+			}()
+
+		case "XLM":
+			transferData := serializers.TransferXLM{
+				Amount:        deposit.AssetEquivalent,
+				To:            user.AccountAddress,
+				FromSecret:    masterWallet.PrivateKey,
+				Initialize:    true,
+				Token:         deposit.ProposedAsset,
+				IssuerAccount: masterWallet.PublicAddress,
+				FromAccount:   masterWallet.PublicAddress,
+			}
+			txData, code, err := apis.PerformTransactionXLM(transferData)
+			if err != nil {
+				c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
+				return
+			}
+			hash := txData["txId"]
+			transaction.Hash = hash
+			transaction.Chain = "XLM"
+
+			go func() {
+				transferData := serializers.TransferXLM{
+					Amount:      nativeAmount,
+					To:          user.AccountAddress,
+					FromSecret:  masterWallet.PrivateKey,
+					Initialize:  true,
+					FromAccount: masterWallet.PublicAddress,
+				}
+				txData, _, err := apis.PerformTransactionXLM(transferData)
+				if err != nil {
+					panic(err)
+				}
+				var xlmTrans models.Transaction
+				id := txData["txId"]
+				xlmTrans.Hash = id
+				xlmTrans.Chain = "XLM"
+				xlmTrans.Amount = nativeAmount
+				xlmTrans.UserID = user.ID
+				xlmTrans.User = user
+				xlmTrans.TransactionId = id
+				xlmTrans.TransactionType = "native"
+				xlmTrans.TransactionSubType = "Deposit"
+				xlmTrans.Asset = "XLM"
+				xlmTrans.Description = "On-Ramp Deposit of Gas Fees"
+				if err := xlmTrans.SaveTransaction(); err != nil {
+					panic(err)
+				}
+
+			}()
+
+		}
+
+		transaction.Amount = deposit.AssetEquivalent
+		transaction.Status = "Completed"
+
+		transaction.Asset = deposit.ProposedAsset
+		transaction.Address = user.AccountAddress
+		transaction.CounterAddress = masterWallet.PublicAddress
+		transaction.TransactionSubType = "Deposit"
+		transaction.TransactionType = "Fungible Token"
+		transaction.Description = "On-Ramp Deposit"
+		transaction.User = user
+		transaction.UserID = user.ID
+		if err := transaction.SaveTransaction(); err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+	case "Reject":
+		deposit.Status = "Rejected"
+	}
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "request verified successfully",
+		"data":   deposit,
+	})
+}
+
+func OffRampV2(c *gin.Context) {
+	var input serializers.OffRamp
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	withdrawal := models.WithdrawalRequest{
+		UserID:         user.ID,
+		User:           user,
+		CryptoAmount:   input.CryptoAmount,
+		BankName:       input.BankName,
+		AccountNumber:  input.AccountNumber,
+		AccountName:    input.AccountName,
+		Address:        user.AccountAddress,
+		Status:         "pending",
+		Asset:          input.Asset,
+		Chain:          input.Chain,
+		EquivalentFiat: input.FiatEquivalent,
+		FiatCurrency:   input.CurrencyCode,
+	}
+
+	masterWallet, err := models.FetchMasterWallet(input.Chain)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	trans := models.Transaction{}
+	if err := processTransaction(&trans, &withdrawal, input, user, masterWallet); err != nil {
+		c.JSON(err.StatusCode, gin.H{"error": err.Error(), "message": "transaction failed"})
+		return
+	}
+
+	if err = withdrawal.SaveWithdrawalRequest(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	go notifyAdmins(input, trans.Hash)
+
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "withdrawal request submitted successfully",
+		"data":   withdrawal,
+	})
+}
+
+func processTransaction(trans *models.Transaction, withdrawal *models.WithdrawalRequest, input serializers.OffRamp, user models.User, masterWallet models.MasterWallet) *apiError {
+	switch input.Chain {
+	case "CELO":
+		hash, code, err := apis.PerformTransactionCelo(withdrawal.CryptoAmount, masterWallet.PublicAddress, user.PrivateKey, false)
+		if err != nil {
+			return &apiError{code, err}
+		}
+		trans.Hash = hash
+		trans.Chain = "CELO"
+		trans.Asset = "CUSD"
+		withdrawal.Status = "Awaiting Payment"
+		withdrawal.Hash = hash
+	case "XLM":
+		transferData := serializers.TransferXLM{
+			Amount:        withdrawal.CryptoAmount,
+			To:            masterWallet.PublicAddress,
+			FromSecret:    user.PrivateKey,
+			Initialize:    false,
+			Token:         input.Asset,
+			IssuerAccount: user.AccountAddress,
+			FromAccount:   user.AccountAddress,
+		}
+		txData, code, err := apis.PerformTransactionXLM(transferData)
+		if err != nil {
+			return &apiError{code, err}
+		}
+		hash := txData["txId"]
+		trans.Hash = hash
+		trans.Chain = "XLM"
+		trans.Asset = input.Asset
+		withdrawal.Status = "Awaiting Payment"
+		withdrawal.Hash = hash
+	}
+	return nil
+}
+
+func notifyAdmins(input serializers.OffRamp, hash string) {
+	admins, err := models.FindAdmins()
+	if err != nil {
+		return
+	}
+
+	var adminEmails []string
+	for _, admin := range admins {
+		adminEmails = append(adminEmails, admin.Email)
+	}
+
+	offRamp := serializers.AdminOffRampSerializer{
+		Name:          input.AccountName,
+		BankName:      input.BankName,
+		AccountNumber: input.AccountNumber,
+		Amount:        input.FiatEquivalent,
+		Currency:      input.CurrencyCode,
+		Ref:           hash,
+	}
+	_ = mails.AdminOffRampMail(adminEmails, offRamp)
+}
+
+type apiError struct {
+	StatusCode int
+	Err        error
+}
+
+func (e *apiError) Error() string {
+	return e.Err.Error()
+}
+
+func VerifyOffRamp(c *gin.Context) {
+	id := c.Param("id")
+	intId, _ := strconv.Atoi(id)
+	withdrawal, err := models.GetWithdrawalRequest(intId)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	var input serializers.OffRampAction
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	withdrawal.Status = "Completed"
+	withdrawal.BankRef = input.BankRef
+	if err := withdrawal.UpdateWithdrawalRequest(); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	user, err := models.GetUserByID(withdrawal.UserID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	go func() {
+		floatAmount, err := strconv.ParseFloat(withdrawal.EquivalentFiat, 64)
+		if err != nil {
+			panic(err)
+		}
+		amount := utils.FormatAmountWithCommas(floatAmount)
+		data := serializers.UserOffRampMail{
+			Name:          fmt.Sprintf("%s %s", user.LastName, user.FirstName),
+			Amount:        amount,
+			Currency:      withdrawal.FiatCurrency,
+			Ref:           withdrawal.BankRef,
+			BankName:      withdrawal.BankName,
+			AccountNumber: withdrawal.AccountNumber,
+			AccountName:   withdrawal.AccountName,
+		}
+		emails := []string{user.Email}
+		_ = mails.UserOffRampMail(emails, data)
+	}()
 
 }

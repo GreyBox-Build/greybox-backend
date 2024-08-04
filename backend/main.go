@@ -105,6 +105,20 @@ func main() {
 		transV2.GET("/destination-bank", controllers.GetDestinationBankAccount)
 		transV2.GET("/reference", controllers.GenerateReference)
 		transV2.POST("/on-ramp", controllers.OnRampV2)
+		transV2.POST("/off-ramp", controllers.OffRampV2)
+
+	}
+
+	requests := r.Group("/api/v1/requests")
+	{
+		requests.Use(middlewares.JwtAuthMiddleware())
+		requests.Use(middlewares.IsAdmin())
+		transV2.GET("/on-ramp", controllers.FetchOnRampRequests)
+		transV2.GET("/off-ramp", controllers.FetchOffRampRequests)
+		transV2.GET("/on-ramp/:id", controllers.GetOnRampRequest)
+		transV2.GET("/off-ramp/:id", controllers.GetOffRampRequest)
+		transV2.POST("/on-ramp/:id/verify", controllers.VerifyOnRamp)
+		transV2.POST("/off-ramp/:id/verify", controllers.VerifyOffRamp)
 	}
 
 	r.Run(":8080")

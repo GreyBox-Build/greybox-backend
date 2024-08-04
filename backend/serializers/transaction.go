@@ -89,3 +89,23 @@ type OnRamp struct {
 	Currency      string `json:"currency"`
 	AssetAmount   string `json:"assetAmount"`
 }
+
+type OnRampAction struct {
+	Action string `json:"action"`
+}
+
+type OffRampAction struct {
+	Action  string `json:"action"`
+	BankRef string `json:"bankRef"`
+}
+
+type OffRamp struct {
+	FiatEquivalent string `json:"fiatEquivalent"`
+	Asset          string `json:"asset"`
+	CryptoAmount   string `json:"cryptoAmount"`
+	Chain          string `json:"chain"`
+	BankName       string `json:"bankName"`
+	AccountNumber  string `json:"accountNumber"`
+	AccountName    string `json:"accountName"`
+	CurrencyCode   string `json:"currencyCode"`
+}

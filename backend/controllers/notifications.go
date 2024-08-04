@@ -75,7 +75,7 @@ func TatumWebhook(c *gin.Context) {
 		if currentBalance > user.PreviousBalance {
 			user.PreviousBalance = currentBalance
 			transType = "Deposit"
-			amount := utils.PerformAmountCalculation(exchangeRate, input.Amount)
+			amount := utils.PreformDepositofNativeCalculation(exchangeRate, input.Amount)
 
 			_, code, err := apis.PerformTransactionCelo(amount, user.AccountAddress, masterWallet.PrivateKey, true)
 			if err != nil {
