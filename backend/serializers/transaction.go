@@ -74,8 +74,8 @@ type Bank struct {
 	AccountName   string `json:"AccountName"`
 }
 
-type BanksStruct struct {
-	Banks []Bank `json:"Banks"`
+type BankData struct {
+	Banks []Bank `json:"banks"`
 }
 
 type OnRamp struct {

@@ -113,12 +113,12 @@ func main() {
 	{
 		requests.Use(middlewares.JwtAuthMiddleware())
 		requests.Use(middlewares.IsAdmin())
-		transV2.GET("/on-ramp", controllers.FetchOnRampRequests)
-		transV2.GET("/off-ramp", controllers.FetchOffRampRequests)
-		transV2.GET("/on-ramp/:id", controllers.GetOnRampRequest)
-		transV2.GET("/off-ramp/:id", controllers.GetOffRampRequest)
-		transV2.POST("/on-ramp/:id/verify", controllers.VerifyOnRamp)
-		transV2.POST("/off-ramp/:id/verify", controllers.VerifyOffRamp)
+		requests.GET("/on-ramp", controllers.FetchOnRampRequests)
+		requests.GET("/off-ramp", controllers.FetchOffRampRequests)
+		requests.GET("/on-ramp/:id", controllers.GetOnRampRequest)
+		requests.GET("/off-ramp/:id", controllers.GetOffRampRequest)
+		requests.POST("/on-ramp/:id/verify", controllers.VerifyOnRamp)
+		requests.POST("/off-ramp/:id/verify", controllers.VerifyOffRamp)
 	}
 
 	r.Run(":8080")

@@ -31,7 +31,7 @@ type Transaction struct {
 
 type DepositRequest struct {
 	gorm.Model
-	UserID          uint      `gorm:"index" json:"user_id"`
+	UserID          uint      `json:"user_id"`
 	User            User      `gorm:"foreignKey:UserID" json:"user"`
 	Status          string    `json:"status"`
 	Ref             string    `json:"ref"`
@@ -39,8 +39,8 @@ type DepositRequest struct {
 	DepositBank     string    `json:"deposit_bank"`
 	AccountNumber   string    `json:"account_number"`
 	ConfirmedAt     time.Time `json:"confirmed_at"`
-	VerifiedById    uint      `json:"verified_by_id"`
-	VerifiedBy      User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
+	VerifiedById    *uint     `gorm:"default:null" json:"verified_by_id"`
+	VerifiedBy      *User     `gorm:"foreignKey:VerifiedById" json:"verified_by"`
 	Currency        string    `json:"currency"`
 	FiatAmount      string    `json:"fiat_amount"`
 	ProposedAsset   string    `json:"proposed_asset"`
@@ -53,7 +53,7 @@ type WithdrawalRequest struct {
 	UserID         uint      `gorm:"index" json:"user_id"`
 	User           User      `gorm:"foreignKey:UserID" json:"user"`
 	Status         string    `json:"status"`
-	CryptoAmount   string    `json:"amount"`
+	CryptoAmount   string    `json:"crypto_amount"`
 	Chain          string    `json:"chain"`
 	Hash           string    `json:"hash"`
 	Address        string    `json:"address"`
@@ -61,11 +61,11 @@ type WithdrawalRequest struct {
 	AccountName    string    `json:"account_name"`
 	AccountNumber  string    `json:"account_number"`
 	ConfirmedAt    time.Time `json:"confirmed_at"`
-	VerifiedById   uint      `json:"verified_by_id"`
-	VerifiedBy     User      `gorm:"foreignKey:VerifiedById" json:"verified_by"`
+	VerifiedById   *uint     `gorm:"default:null" json:"verified_by_id"`
+	VerifiedBy     *User     `gorm:"foreignKey:VerifiedById" json:"verified_by"`
 	BankRef        string    `json:"bank_ref"`
 	Asset          string    `json:"asset"`
-	EquivalentFiat string    `json:"fiat_equivalent"`
+	EquivalentFiat string    `json:"equivalent_fiat"`
 	FiatCurrency   string    `json:"fiat_currency"`
 }
 
@@ -169,7 +169,7 @@ func FilterDepositRequests(ref, currency, fiatAmount, accountNumber, status, cou
 		query = query.Where("proposed_asset = ?", cryptoAsset)
 	}
 
-	err := query.Find(&depositRequests).Error
+	err := query.Preload("User").Find(&depositRequests).Error
 	if err != nil {
 		return nil, err
 	}

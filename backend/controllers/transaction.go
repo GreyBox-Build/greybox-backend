@@ -279,7 +279,7 @@ func GetDestinationBankAccount(c *gin.Context) {
 	countryCode := c.Query("countryCode")
 	root, _ := os.Getwd()
 
-	jsonFilePath := filepath.Join(root, "/templates", "/bankaccount.json")
+	jsonFilePath := filepath.Join(root, "templates", "bankaccount.json")
 
 	jsonData, err := os.ReadFile(jsonFilePath)
 	if err != nil {
@@ -287,15 +287,16 @@ func GetDestinationBankAccount(c *gin.Context) {
 		return
 	}
 
-	var data serializers.BanksStruct
+	var data serializers.BankData
 	err = json.Unmarshal(jsonData, &data)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
 	for _, bank := range data.Banks {
 		if bank.CountryCode == countryCode {
-			c.JSON(200, gin.H{
+			c.JSON(http.StatusOK, gin.H{
 				"errors": false,
 				"status": "fetch destination bank successfully",
 				"data":   bank,
@@ -303,7 +304,7 @@ func GetDestinationBankAccount(c *gin.Context) {
 			return
 		}
 	}
-	c.JSON(400, gin.H{"error": "no available bank found for region: " + countryCode})
+	c.JSON(http.StatusBadRequest, gin.H{"error": "no available bank found for region: " + countryCode})
 }
 
 func GenerateReference(c *gin.Context) {
@@ -364,6 +365,7 @@ func OnRampV2(c *gin.Context) {
 		for _, admin := range admins {
 			adminEmails = append(adminEmails, admin.Email)
 		}
+		fmt.Println("emails:", adminEmails)
 		onRamp := serializers.AdminOnRampSerializer{
 			Name:          "Admin",
 			BankName:      input.BankName,
