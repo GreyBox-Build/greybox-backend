@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"math"
 	"strconv"
 	"strings"
@@ -14,6 +15,7 @@ func ConvertTokenToNative(currentNativeUsdEquivalent, TokenAmount string) string
 	// Perform the conversion
 	nativeAmount := cusdAmountFloat / currentCeloUsdPriceFloat
 	nativeAmount = math.Round(nativeAmount*100) / 100
+	fmt.Println("nativeAmount: ", nativeAmount)
 
 	// Convert the result back to a string
 	nativeAmountStr := strconv.FormatFloat(nativeAmount, 'f', -1, 64)
@@ -58,7 +60,7 @@ func ConvertAssetToFiat(currentEquivalent, amount string) string {
 
 func PreformDepositofNativeCalculation(currentNativeUsdEquivalent, amount string) string {
 	nativeAmount := GetRemainingOnePercent(amount)
-	return ConvertTokenToNative(currentNativeUsdEquivalent, nativeAmount)
+	return nativeAmount
 }
 
 func GetRemainingOnePercent(amount string) string {
@@ -66,8 +68,7 @@ func GetRemainingOnePercent(amount string) string {
 	amountFloat, _ := strconv.ParseFloat(amount, 64)
 
 	// Calculate 1% of the amount
-	onePercent := (amountFloat * 100) / 99
-
+	onePercent := amountFloat / 100
 	// Convert the result back to a string
 	onePercentStr := strconv.FormatFloat(onePercent, 'f', -1, 64)
 

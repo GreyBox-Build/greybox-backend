@@ -122,7 +122,7 @@ func (t *Transaction) SaveTransaction() error {
 
 func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 	var transaction Transaction
-	err := db.Where("hash = ? AND chain = ?", hash, chain).First(&transaction).Error
+	err := db.Preload("User").Where("hash = ? AND chain = ?", hash, chain).First(&transaction).Error
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 
 func GetTransactionsByUserID(userId uint, chain string) ([]*Transaction, error) {
 	var transactions []*Transaction
-	err := db.Where("user_id = ? AND chain = ?", userId, chain).Order("created_at desc").Find(&transactions).Error
+	err := db.Preload("User").Where("user_id = ? AND chain = ?", userId, chain).Order("created_at desc").Find(&transactions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func FilterWithdrawalRequests(status, chain, hash, address, accountNumber string
 		query = query.Where("account_number = ?", accountNumber)
 	}
 
-	err := query.Find(&withdrawalRequests).Error
+	err := query.Preload("User").Find(&withdrawalRequests).Error
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func FilterWithdrawalRequests(status, chain, hash, address, accountNumber string
 
 func GetDepositRequest(id int) (*DepositRequest, error) {
 	var depositRequest DepositRequest
-	err := db.First(&depositRequest, id).Error
+	err := db.Preload("User").First(&depositRequest, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func GetDepositRequest(id int) (*DepositRequest, error) {
 
 func GetWithdrawalRequest(id int) (*WithdrawalRequest, error) {
 	var withdrawalRequest WithdrawalRequest
-	err := db.First(&withdrawalRequest, id).Error
+	err := db.Preload("User").First(&withdrawalRequest, id).Error
 	if err != nil {
 		return nil, err
 	}

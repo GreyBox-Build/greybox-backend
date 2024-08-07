@@ -462,12 +462,12 @@ func VerifyOnRamp(c *gin.Context) {
 	intId, _ := strconv.Atoi(id)
 	deposit, err := models.GetDepositRequest(intId)
 	if err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, gin.H{"error": err.Error(), "message": "error fetching request"})
 		return
 	}
 	var input serializers.OnRampAction
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{"error": err.Error()})
+		c.JSON(400, gin.H{"error": err.Error(), "message": "in"})
 		return
 	}
 	user, err := models.GetUserByID(deposit.UserID)
@@ -497,26 +497,26 @@ func VerifyOnRamp(c *gin.Context) {
 			transaction.Hash = txHash
 			transaction.Chain = "CELO"
 			go func() {
-				hash, _, err := apis.PerformTransactionCelo(nativeAmount, user.AccountAddress, masterWallet.PrivateKey, true)
-				if err != nil {
-					panic(err)
-				}
-				var nativeTrans models.Transaction
-				nativeTrans.Address = user.AccountAddress
-				nativeTrans.CounterAddress = masterWallet.PublicAddress
-				nativeTrans.Amount = nativeAmount
-				nativeTrans.UserID = user.ID
-				nativeTrans.User = user
-				nativeTrans.Hash = hash
-				nativeTrans.Description = "On-Ramp Deposit of Gas Fees"
-				nativeTrans.TransactionId = hash
-				nativeTrans.TransactionType = "native"
-				nativeTrans.TransactionSubType = "Deposit"
-				nativeTrans.Chain = "CELO"
-				nativeTrans.Asset = "CELO"
-				if err := nativeTrans.SaveTransaction(); err != nil {
-					panic(err)
-				}
+				time.AfterFunc(5*time.Minute, func() {
+					hash, _, _ := apis.PerformTransactionCelo(nativeAmount, user.AccountAddress, masterWallet.PrivateKey, true)
+
+					var nativeTrans models.Transaction
+					nativeTrans.Address = user.AccountAddress
+					nativeTrans.CounterAddress = masterWallet.PublicAddress
+					nativeTrans.Amount = nativeAmount
+					nativeTrans.UserID = user.ID
+					nativeTrans.User = user
+					nativeTrans.Hash = hash
+					nativeTrans.Description = "On-Ramp Deposit of Gas Fees"
+					nativeTrans.TransactionId = hash
+					nativeTrans.TransactionType = "native"
+					nativeTrans.TransactionSubType = "Deposit"
+					nativeTrans.Chain = "CELO"
+					nativeTrans.Asset = "CELO"
+					nativeTrans.Status = "Completed"
+					_ = nativeTrans.SaveTransaction()
+
+				})
 			}()
 
 		case "XLM":
@@ -539,33 +539,32 @@ func VerifyOnRamp(c *gin.Context) {
 			transaction.Chain = "XLM"
 
 			go func() {
-				transferData := serializers.TransferXLM{
-					Amount:      nativeAmount,
-					To:          user.AccountAddress,
-					FromSecret:  masterWallet.PrivateKey,
-					Initialize:  true,
-					FromAccount: masterWallet.PublicAddress,
-				}
-				txData, _, err := apis.PerformTransactionXLM(transferData)
-				if err != nil {
-					panic(err)
-				}
-				var xlmTrans models.Transaction
-				id := txData["txId"]
-				xlmTrans.Hash = id
-				xlmTrans.Chain = "XLM"
-				xlmTrans.Amount = nativeAmount
-				xlmTrans.UserID = user.ID
-				xlmTrans.User = user
-				xlmTrans.TransactionId = id
-				xlmTrans.TransactionType = "native"
-				xlmTrans.TransactionSubType = "Deposit"
-				xlmTrans.Asset = "XLM"
-				xlmTrans.Description = "On-Ramp Deposit of Gas Fees"
-				if err := xlmTrans.SaveTransaction(); err != nil {
-					panic(err)
-				}
+				time.AfterFunc(5*time.Minute, func() {
+					transferData := serializers.TransferXLM{
+						Amount:      nativeAmount,
+						To:          user.AccountAddress,
+						FromSecret:  masterWallet.PrivateKey,
+						Initialize:  true,
+						FromAccount: masterWallet.PublicAddress,
+					}
+					txData, _, _ := apis.PerformTransactionXLM(transferData)
 
+					var xlmTrans models.Transaction
+					id := txData["txId"]
+					xlmTrans.Hash = id
+					xlmTrans.Chain = "XLM"
+					xlmTrans.Amount = nativeAmount
+					xlmTrans.UserID = user.ID
+					xlmTrans.User = user
+					xlmTrans.TransactionId = id
+					xlmTrans.TransactionType = "native"
+					xlmTrans.TransactionSubType = "Deposit"
+					xlmTrans.Asset = "XLM"
+					xlmTrans.Description = "On-Ramp Deposit of Gas Fees"
+					xlmTrans.Status = "Completed"
+					_ = xlmTrans.SaveTransaction()
+
+				})
 			}()
 
 		}
@@ -638,6 +637,12 @@ func OffRampV2(c *gin.Context) {
 	trans := models.Transaction{}
 	if err := processTransaction(&trans, &withdrawal, input, user, masterWallet); err != nil {
 		c.JSON(err.StatusCode, gin.H{"error": err.Error(), "message": "transaction failed"})
+		return
+	}
+	trans.UserID = user.ID
+	trans.User = user
+	if err := trans.SaveTransaction(); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -766,5 +771,9 @@ func VerifyOffRamp(c *gin.Context) {
 		emails := []string{user.Email}
 		_ = mails.UserOffRampMail(emails, data)
 	}()
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "request verified successfully",
+	})
 
 }
