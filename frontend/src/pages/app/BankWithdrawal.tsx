@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { CancelIcon, CopyBlack } from "../../components/icons/Icons";
+import { CancelIcon } from "../../components/icons/Icons";
 import AppLayout from "./AppLayout";
 import {
   InputInfoLabel,
@@ -9,86 +9,63 @@ import {
 import { FormButton } from "../../components/buttons/FormButton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { depositViaBankTransferSchema } from "../../utils/Validations";
+import { withdrawViaBankSchema } from "../../utils/Validations";
 import {
   useGetAuthUserQuery,
-  useGetBankDetailsQuery,
   useGetEquivalentAmountQuery,
-  useGetTransactionReferenceQuery,
-  useOnrampMutation,
+  useOfframpMutation,
 } from "../../appSlices/apiSlice";
 import { assignLocalError, removeLocalError } from "../../utils/Helpers";
 import { ZodIssue } from "zod";
 import { useState } from "react";
-import { useCopyTextToClipboard } from "../../utils/Copy";
 import { useSnackbar } from "notistack";
 
-const BankTransferDeposit = () => {
+const BankWithdrawal = () => {
   const navigate = useNavigate();
   const { currentData: user } = useGetAuthUserQuery({});
   const [localErrors, setLocalErrors] = useState<ZodIssue[]>([]);
-  const copyText = useCopyTextToClipboard();
 
   const { enqueueSnackbar } = useSnackbar();
 
   const { control, handleSubmit, watch } = useForm({
     defaultValues: {
-      amount: "0",
+      cryptoAmount: "0",
     },
-    resolver: zodResolver(depositViaBankTransferSchema),
+    resolver: zodResolver(withdrawViaBankSchema),
   });
 
-  const amount = watch("amount");
+  const cryptoAmount = watch("cryptoAmount");
   const userData = user?.data?.personal_details;
 
-  const { currentData: bank } = useGetBankDetailsQuery(userData?.country_code);
-
-  const bankDetails = bank?.data;
-
-  const { currentData: reference } = useGetTransactionReferenceQuery({});
-
-  const [onramp, { isLoading }] = useOnrampMutation();
+  const [offramp, { isLoading }] = useOfframpMutation();
 
   const {
     currentData: equivalent,
     isError: isEquivalentError,
     error: equivalentError,
   }: any = useGetEquivalentAmountQuery({
-    amount: amount?.replace(/,/g, ""),
+    amount: cryptoAmount?.replace(/,/g, ""),
     currency: userData?.currency,
     cryptoAsset: userData?.crypto_currency,
-    type: "on-ramp",
+    type: "off-ramp",
   });
 
-  const DetailsCard = ({ text, value }: { text: string; value: string }) => (
-    <div
-      onClick={() => copyText(value, `Copied ${text}`)}
-      className="rounded-[8px]  flex items-center justify-between bg-grey-1 p-[8px_22px] text-black-2 text-[0.875rem] leading-[18px] border-[#99999961] border-[1px] gap-x-[5px] shadow-shadow-1"
-    >
-      <div className="flex flex-col gap-y-[5px]">
-        <p>{text}</p>
-        <p className="font-[700]">{value}</p>
-      </div>
-      <CopyBlack />
-    </div>
-  );
   const handleDepositViaBankTransfer = async (data: any) => {
-    const { amount } = data;
+    const { cryptoAmount, bankName, accountNumber, accountName } = data;
 
     const details = {
-      amount: amount?.replace(/,/g, ""),
+      cryptoAmount: cryptoAmount?.replace(/,/g, ""),
       asset: userData?.crypto_currency,
-      countryCode: userData?.country_code,
-      ref: reference?.data?.reference,
-      bankName: bankDetails?.BankName,
-      accountNumber: bankDetails?.AccountNumber,
-      accountName: bankDetails?.AccountName,
-      currency: userData?.currency,
-      assetAmount: equivalent?.data?.amount,
+      fiatEquivalent: equivalent?.data?.amount,
+      chain: userData?.crypto_currency,
+      currencyCode: userData?.currency_code,
+      bankName,
+      accountNumber,
+      accountName,
     };
 
     try {
-      const response = await onramp(details).unwrap();
+      const response = await offramp(details).unwrap();
       enqueueSnackbar(response?.status, { variant: "success" });
       setTimeout(() => {
         navigate("/dashboard");
@@ -108,7 +85,7 @@ const BankTransferDeposit = () => {
               <CancelIcon />
             </span>
             <h2 className=" text-black text-[1.5rem] font-[600]">
-              Deposit Via Bank Transfer
+              Withdraw Via Bank
             </h2>
           </div>
           <form
@@ -117,34 +94,36 @@ const BankTransferDeposit = () => {
           >
             <section className="flex flex-col gap-y-[32px]">
               <div>
-                <InputLabel text={`Enter amount in ${userData?.currency}`} />
+                <InputLabel text={`Enter amount in cUSD`} />
                 <TextInput
-                  name="amount"
+                  name="cryptoAmount"
                   control={control}
                   placeholder="0"
                   localType="figure"
                   onLocalChange={() => {
-                    parseFloat(amount) < 500
-                      ? assignLocalError("amount", localErrors)
-                      : removeLocalError("amount", localErrors, setLocalErrors);
+                    parseFloat(cryptoAmount) < 1
+                      ? assignLocalError("cryptoAmount", localErrors)
+                      : removeLocalError(
+                          "cryptoAmount",
+                          localErrors,
+                          setLocalErrors
+                        );
                   }}
                 />
                 <InputInfoLabel
                   title="Buying Rate"
-                  value={`500${userData?.currency} = ${
+                  value={`1cUSD = ${
                     equivalent?.data?.amount &&
                     !isNaN(
-                      parseFloat(equivalent?.data?.amount) / parseFloat(amount)
+                      parseFloat(equivalent?.data?.amount) /
+                        parseFloat(cryptoAmount)
                     )
                       ? (
-                          (parseFloat(equivalent?.data?.amount) /
-                            parseFloat(amount)) *
-                          500
+                          parseFloat(equivalent?.data?.amount) /
+                          parseFloat(cryptoAmount)
                         ).toFixed(7)
                       : "-"
-                  }${
-                    userData?.crypto_currency ? userData?.crypto_currency : "-"
-                  }`}
+                  }${userData?.currency ? userData?.currency : "-"}`}
                 />
                 {isEquivalentError && (
                   <p className=" text-red-500 text-[10px]">
@@ -170,28 +149,36 @@ const BankTransferDeposit = () => {
                   }`}
                 />
               </div>
-            </section>
 
-            <section className="mt-[24px]">
-              <InputLabel text="Make your transfer with the account details below. Make sure you add reference to the description." />
-              <div className="mt-[15px] flex flex-col gap-y-[10px]">
-                <DetailsCard
-                  text="Account Number"
-                  value={bankDetails?.AccountNumber}
+              <div>
+                <InputLabel text={`Bank Name`} />
+                <TextInput
+                  name="bankName"
+                  control={control}
+                  placeholder="Enter Bank Name"
                 />
-                <DetailsCard text="Bank Name" value={bankDetails?.BankName} />
-                <DetailsCard
-                  text="Account Name"
-                  value={bankDetails?.AccountName}
+              </div>
+              <div>
+                <InputLabel text={`Account Number`} />
+                <TextInput
+                  name="accountNumber"
+                  control={control}
+                  placeholder="Enter Account Number"
+                  localType="number"
                 />
-                <DetailsCard
-                  text="Reference"
-                  value={reference?.data?.reference}
+              </div>
+              <div>
+                <InputLabel text={`Account Name`} />
+                <TextInput
+                  name="accountName"
+                  control={control}
+                  placeholder="Enter Account Name"
                 />
               </div>
             </section>
+
             <FormButton
-              label="I Have Paid"
+              label="Submit Request"
               extraClass="mt-[50px]"
               loading={isLoading}
             />
@@ -202,4 +189,4 @@ const BankTransferDeposit = () => {
   );
 };
 
-export default BankTransferDeposit;
+export default BankWithdrawal;

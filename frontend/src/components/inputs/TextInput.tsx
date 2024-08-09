@@ -10,6 +10,7 @@ interface FormFieldProps
   img?: React.ReactNode;
   isSmall?: boolean;
   localType?: string;
+  onLocalChange?: () => void;
   onClick?: React.MouseEventHandler<HTMLDivElement> | undefined;
 }
 export const TextInput = ({
@@ -19,6 +20,7 @@ export const TextInput = ({
   isSmall,
   localType,
   onClick,
+  onLocalChange,
   ...props
 }: FormFieldProps) => {
   const formatInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,7 +49,10 @@ export const TextInput = ({
           >
             <input
               value={value}
-              onChange={(e) => onChange(formatInput(e))}
+              onChange={(e) => {
+                onChange(formatInput(e));
+                onLocalChange && onLocalChange();
+              }}
               {...props}
               className={`flex-grow w-[24%] h-[90%] text-black-3 placeholder:text-black-3 text-[0.875rem] leading-[18px]  bg-transparent outline-none ${
                 isSmall ? "flex items-center justify-center px-0" : "px-[5px]"

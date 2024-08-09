@@ -194,6 +194,9 @@ export const CancelIconWhite = () => (
 export const CopyWhite = () => (
   <img src="/images/copyWhite.png" alt="" className=" cursor-pointer" />
 );
+export const CopyBlack = () => (
+  <img src="/images/copyBlack.svg" alt="" className=" cursor-pointer" />
+);
 
 export const LightIcon = () => (
   <img src="/images/light.svg" alt="" className=" cursor-pointer" />

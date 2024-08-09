@@ -28,6 +28,7 @@ import PrivacyPolicy from "./pages/app/PrivacyPolicy";
 import AMLPolicy from "./pages/app/AMLPolicy";
 import AppLayout from "./pages/app/AppLayout";
 import BankTransferDeposit from "./pages/app/BankTransferDeposit";
+import BankWithdrawal from "./pages/app/BankWithdrawal";
 
 export const routes = createBrowserRouter([
   {
@@ -97,6 +98,10 @@ export const routes = createBrowserRouter([
   {
     path: "/withdrawal-options",
     element: <WithdrawalOption />,
+  },
+  {
+    path: "/withdraw-via-bank",
+    element: <BankWithdrawal />,
   },
   {
     path: "/withdraw-via-paychant",
