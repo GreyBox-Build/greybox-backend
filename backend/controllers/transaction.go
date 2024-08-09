@@ -777,3 +777,30 @@ func VerifyOffRamp(c *gin.Context) {
 	})
 
 }
+
+func GetExchangeRate(c *gin.Context) {
+	fiatCurrency := c.Query("fiat_currency")
+	asset := c.Query("asset")
+	rate := make(chan string)
+	err := make(chan error)
+	go apis.GetExchangeRate(fiatCurrency, asset, rate, err)
+
+	select {
+	case exchangeRate := <-rate:
+		c.JSON(200, gin.H{
+			"errors": false,
+			"status": "exchange rate fetched successfully",
+			"data":   exchangeRate,
+		})
+	case error := <-err:
+		c.JSON(400, gin.H{
+			"errors": true,
+			"status": error.Error(),
+		})
+	case <-time.After(10 * time.Second):
+		c.JSON(408, gin.H{
+			"errors": true,
+			"status": "Request timed out",
+		})
+	}
+}

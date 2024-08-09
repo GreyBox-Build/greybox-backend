@@ -56,6 +56,13 @@ func main() {
 		chains.GET("", controllers.FetchChain)
 	}
 
+	XchangeRate := r.Group("/api/v1/exchange-rate")
+	{
+		XchangeRate.GET("", controllers.GetExchangeRate)
+	}
+
+	//r.Use(middlewares.JwtAuthMiddleware())
+
 	public := r.Group("/api/v1/user")
 	{
 		public.POST("/login", controllers.FetchAuthenticatedUserToken)
