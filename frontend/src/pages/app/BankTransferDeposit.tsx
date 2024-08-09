@@ -8,15 +8,18 @@ import {
 } from "../../components/inputs/TextInput";
 import { FormButton } from "../../components/buttons/FormButton";
 import { useForm } from "react-hook-form";
-import { useOnrampQuery } from "../../appSlices/apiSlice";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { depositViaMobileSchema } from "../../utils/Validations";
+import {
+  useGetAuthUserQuery,
+  useGetEquivalentAmountQuery,
+} from "../../appSlices/apiSlice";
 
 const BankTransferDeposit = () => {
   const navigate = useNavigate();
+  const { currentData: user } = useGetAuthUserQuery({});
 
-  const { currentData: onrampInfo } = useOnrampQuery({});
-  const { control, handleSubmit } = useForm({
+  const { control, handleSubmit, watch } = useForm({
     defaultValues: {
       amount: "0",
     },
@@ -25,11 +28,18 @@ const BankTransferDeposit = () => {
 
   const handleDepositViaMobileMoney = (data: any) => {
     const { amount } = data;
-    window.open(
-      `https://sandbox-pay.fonbnk.com/?source=${process.env.REACT_APP_SOURCE_PARAM}&asset=${onrampInfo?.data?.asset}&country=${onrampInfo?.data?.country}&provider=bank_transfer&amount=${amount}&network=${onrampInfo?.data?.network}&address=${onrampInfo?.data?.wallet_address}&freezeWallet=1&freezeNetwork=1&freezeAmount=1&redirectUrl=${process.env.REACT_APP_FRONTEND_BASE_URL}/dashboard/{status}`,
-      "_self"
-    );
   };
+
+  const amount = watch("amount");
+  const userData = user?.data?.personal_details;
+
+  const { currentData: equivalent } = useGetEquivalentAmountQuery({
+    amount,
+    currency: userData?.currency,
+    cryptoAsset: userData?.crypto_currency,
+    type: "on-ramp",
+  });
+
   return (
     <AppLayout
       child={
