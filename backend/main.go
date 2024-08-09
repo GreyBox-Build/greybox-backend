@@ -39,13 +39,17 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
+	//gin.SetMode(gin.ReleaseMode)
 
 	db := models.InitializeDB()
 	models.Migrate(db)
 	r := gin.Default()
+
 	//config := cors.DefaultConfig()
 	//config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(CORS())
+
+	r.Use(middlewares.AllowedHosts([]string{"localhost:8080", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
 
 	chains := r.Group("/api/v1/chains")
 	{
@@ -54,7 +58,6 @@ func main() {
 
 	public := r.Group("/api/v1/user")
 	{
-		public.POST("/register", controllers.CreateAccount)
 		public.POST("/login", controllers.FetchAuthenticatedUserToken)
 		public.POST("/forget-password", controllers.ForgetPassword)
 		public.POST("/reset-password", controllers.ResetPassword)
@@ -69,6 +72,7 @@ func main() {
 	{
 		user.Use(middlewares.JwtAuthMiddleware())
 		user.GET("/user", controllers.GetAuthenticatedUser)
+		user.POST("/make-admin", controllers.MakeAdmin)
 	}
 
 	trans := r.Group("/api/v1/transaction")
@@ -79,6 +83,42 @@ func main() {
 		trans.GET("/hash", controllers.GetTransactionsByHash)
 		trans.POST("/off-ramp", controllers.OffRampTransaction)
 		trans.POST("/sign-url", controllers.SignUrl)
+	}
+
+	notification := r.Group("/api/v1/notification")
+	{
+		//notification.Use(middlewares.JwtAuthMiddleware())
+		notification.POST("/register-hmac", controllers.RegisterHmac)
+	}
+
+	master := r.Group("/api/v1")
+	{
+		//master.POST("/master-wallet", controllers.GenerateMasterWallet)
+		master.GET("/master-wallet", controllers.GetMasterWallet)
+
+	}
+
+	transV2 := r.Group("/api/v2/transaction")
+	{
+		transV2.Use(middlewares.JwtAuthMiddleware())
+		transV2.GET("/equivalent-amount", controllers.AmountToReceive)
+		transV2.GET("/destination-bank", controllers.GetDestinationBankAccount)
+		transV2.GET("/reference", controllers.GenerateReference)
+		transV2.POST("/on-ramp", controllers.OnRampV2)
+		transV2.POST("/off-ramp", controllers.OffRampV2)
+
+	}
+
+	requests := r.Group("/api/v1/requests")
+	{
+		requests.Use(middlewares.JwtAuthMiddleware())
+		requests.Use(middlewares.IsAdmin())
+		requests.GET("/on-ramp", controllers.FetchOnRampRequests)
+		requests.GET("/off-ramp", controllers.FetchOffRampRequests)
+		requests.GET("/on-ramp/:id", controllers.GetOnRampRequest)
+		requests.GET("/off-ramp/:id", controllers.GetOffRampRequest)
+		requests.POST("/on-ramp/:id/verify", controllers.VerifyOnRamp)
+		requests.POST("/off-ramp/:id/verify", controllers.VerifyOffRamp)
 	}
 
 	r.Run(":8080")

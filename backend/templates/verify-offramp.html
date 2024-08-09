@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GreyBox Onramp Confirmation</title>
+    <!-- Include Tailwind CSS styles -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100 font-sans">
+
+    <div class="max-w-2xl mx-auto p-6 bg-white shadow-md my-16">
+
+        <p class="text-lg">Dear Admin,</p>
+
+        <p class="mt-4">We hope this email finds you well. A user recently made an OFF-RAMP request</p>
+
+        <p class="mt-4">
+            Kindly complete the request by making a deposit to the account details below:
+        </p>
+
+        <p class="mt-4">Bank Name: {{.BankName}}</p>
+        <p class="mt-4">Account Name: {{.Name}}</p>
+        <p class="mt-4">Acount Number: {{.AccountNumber}}</p>
+        <p class="mt-4">Amount: {{.Currency}} {{.Amount}}</p>
+
+        
+
+        <p class="mt-4">After making this Transaction, kindly confirm this transaction by using this Ref: <strong>{{.Ref}}</strong> on the dashboard. 
+            Search for this Ref on the Off Ramp section. Verify the request by inserting the Bank Ref gotten from the Transaction made above.
+        </p>
+
+        <p class="mt-4">Thank you for your attention to this matter.</p>
+
+        <p class="mt-4">Best regards,<br>
+            greybox organization<br>
+            yours trully</p>
+    </div>
+
+</body>
+
+</html>

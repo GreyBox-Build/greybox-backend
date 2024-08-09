@@ -14,3 +14,7 @@ type PrivGeneration struct {
 	Index    uint   `json:"index"`
 	Mnemonic string `json:"mnemonic"`
 }
+
+type MasterWalletForm struct {
+	Asset string `json:"asset"`
+}

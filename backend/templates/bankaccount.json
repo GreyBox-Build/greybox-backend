@@ -1,0 +1,17 @@
+{
+    "banks":[
+        {
+            "CountryCode":"NG",
+            "BankName":"GtBank Plc",
+            "AccountNumber":"0168351065",
+            "AccountName":"Adegoke Wasiu"
+        },
+        {
+            "CountryCode":"GH",
+            "BankName":"First Bank Ghana Lmited",
+            "AccountNumber":"0192020001106",
+            "AccountName":"George A Bruce"
+        }
+    
+    ]
+}

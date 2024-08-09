@@ -66,3 +66,46 @@ type TransactionXLM struct {
 type SignUrl struct {
 	Url string `json:"url"`
 }
+
+type Bank struct {
+	CountryCode   string `json:"CountryCode"`
+	BankName      string `json:"BankName"`
+	AccountNumber string `json:"AccountNumber"`
+	AccountName   string `json:"AccountName"`
+}
+
+type BankData struct {
+	Banks []Bank `json:"banks"`
+}
+
+type OnRamp struct {
+	FiatAmount    string `json:"amount"`
+	Asset         string `json:"asset"`
+	CountryCode   string `json:"countryCode"`
+	Ref           string `json:"ref"`
+	BankName      string `json:"bankName"`
+	AccountNumber string `json:"accountNumber"`
+	AccountName   string `json:"accountName"`
+	Currency      string `json:"currency"`
+	AssetAmount   string `json:"assetAmount"`
+}
+
+type OnRampAction struct {
+	Action string `json:"action"`
+}
+
+type OffRampAction struct {
+	Action  string `json:"action"`
+	BankRef string `json:"bankRef"`
+}
+
+type OffRamp struct {
+	FiatEquivalent string `json:"fiatEquivalent"`
+	Asset          string `json:"asset"`
+	CryptoAmount   string `json:"cryptoAmount"`
+	Chain          string `json:"chain"`
+	BankName       string `json:"bankName"`
+	AccountNumber  string `json:"accountNumber"`
+	AccountName    string `json:"accountName"`
+	CurrencyCode   string `json:"currencyCode"`
+}

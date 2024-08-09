@@ -1,128 +1,16 @@
 package controllers
 
 import (
-	//"backend/apis"
 	"backend/apis"
 	"backend/models"
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
-	"encoding/json"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
-
-func CreateAccount(c *gin.Context) {
-
-	var input serializers.User
-
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-	var user models.User
-	user.FirstName = input.FirstName
-	user.Email = input.Email
-	user.Password = input.Password
-	user.LastName = input.LastName
-	user.Country = input.Country
-	user.LastName = input.LastName
-	user.Currency = input.Currency
-	user.CountryCode = input.CountryCode
-	if err := user.BeforeSaveDetail(); err != nil {
-		c.JSON(400, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	user.AccountID = models.GenerateAccountId()
-	user.AccountNumber = models.GenerateAccountNumber()
-	user.AccountCode = models.GenerateAccountCode("GBX")
-
-	apiURL := "https://api.tatum.io/v3/ledger/account"
-	key := os.Getenv("TATUM_API_KEY_TEST")
-	customer := map[string]string{
-		"externalId":         user.AccountID,
-		"accountingCurrency": user.Currency,
-		"customerCountry":    user.CountryCode,
-		"providerCountry":    "GH",
-	}
-	xpub, err := models.GetLatestXlmPublic()
-	if err != nil {
-		data, err := apis.GenerateStellarAddress()
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating address failed",
-			})
-			return
-		}
-		xpub.Xpub = data["address"]
-		xpub.Secret = data["secret"]
-		if err := xpub.Save(); err != nil {
-			c.JSON(500, gin.H{
-				"error":   err.Error(),
-				"message": "failed to create xpub key",
-			})
-		}
-	}
-
-	virtual := serializers.VirtualAccount{
-		Xpub:               xpub.Xpub,
-		Currency:           "XLM",
-		Customer:           customer,
-		Compliant:          false,
-		AccountCode:        user.AccountCode,
-		AccountNumber:      user.AccountNumber,
-		AccountingCurrency: user.Currency,
-	}
-	user.Xpub = xpub.Xpub
-	user.PrivateKey = xpub.Secret
-	id, err := apis.CreateVirtualAccount(apiURL, key, virtual)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "creating virtual account failed",
-		})
-		return
-	}
-	user.CustomerId = id
-	address, memo, err := apis.CreateDepositWallet(user.CustomerId)
-	if err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "creating deposit wallet failed",
-		})
-		return
-	}
-	user.AccountAddress = address
-	user.Memo = memo
-
-	if err := user.SaveUser(); err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "creating user falied",
-		})
-		return
-	}
-	if err := apis.ActivateVirtualAccount(user.AccountID, key); err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "activating virtual account failed",
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"message": "created account successfuly",
-	})
-}
 
 func CreateAccountV2(c *gin.Context) {
 
@@ -208,6 +96,14 @@ func CreateAccountV2(c *gin.Context) {
 		})
 		return
 	}
+	//if user.CryptoCurrency == "CELO" {
+	//	go func() {
+	//		err := apis.CreateNotificationSubscription(user.AccountAddress, input.Chain)
+	//		if err != nil {
+	//			fmt.Println("Error creating notification subscription:", err)
+	//		}
+	//	}()
+	//}
 
 	c.JSON(200, gin.H{
 		"message": "created account successfuly",
@@ -334,26 +230,45 @@ func GetAuthenticatedUser(c *gin.Context) {
 		})
 		return
 	}
-	var balance float32
+
+	balanceChan := make(chan float32)
+	errorChan := make(chan error)
 	switch user.CryptoCurrency {
 	case serializers.Chains.Celo:
-		balance, err = apis.FetchAccountBalanceCUSD(user.AccountAddress)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-
+		go func() {
+			balance, err := apis.FetchAccountBalanceCUSD(user.AccountAddress)
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			balanceChan <- balance
+		}()
 	case serializers.Chains.Stellar:
-		balance, err = apis.FetchAccountBalanceXLM(user.AccountAddress)
-		if err != nil {
-			c.JSON(500, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
+		go func() {
+			balance, err := apis.FetchAccountBalanceXLM(user.AccountAddress)
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			balanceChan <- balance
+		}()
 	}
+
+	// Wait for balance or error
+	var balance float32
+	select {
+	case balance = <-balanceChan:
+		// Balance successfully retrieved
+	case err = <-errorChan:
+		// Error occurred while fetching balance
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	user.PreviousBalance = balance
+	user.UpdateUser()
 
 	data := map[string]float32{
 		"balance": balance,
@@ -369,24 +284,120 @@ func GetAuthenticatedUser(c *gin.Context) {
 	})
 }
 
-func FetchChain(c *gin.Context) {
-
-	root, _ := os.Getwd()
-
-	jsonFilePath := filepath.Join(root, "/templates", "/chains.json")
-
-	jsonData, err := os.ReadFile(jsonFilePath)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func GenerateMasterWallet(c *gin.Context) {
+	var input serializers.MasterWalletForm
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{
+			"message": err.Error(),
+		})
 		return
 	}
+	var masterWallet models.MasterWallet
+	switch input.Asset {
+	case serializers.Chains.Celo:
+		meumnic, xpub, err := apis.GenerateCelloWallet()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating cello wallet failed",
+			})
+			return
+		}
+		address, err := apis.GenerateCelloAddress(xpub)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating address failed",
+			})
+			return
+		}
+		masterWallet.PublicAddress = address
+		masterWallet.XpublicAddress = xpub
+		masterWallet.Mnemonic = meumnic
+		privData := serializers.PrivGeneration{
+			Index:    1,
+			Mnemonic: meumnic,
+		}
+		privKey, err := apis.GeneratePrivateKey(privData)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating private key failed",
+			})
+			return
+		}
+		masterWallet.PrivateKey = privKey
 
-	var data []serializers.Data
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+	case serializers.Chains.Stellar:
+		data, code, err := apis.GenerateXlmAccount()
+		if err != nil {
+			c.JSON(code, gin.H{
+				"error":   err.Error(),
+				"message": "generating address failed",
+			})
+			return
+		}
+		address, secret := data["address"], data["secret"]
+		masterWallet.PublicAddress = address
+		masterWallet.PrivateKey = secret
+	}
+	masterWallet.WalletChain = input.Asset
+	if err := masterWallet.CreateMasterWallet(); err != nil {
+		c.JSON(400, gin.H{
+			"error":   err.Error(),
+			"message": "creating master wallet failed",
+		})
 		return
 	}
+	c.JSON(200, gin.H{
+		"status": "created master wallet succesfully",
+		"errors": false,
+		"data":   masterWallet,
+	})
+}
 
-	c.JSON(http.StatusOK, gin.H{"data": data, "status": "fetched accepted chains", "errors": false})
+func GetMasterWallet(c *gin.Context) {
+	input := c.Query("asset")
+	masterWallet, err := models.FetchMasterWallet(input)
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"status": "fetched master wallet succesfully",
+		"errors": false,
+		"data":   masterWallet,
+	})
+}
+
+func MakeAdmin(c *gin.Context) {
+	var input serializers.AdminForm
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+	key := os.Getenv("ADMIN_KEY")
+	if key != input.Key {
+		c.JSON(400, gin.H{
+			"error": "invalid admin key",
+		})
+		return
+	}
+	user, ok := models.FindUserByEmail(input.UserEmail)
+	if !ok {
+		c.JSON(400, gin.H{
+			"error": "could not find user with such email",
+		})
+		return
+	}
+	user.Role = "Admin"
+	user.UpdateUser()
+	c.JSON(200, gin.H{
+		"status": "user is now an admin",
+		"errors": false,
+	})
 }

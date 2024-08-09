@@ -1,0 +1,17 @@
+# Use the tatumio/tatum-kms as the base image
+FROM tatumio/tatum-kms
+
+# Set environment variables
+ENV TRANSACTION_URL=https://apis.greyboxpay.com/api/v1/transaction/verify/
+ENV PERIOD_OF_CHECK=300
+ENV WALLET_STORAGE_LOCATION=/kms/wallet/wallet.dat
+ENV CHAINS=CELO,XLM
+
+# Copy the kms_commands.sh script into the container
+COPY ./kms/kms_commands.sh /kms_commands.sh
+
+# Ensure the script is executable
+RUN chmod +x /kms_commands.sh
+
+# Set the entry point to the script
+ENTRYPOINT ["/bin/sh", "/kms_commands.sh"]

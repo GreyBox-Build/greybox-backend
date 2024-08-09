@@ -28,6 +28,25 @@ type Response struct {
 	NextPage string   `json:"nextPage"`
 }
 
+type ManagedWallet struct {
+	SignatureId string `json:"signatureId"`
+}
+
+type PrivateKeyKMS struct {
+	PrivateKey string `json:"privateKey"`
+}
+
+type Wallet struct {
+	Mnemonic string `json:"mnemonic"`
+	Xpub     string `json:"xpub"`
+	Testnet  bool   `json:"testnet"`
+	Chain    string `json:"chain"`
+}
+
+type Address struct {
+	Address string `json:"address"`
+}
+
 func GenerateCelloAddress(xpub string) (string, error) {
 	apiURL := fmt.Sprintf("https://api.tatum.io/v3/celo/address/%s"+"/%d", xpub, 1)
 	client := &http.Client{}

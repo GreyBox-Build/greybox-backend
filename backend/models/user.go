@@ -18,27 +18,25 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Email          string `gorm:"unique;not null" json:"email"`
-	Password       string `json:"-"`
-	Currency       string `json:"currency"`
-	Country        string `json:"country"`
-	Mnemonic       string `json:"-"`
-	Xpub           string `json:"-"`
-	AccountID      string `json:"account_id"`
-	CustomerId     string `json:"customer_id"`
-	AccountNumber  string `json:"account_number"`
-	AccountCode    string `json:"account_code"`
-	CountryCode    string `json:"country_code"`
-	IsVerified     bool   `gorm:"default:false" json:"is_verified"`
-	AccountAddress string `json:"account_address"`
-	PrivateKey     string `json:"-"`
-	CryptoCurrency string `gorm:"default:CELO" json:"crypto_currency"`
-	Memo           string `json:"memo"`
-	UserImage      string `json:"user_image"`
-	SignatureId    string `json:"-"`
-	TokenAddress   string `json:"token_address"`
+	FirstName       string  `json:"first_name"`
+	LastName        string  `json:"last_name"`
+	Email           string  `gorm:"unique;not null" json:"email"`
+	Password        string  `json:"-"`
+	Currency        string  `json:"currency"`
+	Country         string  `json:"country"`
+	Mnemonic        string  `json:"-"`
+	Xpub            string  `json:"-"`
+	CountryCode     string  `json:"country_code"`
+	IsVerified      bool    `gorm:"default:false" json:"is_verified"`
+	AccountAddress  string  `json:"account_address"`
+	PrivateKey      string  `json:"-"`
+	CryptoCurrency  string  `gorm:"default:CELO" json:"crypto_currency"`
+	UserImage       string  `json:"user_image"`
+	SignatureId     string  `json:"-"`
+	TokenAddress    string  `json:"token_address"`
+	Index           uint64  `json:"-"`
+	PreviousBalance float32 `json:"-"`
+	Role            string  `gorm:"default:Customer" json:"role"`
 }
 
 var counter uint64
@@ -273,4 +271,12 @@ func FindUserByAddress(address string) (User, error) {
 		return user, err
 	}
 	return user, nil
+}
+
+func FindAdmins() ([]User, error) {
+	var users []User
+	if err := db.Where("role = ?", "Admin").Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
 }

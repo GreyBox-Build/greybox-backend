@@ -13,7 +13,7 @@ import (
 )
 
 type TransactionRequest struct {
-	Amount         string `json:"amount"`
+	Amount         string `json:"amount,omitempty"`
 	Currency       string `json:"currency"`
 	To             string `json:"to"`
 	FeeCurrency    string `json:"feeCurrency"`
@@ -126,7 +126,7 @@ func GetTransactionByHash(chain, hash string) ([]map[string]interface{}, error) 
 	return result, nil
 }
 
-func PerformTransactionCelo(amount, accountAddress, privKey string) (string, int, error) {
+func PerformTransactionCelo(amount, accountAddress, privKey string, isNative bool) (string, int, error) {
 	url := "https://api.tatum.io/v3/celo/transaction"
 	client := &http.Client{}
 
@@ -136,6 +136,9 @@ func PerformTransactionCelo(amount, accountAddress, privKey string) (string, int
 		To:             accountAddress,
 		FeeCurrency:    "CELO",
 		FromPrivateKey: privKey,
+	}
+	if isNative {
+		newData.Currency = "CELO"
 	}
 
 	// Convert the struct to JSON format
@@ -159,9 +162,26 @@ func PerformTransactionCelo(amount, accountAddress, privKey string) (string, int
 
 	switch resp.StatusCode {
 	case 403:
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", 500, err
+		}
+		var result map[string]interface{}
+		if err = json.Unmarshal(body, &result); err != nil {
+			return "", 500, err
+		}
+
 		errMsg = "failed to perform transaction. most likely insufficient funds"
 
 	case 400:
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", 500, err
+		}
+		var result map[string]string
+		if err = json.Unmarshal(body, &result); err != nil {
+			return "", 500, err
+		}
 		errMsg = "failed to perform transaction. validation error"
 
 	case 500:
@@ -179,6 +199,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey string) (string, int
 	if err != nil {
 		return "", 500, err
 	}
+
 	var result map[string]string
 	if err = json.Unmarshal(body, &result); err != nil {
 		return "", 500, err
@@ -267,7 +288,6 @@ func PerformTransactionXLM(data serializers.TransferXLM) (map[string]string, int
 			mesage := map[string]string{
 				"message": errorMessage,
 			}
-			fmt.Println(mesage)
 			return mesage, resp.StatusCode, fmt.Errorf(errMsg)
 		}
 	}

@@ -1,4 +1,4 @@
-version: '3.9'
+name: "greybox-service"
 
 services:
   api:
@@ -15,22 +15,23 @@ services:
       - api_volume:/usr/src/app/  # This maps the backend source code to the container
       - sqlite_db:/usr/src/app/test.db
     
-  nginx: 
-    restart: always
-    container_name: nginx-server
-    build:
-      context: .
-      dockerfile: ./docker/nginx/dockerfile
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - ./docker/nginx/development:/etc/nginx/conf.d
-    depends_on: 
-      - api
-    command: ["nginx", "-g", "daemon off;"]
+#  nginx: 
+#    restart: always
+ #   container_name: nginx-server
+#    build:
+ #     context: .
+ #     dockerfile: ./docker/nginx/dockerfile
+ #   ports:
+ #     - 80:80
+ #     - 443:443
+  #  volumes:
+  #    - ./docker/nginx/development:/etc/nginx/conf.d
+  #  depends_on: 
+  #    - api
+  #  command: ["nginx", "-g", "daemon off;"]
+
     
-    
+
 volumes:
   sqlite_db:
   api_volume:
