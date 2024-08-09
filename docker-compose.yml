@@ -15,9 +15,9 @@ services:
       - api_volume:/usr/src/app/  # This maps the backend source code to the container
       - sqlite_db:/usr/src/app/test.db
     
-  nginx: 
+  nginx-service: 
     restart: always
-    container_name: nginx-server
+    container_name: nginx-service
     build:
       context: .
       dockerfile: ./docker/nginx/dockerfile
