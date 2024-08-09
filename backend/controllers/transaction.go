@@ -482,7 +482,12 @@ func VerifyOnRamp(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	nativeAmount := utils.PreformDepositofNativeCalculation("USD", deposit.AssetEquivalent)
+	nativeAmount, err := utils.PerformDepositofNativeCalculation(deposit.AssetEquivalent, "USD", user.CryptoCurrency)
+	// fmt.Println(nativeAmount)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
 	switch input.Action {
 	case "Approve":
 		deposit.Status = "Approved"
@@ -539,7 +544,7 @@ func VerifyOnRamp(c *gin.Context) {
 			transaction.Chain = "XLM"
 
 			go func() {
-				time.AfterFunc(5*time.Minute, func() {
+				time.AfterFunc(4*time.Minute, func() {
 					transferData := serializers.TransferXLM{
 						Amount:      nativeAmount,
 						To:          user.AccountAddress,

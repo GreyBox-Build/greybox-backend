@@ -1,10 +1,12 @@
 package utils
 
 import (
+	"backend/apis"
 	"fmt"
 	"math"
 	"strconv"
 	"strings"
+	"time"
 )
 
 func ConvertTokenToNative(currentNativeUsdEquivalent, TokenAmount string) string {
@@ -58,9 +60,36 @@ func ConvertAssetToFiat(currentEquivalent, amount string) string {
 	return fiatAmountStr
 }
 
-func PreformDepositofNativeCalculation(currentNativeUsdEquivalent, amount string) string {
-	nativeAmount := GetRemainingOnePercent(amount)
-	return nativeAmount
+func PerformDepositofNativeCalculation(amount, fiatCurrency, assetCurrency string) (string, error) {
+
+	actualAmount := GetRemainingOnePercent(amount)
+
+	resultChan := make(chan string)
+	errChan := make(chan error)
+
+	go apis.GetExchangeRate(fiatCurrency, assetCurrency, resultChan, errChan)
+
+	select {
+	case exchangeRate := <-resultChan:
+		rate, err := strconv.ParseFloat(exchangeRate, 64)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse exchange rate: %v", err)
+		}
+		actualAmountFloat, err := strconv.ParseFloat(actualAmount, 64)
+		if err != nil {
+			return "", fmt.Errorf("failed to parse actual amount: %v", err)
+		}
+
+		nativeAmount := actualAmountFloat / rate
+
+		// Return the calculated amount as a string
+		return fmt.Sprintf("%.8f", nativeAmount), nil
+
+	case err := <-errChan:
+		return "", err
+	case <-time.After(3 * time.Second):
+		return "", fmt.Errorf("timeout occurred while fetching exchange rate")
+	}
 }
 
 func GetRemainingOnePercent(amount string) string {
