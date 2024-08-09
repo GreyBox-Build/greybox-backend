@@ -1,11 +1,12 @@
 // Import the RTK Query methods from the React-specific entry point
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define our single API slice object
+// baseUrl: "https://apis.greyboxpay.com/api",
 export const apiSlice = createApi({
   reducerPath: "api",
   refetchOnReconnect: true,
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://apis.greyboxpay.com/api",
+    baseUrl: "http://localhost:8080/api",
     prepareHeaders: (headers, { endpoint }) => {
       const token = localStorage.getItem("access_token");
 
@@ -43,9 +44,24 @@ export const apiSlice = createApi({
         body: user,
       }),
     }),
+    getEquivalentAmount: builder.query({
+      query: ({ amount, currency, cryptoAsset, type }) => ({
+        url: `/v2/transaction/equivalent-amount?amount=${amount}&currency=${currency}&cryptoAsset=${cryptoAsset}&type=${type}`,
+      }),
+    }),
+    getBankDetails: builder.query({
+      query: (countryCode) => ({
+        url: `/v2/transaction/destination-bank?countryCode=${countryCode}`,
+      }),
+    }),
+    getTransactionReference: builder.query({
+      query: () => ({
+        url: `/v2/transaction/reference`,
+      }),
+    }),
     offramp: builder.mutation({
       query: (details) => ({
-        url: "/v1/transaction/off-ramp",
+        url: "/v2/transaction/off-ramp",
         method: "POST",
         body: details,
       }),
@@ -62,9 +78,11 @@ export const apiSlice = createApi({
         url: "/v1/auth/user",
       }),
     }),
-    onramp: builder.query({
-      query: () => ({
-        url: "/v1/transaction/on-ramp",
+    onramp: builder.mutation({
+      query: (details) => ({
+        url: "/v2/transaction/on-ramp",
+        method: "POST",
+        body: details,
       }),
     }),
     getTransaction: builder.query({
@@ -94,7 +112,10 @@ export const {
   useGetChainsQuery,
   useObtainTokenMutation,
   useGetAuthUserQuery,
-  useOnrampQuery,
+  useGetBankDetailsQuery,
+  useGetEquivalentAmountQuery,
+  useGetTransactionReferenceQuery,
+  useOnrampMutation,
   useForgetPasswordMutation,
   useResetPasswordMutation,
   useOfframpMutation,

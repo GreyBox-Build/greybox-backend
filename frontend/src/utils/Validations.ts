@@ -58,6 +58,27 @@ export const depositViaMobileSchema = z.object({
     .refine((amount) => parseFloat(amount) !== 0, "Zero amount not allowed"),
 });
 
+export const depositViaBankTransferSchema = z.object({
+  amount: z
+    .string()
+    .refine(
+      (amount) => parseFloat(amount?.replace(/,/g, "")) >= 500,
+      "Amount must not be less than 500"
+    ),
+});
+
+export const withdrawViaBankSchema = z.object({
+  cryptoAmount: z
+    .string()
+    .refine(
+      (cryptoAmount) => parseFloat(cryptoAmount?.replace(/,/g, "")) >= 1,
+      "Amount must not be less than 500"
+    ),
+  bankName: z.string().min(1, { message: "Bank name is required" }),
+  accountNumber: z.string().min(1, { message: "Account number is required" }),
+  accountName: z.string().min(1, { message: "Account name is required" }),
+});
+
 export const withdrawViaMobileSchema = z.object({
   amount: z
     .string()

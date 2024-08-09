@@ -8,8 +8,6 @@ import LockScreen from "./pages/auth/LockScreen";
 import WelcomeScreen from "./pages/auth/WelcomeScreen";
 import Dashboard from "./pages/app/Dashboard";
 import AllTransaction from "./pages/app/AllTransaction";
-import MobileMoneyDeposit from "./pages/app/MobileMoneyDeposit";
-import MobileMoneyWithdrawal from "./pages/app/MobileMoneyWithdrawal";
 import PaychantWithdrawal from "./pages/app/PaychantWithdrawal";
 import Notifications from "./pages/app/Notifications";
 import Settings from "./pages/app/Settings";
@@ -30,6 +28,7 @@ import PrivacyPolicy from "./pages/app/PrivacyPolicy";
 import AMLPolicy from "./pages/app/AMLPolicy";
 import AppLayout from "./pages/app/AppLayout";
 import BankTransferDeposit from "./pages/app/BankTransferDeposit";
+import BankWithdrawal from "./pages/app/BankWithdrawal";
 
 export const routes = createBrowserRouter([
   {
@@ -89,10 +88,6 @@ export const routes = createBrowserRouter([
     element: <DepositOption />,
   },
   {
-    path: "/deposit-via-mobile-money",
-    element: <MobileMoneyDeposit />,
-  },
-  {
     path: "/deposit-via-bank-transfer",
     element: <BankTransferDeposit />,
   },
@@ -105,8 +100,8 @@ export const routes = createBrowserRouter([
     element: <WithdrawalOption />,
   },
   {
-    path: "/withdraw-via-mobile-money",
-    element: <MobileMoneyWithdrawal />,
+    path: "/withdraw-via-bank",
+    element: <BankWithdrawal />,
   },
   {
     path: "/withdraw-via-paychant",
