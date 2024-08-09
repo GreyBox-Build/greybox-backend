@@ -1,7 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { CancelIcon } from "../../components/icons/Icons";
 import AppLayout from "./AppLayout";
-import { InputLabel, TextInput } from "../../components/inputs/TextInput";
+import {
+  InputInfoLabel,
+  InputLabel,
+  TextInput,
+} from "../../components/inputs/TextInput";
 import { FormButton } from "../../components/buttons/FormButton";
 import { useForm } from "react-hook-form";
 import { useOnrampQuery } from "../../appSlices/apiSlice";
@@ -49,9 +53,13 @@ const BankTransferDeposit = () => {
                   name="amount"
                   control={control}
                   placeholder="0"
-                  type="number"
-                  step={1}
+                  localType="figure"
                 />
+                <InputInfoLabel title="Buying Rate" value="1cUSD = 1USD" />
+              </div>
+              <div>
+                <InputLabel text={`You will recieve`} />
+                <TextInput name="" control={control} readOnly value={0} />
               </div>
             </section>
             <FormButton

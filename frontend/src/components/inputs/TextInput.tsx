@@ -9,6 +9,7 @@ interface FormFieldProps
   name?: string;
   img?: React.ReactNode;
   isSmall?: boolean;
+  localType?: string;
   onClick?: React.MouseEventHandler<HTMLDivElement> | undefined;
 }
 export const TextInput = ({
@@ -16,9 +17,22 @@ export const TextInput = ({
   name,
   img,
   isSmall,
+  localType,
   onClick,
   ...props
 }: FormFieldProps) => {
+  const formatInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (localType === "figure") {
+      return e.target.value
+        .replace(/[^0-9]/g, "")
+        .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    if (localType === "number") {
+      return e.target.value.replace(/[^0-9]/g, "");
+    }
+    return e.target.value;
+  };
   return (
     <Controller
       control={control}
@@ -33,7 +47,7 @@ export const TextInput = ({
           >
             <input
               value={value}
-              onChange={onChange}
+              onChange={(e) => onChange(formatInput(e))}
               {...props}
               className={`flex-grow w-[24%] h-[90%] text-black-3 placeholder:text-black-3 text-[0.875rem] leading-[18px]  bg-transparent outline-none ${
                 isSmall ? "flex items-center justify-center px-0" : "px-[5px]"

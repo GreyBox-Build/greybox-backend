@@ -36,7 +36,7 @@ const ExchangeDeposit = () => {
           <p className=" text-orange-1 text-[1rem] font-[600] leading-[22px] text-center mt-[88px]">
             Deposit Address
           </p>
-          <p className="text-black text-[0.875rem] leading-[22px] text-center mt-[22px]">
+          <p className="w-full px-[15px] text-black text-[0.875rem] leading-[22px] text-center mt-[22px] break-words">
             {userData?.data?.personal_details?.account_address}
           </p>
 

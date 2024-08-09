@@ -11,11 +11,6 @@ const DepositOption = () => {
       child={
         <div className="p-[25px] m-auto w-full h-fit md:w-[50.33%] lg:w-[45.33%] bg-grey-5 rounded-[32px_32px_0px_0px]">
           <FlatButton
-            label="Deposit Via Mobile Money"
-            extraClass="bg-grey-1 mb-[8px]"
-            onClick={() => navigate("/deposit-via-mobile-money")}
-          />
-          <FlatButton
             label="Deposit Via Bank Transfer"
             extraClass="bg-[transparent] mb-[8px]"
             onClick={() => navigate("/deposit-via-bank-transfer")}
