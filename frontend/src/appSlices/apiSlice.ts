@@ -6,7 +6,7 @@ export const apiSlice = createApi({
   reducerPath: "api",
   refetchOnReconnect: true,
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:8080/api",
+    baseUrl: "https://apis.greyboxpay.com/api",
     prepareHeaders: (headers, { endpoint }) => {
       const token = localStorage.getItem("access_token");
 
@@ -23,7 +23,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Staffs", "Zones", "Areas", "Branches"],
+  tagTypes: ["User"],
   endpoints: (builder) => ({
     createUser: builder.mutation({
       query: (user) => ({
@@ -59,12 +59,18 @@ export const apiSlice = createApi({
         url: `/v2/transaction/reference`,
       }),
     }),
+    getExchangeRate: builder.query({
+      query: ({ fiat, asset }) => ({
+        url: `/v1/exchange-rate?fiat_currency=${fiat}&asset=${asset}`,
+      }),
+    }),
     offramp: builder.mutation({
       query: (details) => ({
         url: "/v2/transaction/off-ramp",
         method: "POST",
         body: details,
       }),
+      invalidatesTags: ["User"],
     }),
     signUrl: builder.mutation({
       query: (url) => ({
@@ -77,6 +83,7 @@ export const apiSlice = createApi({
       query: () => ({
         url: "/v1/auth/user",
       }),
+      providesTags: ["User"],
     }),
     onramp: builder.mutation({
       query: (details) => ({
@@ -84,10 +91,11 @@ export const apiSlice = createApi({
         method: "POST",
         body: details,
       }),
+      invalidatesTags: ["User"],
     }),
     getTransaction: builder.query({
-      query: ({ category, pageSize }) => ({
-        url: `/v1/transaction?category=${category}&pageSize=${pageSize}`,
+      query: (chain) => ({
+        url: `/v1/transaction?chain=${chain}`,
       }),
     }),
     forgetPassword: builder.mutation({
@@ -120,5 +128,6 @@ export const {
   useResetPasswordMutation,
   useOfframpMutation,
   useGetTransactionQuery,
+  useGetExchangeRateQuery,
   useSignUrlMutation,
 } = apiSlice;

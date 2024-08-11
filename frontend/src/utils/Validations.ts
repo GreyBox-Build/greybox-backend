@@ -62,8 +62,8 @@ export const depositViaBankTransferSchema = z.object({
   amount: z
     .string()
     .refine(
-      (amount) => parseFloat(amount?.replace(/,/g, "")) >= 500,
-      "Amount must not be less than 500"
+      (amount) => parseFloat(amount?.replace(/,/g, "")) >= 1500,
+      "Amount must not be less than 1500"
     ),
 });
 
@@ -72,7 +72,7 @@ export const withdrawViaBankSchema = z.object({
     .string()
     .refine(
       (cryptoAmount) => parseFloat(cryptoAmount?.replace(/,/g, "")) >= 1,
-      "Amount must not be less than 500"
+      "Amount must not be less than 1"
     ),
   bankName: z.string().min(1, { message: "Bank name is required" }),
   accountNumber: z.string().min(1, { message: "Account number is required" }),

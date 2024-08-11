@@ -14,10 +14,15 @@ import {
   useGetAuthUserQuery,
   useGetBankDetailsQuery,
   useGetEquivalentAmountQuery,
+  useGetExchangeRateQuery,
   useGetTransactionReferenceQuery,
   useOnrampMutation,
 } from "../../appSlices/apiSlice";
-import { assignLocalError, removeLocalError } from "../../utils/Helpers";
+import {
+  assignLocalError,
+  removeLocalError,
+  returnAsset,
+} from "../../utils/Helpers";
 import { ZodIssue } from "zod";
 import { useState } from "react";
 import { useCopyTextToClipboard } from "../../utils/Copy";
@@ -47,6 +52,11 @@ const BankTransferDeposit = () => {
 
   const { currentData: reference } = useGetTransactionReferenceQuery({});
 
+  const { currentData: rate } = useGetExchangeRateQuery({
+    fiat: userData?.currency,
+    asset: returnAsset(userData?.crypto_currency)?.toLocaleUpperCase(),
+  });
+
   const [onramp, { isLoading }] = useOnrampMutation();
 
   const {
@@ -56,7 +66,7 @@ const BankTransferDeposit = () => {
   }: any = useGetEquivalentAmountQuery({
     amount: amount?.replace(/,/g, ""),
     currency: userData?.currency,
-    cryptoAsset: userData?.crypto_currency,
+    cryptoAsset: returnAsset(userData?.crypto_currency)?.toLocaleUpperCase(),
     type: "on-ramp",
   });
 
@@ -124,27 +134,16 @@ const BankTransferDeposit = () => {
                   placeholder="0"
                   localType="figure"
                   onLocalChange={() => {
-                    parseFloat(amount) < 500
+                    parseFloat(amount) < 1500
                       ? assignLocalError("amount", localErrors)
                       : removeLocalError("amount", localErrors, setLocalErrors);
                   }}
                 />
                 <InputInfoLabel
                   title="Buying Rate"
-                  value={`500${userData?.currency} = ${
-                    equivalent?.data?.amount &&
-                    !isNaN(
-                      parseFloat(equivalent?.data?.amount) / parseFloat(amount)
-                    )
-                      ? (
-                          (parseFloat(equivalent?.data?.amount) /
-                            parseFloat(amount)) *
-                          500
-                        ).toFixed(7)
-                      : "-"
-                  }${
-                    userData?.crypto_currency ? userData?.crypto_currency : "-"
-                  }`}
+                  value={`1${returnAsset(userData?.crypto_currency)} = ${
+                    rate?.data
+                  }${userData?.currency ? userData?.currency : ""}`}
                 />
                 {isEquivalentError && (
                   <p className=" text-red-500 text-[10px]">
@@ -158,14 +157,16 @@ const BankTransferDeposit = () => {
                   name=""
                   control={control}
                   readOnly
-                  value={`${
-                    equivalent?.data?.asset ? equivalent?.data?.asset : "-"
-                  } ${
+                  value={` ${
                     equivalent?.data?.amount
                       ? equivalent?.data?.amount?.replace(
                           /\B(?=(\d{3})+(?!\d))/g,
                           ","
                         )
+                      : ""
+                  }${
+                    userData?.crypto_currency
+                      ? returnAsset(userData?.crypto_currency)
                       : ""
                   }`}
                 />
@@ -173,7 +174,7 @@ const BankTransferDeposit = () => {
             </section>
 
             <section className="mt-[24px]">
-              <InputLabel text="Make your transfer with the account details below. Make sure you add reference to the description." />
+              <InputLabel text="Make your transfer with the account details below. Add reference to the description." />
               <div className="mt-[15px] flex flex-col gap-y-[10px]">
                 <DetailsCard
                   text="Account Number"
