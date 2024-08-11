@@ -502,7 +502,7 @@ func VerifyOnRamp(c *gin.Context) {
 			transaction.Hash = txHash
 			transaction.Chain = "CELO"
 			go func() {
-				time.AfterFunc(5*time.Minute, func() {
+				time.AfterFunc(1*time.Minute, func() {
 					hash, _, _ := apis.PerformTransactionCelo(nativeAmount, user.AccountAddress, masterWallet.PrivateKey, true)
 
 					var nativeTrans models.Transaction
@@ -544,7 +544,7 @@ func VerifyOnRamp(c *gin.Context) {
 			transaction.Chain = "XLM"
 
 			go func() {
-				time.AfterFunc(4*time.Minute, func() {
+				time.AfterFunc(1*time.Minute, func() {
 					transferData := serializers.TransferXLM{
 						Amount:      nativeAmount,
 						To:          user.AccountAddress,
