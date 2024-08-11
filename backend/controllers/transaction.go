@@ -646,6 +646,9 @@ func OffRampV2(c *gin.Context) {
 	}
 	trans.UserID = user.ID
 	trans.User = user
+	trans.Amount = withdrawal.CryptoAmount
+	trans.TransactionType = "Fungible Token"
+	trans.TransactionSubType = "Withdrawal"
 	if err := trans.SaveTransaction(); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
