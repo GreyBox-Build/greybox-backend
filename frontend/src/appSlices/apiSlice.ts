@@ -6,7 +6,7 @@ export const apiSlice = createApi({
   reducerPath: "api",
   refetchOnReconnect: true,
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:8080/api",
+    baseUrl: "https://apis.greyboxpay.com/api",
     prepareHeaders: (headers, { endpoint }) => {
       const token = localStorage.getItem("access_token");
 
