@@ -18,3 +18,11 @@ export const removeLocalError = (
     setState(filteredErrors);
   }
 };
+
+export const returnAsset = (chain: string) => {
+  if (chain?.toLocaleLowerCase() === "celo") {
+    return "cUSD";
+  } else {
+    return "USDC";
+  }
+};

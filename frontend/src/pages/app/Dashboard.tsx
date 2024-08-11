@@ -6,7 +6,7 @@ import {
   Withdraw,
 } from "../../components/icons/Icons";
 import AppLayout from "./AppLayout";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DateHead, DetailsCard, QuickLink } from "../../components/Cards";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,30 +14,35 @@ import {
   useGetTransactionQuery,
 } from "../../appSlices/apiSlice";
 import moment from "moment";
-import { changeFirstLetterToUpperCase } from "../../utils/ChangeFirstLetterToUpperCase";
 import { Oval } from "react-loader-spinner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+
   const [tab, setTab] = useState<"deposits" | "withdrawals" | "history">(
     "deposits"
   );
 
-  const category =
-    tab === "deposits" ? "incoming" : tab === "withdrawals" ? "outgoing" : "";
-
   const { currentData: userData, isFetching } = useGetAuthUserQuery(undefined, {
     refetchOnMountOrArgChange: true,
   });
-  const { currentData: transactions, isFetching: isFetchingTransactions } =
-    useGetTransactionQuery(
-      { category, pageSize: "50" },
-      {
-        refetchOnMountOrArgChange: true,
-      }
-    );
 
-  const transactionArray = transactions?.data?.result;
+  const [cryptoCurrency, setCryptoCurrency] = useState(
+    userData?.data?.personal_details?.crypto_currency
+  );
+  const { currentData: transactions, isFetching: isFetchingTransactions } =
+    useGetTransactionQuery(cryptoCurrency, {
+      refetchOnMountOrArgChange: true,
+    });
+
+  const depositArray = transactions?.data?.filter(
+    (transaction: any) => transaction?.transaction_sub_type === "Deposit"
+  );
+  const withdrawalArray = transactions?.data?.filter(
+    (transaction: any) => transaction?.transaction_sub_type === "Withdrawal"
+  );
+
+  const transactionArray = tab === "deposits" ? depositArray : withdrawalArray;
 
   const groupByDate = (array: any[]) => {
     const grouped: any = {};
@@ -65,15 +70,11 @@ const Dashboard = () => {
     }
   };
 
-  const transformText = (text: string) => {
-    if (text === "incoming") {
-      return "Deposit";
-    } else if (text === "outgoing") {
-      return "Withdrawal";
-    } else {
-      return changeFirstLetterToUpperCase(text);
+  useEffect(() => {
+    if (userData?.data) {
+      setCryptoCurrency(userData?.data?.personal_details?.crypto_currency);
     }
-  };
+  }, [userData?.data]);
 
   const personInfo = userData?.data?.personal_details;
   const walletInfo = userData?.data?.wallet_details;
@@ -163,16 +164,6 @@ const Dashboard = () => {
                 >
                   Withdrawals
                 </button>
-                <button
-                  className={`${
-                    tab === "history"
-                      ? "border-b-orange-1 border-b-[2px]  font-[700] text-black-2  "
-                      : "font-[400] text-black-3"
-                  } text-[0.875rem] mb-[-2px] pr-[5px] leading-[18px] transition-all duration-300 ease-in-out  `}
-                  onClick={() => setTab("history")}
-                >
-                  History
-                </button>
               </div>
               <button
                 className="text-[0.875rem] text-orange-1 leading-[18px] min-w-fit"
@@ -196,7 +187,7 @@ const Dashboard = () => {
                           return (
                             <DetailsCard
                               key={index}
-                              label={transformText(details?.transactionSubtype)}
+                              label={details?.transaction_sub_type}
                               time={moment(details?.timestamp).format(
                                 "hh:mm A"
                               )}
@@ -227,6 +218,11 @@ const Dashboard = () => {
                     strokeWidthSecondary={2}
                   />
                 </div>
+              )}
+              {transactionArray?.length === 0 && (
+                <p className="text-[0.875rem] text-center leading-[12px] mt-[24px]">
+                  No transaction here yet!
+                </p>
               )}
             </section>
           </section>

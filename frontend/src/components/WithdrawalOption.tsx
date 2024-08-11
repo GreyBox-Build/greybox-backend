@@ -1,7 +1,7 @@
-import AppLayout from "../../pages/app/AppLayout";
+import AppLayout from "../pages/app/AppLayout";
 import { useNavigate } from "react-router-dom";
-import { FlatButton } from "../../components/buttons/FlatButton";
-import { FormButton } from "../../components/buttons/FormButton";
+import { FlatButton } from "./buttons/FlatButton";
+import { FormButton } from "./buttons/FormButton";
 
 const WithdrawalOption = () => {
   const navigate = useNavigate();
