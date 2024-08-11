@@ -1848,11 +1848,6 @@
     prop-types "^15.7.2"
     react-is "^16.8.0 || ^17.0.0"
 
-"@moonpay/moonpay-react@^1.7.3":
-  version "1.7.3"
-  resolved "https://registry.yarnpkg.com/@moonpay/moonpay-react/-/moonpay-react-1.7.3.tgz#41187e5509e612b8f60c265d71b62a81414e98cc"
-  integrity sha512-nR8UjImTSi7a2jj127a7MFKlnASNxVNI/AWEhBC9w+jlgL2M6C2txs+xgCmwV6dSUTCrxBaEw2VHU3BBoaRT9Q==
-
 "@mui/core-downloads-tracker@^5.16.4":
   version "5.16.4"
   resolved "https://registry.yarnpkg.com/@mui/core-downloads-tracker/-/core-downloads-tracker-5.16.4.tgz#a34de72acd7e81fdbcc7eeb07786205e90dda148"

@@ -302,7 +302,7 @@ export const countryData = [
 
 export const currencyData = [
   {
-    name: "Ghanan Cedi",
+    name: "Ghana Cedi",
     logo: GHFlag(),
     code: "GHS",
   },

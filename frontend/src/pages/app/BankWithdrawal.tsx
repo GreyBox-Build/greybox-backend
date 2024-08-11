@@ -13,9 +13,14 @@ import { withdrawViaBankSchema } from "../../utils/Validations";
 import {
   useGetAuthUserQuery,
   useGetEquivalentAmountQuery,
+  useGetExchangeRateQuery,
   useOfframpMutation,
 } from "../../appSlices/apiSlice";
-import { assignLocalError, removeLocalError } from "../../utils/Helpers";
+import {
+  assignLocalError,
+  removeLocalError,
+  returnAsset,
+} from "../../utils/Helpers";
 import { ZodIssue } from "zod";
 import { useState } from "react";
 import { useSnackbar } from "notistack";
@@ -37,6 +42,11 @@ const BankWithdrawal = () => {
   const cryptoAmount = watch("cryptoAmount");
   const userData = user?.data?.personal_details;
 
+  const { currentData: rate } = useGetExchangeRateQuery({
+    fiat: userData?.currency,
+    asset: returnAsset(userData?.crypto_currency)?.toLocaleUpperCase(),
+  });
+
   const [offramp, { isLoading }] = useOfframpMutation();
 
   const {
@@ -46,7 +56,7 @@ const BankWithdrawal = () => {
   }: any = useGetEquivalentAmountQuery({
     amount: cryptoAmount?.replace(/,/g, ""),
     currency: userData?.currency,
-    cryptoAsset: userData?.crypto_currency,
+    cryptoAsset: returnAsset(userData?.crypto_currency)?.toLocaleUpperCase(),
     type: "off-ramp",
   });
 
@@ -99,7 +109,7 @@ const BankWithdrawal = () => {
                   name="cryptoAmount"
                   control={control}
                   placeholder="0"
-                  localType="figure"
+                  // localType="figure"
                   onLocalChange={() => {
                     parseFloat(cryptoAmount) < 1
                       ? assignLocalError("cryptoAmount", localErrors)
@@ -112,18 +122,11 @@ const BankWithdrawal = () => {
                 />
                 <InputInfoLabel
                   title="Buying Rate"
-                  value={`1cUSD = ${
-                    equivalent?.data?.amount &&
-                    !isNaN(
-                      parseFloat(equivalent?.data?.amount) /
-                        parseFloat(cryptoAmount)
-                    )
-                      ? (
-                          parseFloat(equivalent?.data?.amount) /
-                          parseFloat(cryptoAmount)
-                        ).toFixed(7)
-                      : "-"
-                  }${userData?.currency ? userData?.currency : "-"}`}
+                  value={`1${returnAsset(
+                    userData?.crypto_currency
+                  )} = ${parseFloat(rate?.data)?.toFixed(2)}${
+                    userData?.currency ? userData?.currency : ""
+                  }`}
                 />
                 {isEquivalentError && (
                   <p className=" text-red-500 text-[10px]">
