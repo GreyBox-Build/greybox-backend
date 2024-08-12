@@ -1,0 +1,14 @@
+{
+  "files": {
+    "main.css": "/static/css/main.f44534c4.css",
+    "main.js": "/static/js/main.3e21a505.js",
+    "static/media/grey-box-bg.png": "/static/media/grey-box-bg.005295af5772d22a51d2.png",
+    "index.html": "/index.html",
+    "main.f44534c4.css.map": "/static/css/main.f44534c4.css.map",
+    "main.3e21a505.js.map": "/static/js/main.3e21a505.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f44534c4.css",
+    "static/js/main.3e21a505.js"
+  ]
+}
