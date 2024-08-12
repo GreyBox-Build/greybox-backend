@@ -141,9 +141,11 @@ const BankTransferDeposit = () => {
                 />
                 <InputInfoLabel
                   title="Buying Rate"
-                  value={`1${returnAsset(userData?.crypto_currency)} = ${
-                    rate?.data
-                  }${userData?.currency ? userData?.currency : ""}`}
+                  value={`1${returnAsset(
+                    userData?.crypto_currency
+                  )} = ${parseFloat(rate?.data)?.toFixed(2)}${
+                    userData?.currency ? userData?.currency : ""
+                  }`}
                 />
                 {isEquivalentError && (
                   <p className=" text-red-500 text-[10px]">
@@ -152,7 +154,7 @@ const BankTransferDeposit = () => {
                 )}
               </div>
               <div>
-                <InputLabel text={`You will recieve`} />
+                <InputLabel text={`You will recieve (minus 1% service fee)`} />
                 <TextInput
                   name=""
                   control={control}

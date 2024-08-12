@@ -1,3 +1,4 @@
+import moment from "moment";
 import { ZodIssue } from "zod";
 
 export const assignLocalError = (path: string, state: ZodIssue[]) => {
@@ -24,5 +25,31 @@ export const returnAsset = (chain: string) => {
     return "cUSD";
   } else {
     return "USDC";
+  }
+};
+
+export const groupByDate = (array: any[]) => {
+  const grouped: any = {};
+
+  array?.forEach((transaction) => {
+    const date = moment(transaction?.timestamp).format("D/MM/YY");
+    if (!grouped[date]) {
+      grouped[date] = [];
+    }
+    grouped[date].push(transaction);
+  });
+  return [
+    {
+      date: Object.keys(grouped),
+      transactions: Object.values(grouped),
+    },
+  ];
+};
+
+export const findSubArray = (arr: any[], param: string) => {
+  for (let i = 0; i < arr.length; i++) {
+    if (moment(arr[i][0]?.timestamp).format("D/MM/YY") === param) {
+      return arr[i];
+    }
   }
 };

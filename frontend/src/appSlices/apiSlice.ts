@@ -2,6 +2,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define our single API slice object
 // baseUrl: "https://apis.greyboxpay.com/api",
+//baseUrl: "http://localhost:8080/api",
 export const apiSlice = createApi({
   reducerPath: "api",
   refetchOnReconnect: true,
@@ -100,7 +101,7 @@ export const apiSlice = createApi({
     }),
     forgetPassword: builder.mutation({
       query: (user) => ({
-        url: "/v1/token/forget-password",
+        url: "/v1/user/forget-password",
         method: "POST",
         body: user,
       }),

@@ -9,11 +9,39 @@ const VerifyOtp = () => {
   const [otp, setOtp] = useState(new Array(4).fill(""));
 
   const handleChange = (element: any, index: number) => {
-    if (isNaN(element.value)) return false;
-    setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
-    console.log(otp);
-    if (element.nextSibling) {
-      element.nextSibling.focus();
+    const value = element.value;
+
+    // When the value is empty and the field was previously filled, move backward
+    if (value === "" && otp[index] !== "") {
+      if (element.previousSibling) {
+        (element.previousSibling as HTMLInputElement).focus();
+      }
+    } else if (!isNaN(value)) {
+      // Handle forward navigation
+      setOtp([...otp.map((d, idx) => (idx === index ? value : d))]);
+      if (element.nextSibling) {
+        element.nextSibling.focus();
+      }
+    }
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    if (e.key === "Backspace") {
+      // Prevent default Backspace behavior
+      e.preventDefault();
+
+      // Delete the value of the current field
+      if (otp[index] !== "") {
+        setOtp([...otp.map((d, idx) => (idx === index ? "" : d))]);
+      }
+
+      // Move focus to the previous input field if current field is empty
+      if (index > 0) {
+        (e.currentTarget.previousSibling as HTMLInputElement).focus();
+      }
     }
   };
 
@@ -26,26 +54,25 @@ const VerifyOtp = () => {
             OTP Sent!
           </h2>
           <p className="mt-[13px] text-[0.875rem] text-black-2">
-            Enter the 4-digit code sent to you at +234-8209-2798
+            Enter the 4-digit code sent to your email
           </p>
           <form className="mt-[24px]">
             <section className="flex gap-x-[17px] mt-[24px] w-full">
-              {otp.map((data, index) => {
-                return (
-                  <input
-                    name="otp"
-                    maxLength={1}
-                    key={index}
-                    value={data}
-                    pattern="[0-9]"
-                    required
-                    onChange={(e) => handleChange(e.target, index)}
-                    onFocus={(e) => e.target.select()}
-                    className=" w-[24%] h-[48px] p-[11px_9.5%] text-black-3 placeholder:text-black-3 text-[0.875rem] leading-[18px] border-[#99999961] border-[1px] gap-x-[5px] shadow-shadow-1 rounded-[8px] outline-none"
-                    autoFocus={index === 0}
-                  />
-                );
-              })}
+              {otp.map((data, index) => (
+                <input
+                  name="otp"
+                  maxLength={1}
+                  key={index}
+                  value={data}
+                  pattern="[0-9]"
+                  required
+                  onChange={(e) => handleChange(e.target, index)}
+                  onFocus={(e) => e.target.select()}
+                  onKeyDown={(e) => handleKeyDown(e, index)}
+                  className=" w-[24%] h-[48px] p-[11px_9.5%] text-black-3 placeholder:text-black-3 text-[0.875rem] leading-[18px] border-[#99999961] border-[1px] gap-x-[5px] shadow-shadow-1 rounded-[8px] outline-none"
+                  autoFocus={index === 0}
+                />
+              ))}
             </section>
 
             <FormButton
