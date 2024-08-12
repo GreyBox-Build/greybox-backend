@@ -40,7 +40,7 @@ export const TextInput = ({
       control={control}
       name={name!}
       render={({ field: { value, onChange }, fieldState: { error } }) => (
-        <>
+        <div>
           <div
             className={`h-[48px] ${
               isSmall ? "p-[11px_9.5%]" : "p-[0px_19px]"
@@ -65,7 +65,7 @@ export const TextInput = ({
               {error.message}
             </p>
           )}
-        </>
+        </div>
       )}
     />
   );

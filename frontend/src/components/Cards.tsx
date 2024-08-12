@@ -192,14 +192,14 @@ export const TransactionHistoryCard = ({
     >
       <div className="flex items-center gap-x-[16px]">
         <TransferIcon />
-        <div className="flex flex-col gap-y-[12px]">
+        <div className="flex flex-col justify-between gap-y-[12px]">
           <div className="flex items-center gap-x-[6px]">
             <span className="text-[0.875rem] leading-[18px] text-black-2">
               {label}
             </span>
             <span
-              className={` w-[43px] p-[4px_8px] rounded-[48px] flex items-center justify-center text-[0.5rem] ${
-                status === "Success"
+              className={`p-[4px_8px] rounded-[48px] flex items-center justify-center text-[0.5rem] ${
+                status === "Completed"
                   ? "bg-success-bg text-success-text"
                   : status === "Pending"
                   ? "bg-pending-bg text-pending-text"
@@ -214,7 +214,7 @@ export const TransactionHistoryCard = ({
           </p>
         </div>
       </div>
-      <div className="flex flex-col gap-y-[12px]">
+      <div className="flex flex-col items-end justify-between gap-y-[12px]">
         <p className="text-[0.875rem] leading-[12px] text-black-3 font-[700]">
           {amount}
         </p>

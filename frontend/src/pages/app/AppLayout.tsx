@@ -6,12 +6,14 @@ import { useEffect } from "react";
 
 const AppLayout = ({ child }: { child: React.ReactNode }) => {
   const navigate = useNavigate();
-  const { isError } = useGetAuthUserQuery({});
+  const { error }: any = useGetAuthUserQuery({});
   useEffect(() => {
-    if (isError) {
-      localStorage.removeItem("access_token");
-      navigate("/sign-in");
-    }
+    setTimeout(() => {
+      if (error?.status === 401) {
+        localStorage.removeItem("access_token");
+        navigate("/sign-in");
+      }
+    }, 500);
   });
 
   return (

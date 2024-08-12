@@ -135,7 +135,7 @@ const BankWithdrawal = () => {
                 )}
               </div>
               <div>
-                <InputLabel text={`You will recieve`} />
+                <InputLabel text={`You will recieve (minus 1% service fee)`} />
                 <TextInput
                   name=""
                   control={control}

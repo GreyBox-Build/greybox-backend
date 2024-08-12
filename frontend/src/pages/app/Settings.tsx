@@ -76,7 +76,10 @@ const Settings = () => {
             <SettingsCard
               text="Sign Out"
               subText="Lorem Ipsum is a dummy text..."
-              onClick={() => navigate("/")}
+              onClick={() => {
+                localStorage.removeItem("access_token");
+                navigate("/");
+              }}
               icon={<SignOutIcon />}
             />
           </section>
