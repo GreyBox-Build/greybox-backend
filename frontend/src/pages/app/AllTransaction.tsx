@@ -13,7 +13,7 @@ import { Oval } from "react-loader-spinner";
 const AllTransaction = () => {
   const navigate = useNavigate();
 
-  const { currentData: userData, isFetching } = useGetAuthUserQuery({});
+  const { currentData: userData } = useGetAuthUserQuery({});
 
   const { currentData: transactions, isFetching: isFetchingTransactions } =
     useGetTransactionQuery(userData?.data?.personal_details?.crypto_currency, {
@@ -64,23 +64,22 @@ const AllTransaction = () => {
                 );
               }
             )}
-          {isFetchingTransactions ||
-            (isFetching && (
-              <div className=" w-full flex justify-center items-center p-[20px_0]">
-                <Oval
-                  height={50}
-                  width={50}
-                  color="#fff"
-                  wrapperStyle={{}}
-                  wrapperClass=""
-                  visible={true}
-                  ariaLabel="oval-loading"
-                  secondaryColor="#22262B"
-                  strokeWidth={2}
-                  strokeWidthSecondary={2}
-                />
-              </div>
-            ))}
+          {isFetchingTransactions && (
+            <div className=" w-full flex justify-center items-center p-[20px_0]">
+              <Oval
+                height={50}
+                width={50}
+                color="#fff"
+                wrapperStyle={{}}
+                wrapperClass=""
+                visible={true}
+                ariaLabel="oval-loading"
+                secondaryColor="#22262B"
+                strokeWidth={2}
+                strokeWidthSecondary={2}
+              />
+            </div>
+          )}
           {transactionArray?.length === 0 &&
             userData?.data?.personal_details?.crypto_currency && (
               <p className="text-[0.875rem] text-center leading-[12px] mt-[24px]">

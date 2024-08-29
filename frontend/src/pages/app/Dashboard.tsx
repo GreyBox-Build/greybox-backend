@@ -24,9 +24,7 @@ const Dashboard = () => {
     "deposits"
   );
 
-  const { currentData: userData, isFetching } = useGetAuthUserQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
+  const { currentData: userData, isFetching } = useGetAuthUserQuery({});
 
   const { currentData: transactions, isFetching: isFetchingTransactions } =
     useGetTransactionQuery(userData?.data?.personal_details?.crypto_currency, {
