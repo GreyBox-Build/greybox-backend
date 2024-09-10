@@ -31,6 +31,7 @@ import { useSnackbar } from "notistack";
 const BankTransferDeposit = () => {
   const navigate = useNavigate();
   const { currentData: user } = useGetAuthUserQuery({});
+  const userData = user?.data?.personal_details;
   const [localErrors, setLocalErrors] = useState<ZodIssue[]>([]);
   const copyText = useCopyTextToClipboard();
 
@@ -40,11 +41,12 @@ const BankTransferDeposit = () => {
     defaultValues: {
       amount: "0",
     },
-    resolver: zodResolver(depositViaBankTransferSchema),
+    resolver: zodResolver(
+      depositViaBankTransferSchema({ currency: userData?.currency })
+    ),
   });
 
   const amount = watch("amount");
-  const userData = user?.data?.personal_details;
 
   const { currentData: bank } = useGetBankDetailsQuery(userData?.country_code);
 
@@ -127,7 +129,11 @@ const BankTransferDeposit = () => {
           >
             <section className="flex flex-col gap-y-[32px]">
               <div>
-                <InputLabel text={`Enter amount in ${userData?.currency}`} />
+                <InputLabel
+                  text={`Enter amount in ${
+                    userData?.currency ? userData?.currency : ""
+                  }`}
+                />
                 <TextInput
                   name="amount"
                   control={control}
@@ -141,11 +147,11 @@ const BankTransferDeposit = () => {
                 />
                 <InputInfoLabel
                   title="Buying Rate"
-                  value={`1${returnAsset(
-                    userData?.crypto_currency
-                  )} = ${parseFloat(rate?.data)?.toFixed(2)}${
-                    userData?.currency ? userData?.currency : ""
-                  }`}
+                  value={`1${returnAsset(userData?.crypto_currency)} = ${
+                    !isNaN(parseFloat(rate?.data))
+                      ? parseFloat(rate?.data)?.toFixed(2)
+                      : "0.0"
+                  }${userData?.currency ? userData?.currency : ""}`}
                 />
                 {isEquivalentError && (
                   <p className=" text-red-500 text-[10px]">
