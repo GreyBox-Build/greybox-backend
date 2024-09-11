@@ -13,12 +13,19 @@ type Rate struct {
 	Rate         string `json:"rate"`
 }
 
-type RateResponse struct {
-	Status           string          `json:"status"`
+// Define the structure for the data field
+type RateData struct {
 	UpdatedDate      time.Time       `json:"updated_date"`
 	BaseCurrencyCode string          `json:"baseCurrencyCode"`
 	Amount           int             `json:"amount"`
 	Rates            map[string]Rate `json:"rates"`
+}
+
+// Define the main structure
+type RateResponse struct {
+	Success bool     `json:"success"`
+	Message string   `json:"message"`
+	Data    RateData `json:"data"`
 }
 
 func GetExchangeRate(fiatCurrency, cryptoCurrency string, resultChan chan<- string, errChan chan<- error) {
@@ -79,9 +86,9 @@ func GetMobileMoneyExhangeRate(fiatCurrency string, resultChan chan<- string, er
 		return
 	}
 	// Extract the exchange rate from the response
-	_, ok := data.Rates[fiatCurrency]
+	_, ok := data.Data.Rates[fiatCurrency]
 	if ok {
-		resultChan <- data.Rates[fiatCurrency].Rate
+		resultChan <- data.Data.Rates[fiatCurrency].Rate
 	} else {
 		errChan <- fmt.Errorf("unexpected response format")
 	}
