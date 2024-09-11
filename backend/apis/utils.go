@@ -5,7 +5,21 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 )
+
+type Rate struct {
+	CurrencyName string `json:"currencyName"`
+	Rate         string `json:"rate"`
+}
+
+type RateResponse struct {
+	Status           string          `json:"status"`
+	UpdatedDate      time.Time       `json:"updated_date"`
+	BaseCurrencyCode string          `json:"baseCurrencyCode"`
+	Amount           int             `json:"amount"`
+	Rates            map[string]Rate `json:"rates"`
+}
 
 func GetExchangeRate(fiatCurrency, cryptoCurrency string, resultChan chan<- string, errChan chan<- error) {
 	apiUrl := fmt.Sprintf("https://api.tatum.io/v3/tatum/rate/%s?basePair=%s", cryptoCurrency, fiatCurrency)
@@ -41,4 +55,35 @@ func GetExchangeRate(fiatCurrency, cryptoCurrency string, resultChan chan<- stri
 	} else {
 		errChan <- fmt.Errorf("unexpected response format")
 	}
+}
+
+func GetMobileMoneyExhangeRate(fiatCurrency string, resultChan chan<- string, errChan chan<- error) {
+	apiUrl := fmt.Sprintf("https://sandbox.hurupay.com/v1/exchange/transfer_rate?from=USD&to=%s", fiatCurrency)
+	// Create a new request
+	req, err := http.NewRequest("GET", apiUrl, nil)
+	if err != nil {
+		errChan <- err
+		return
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	// Send the request
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		errChan <- err
+		return
+	}
+	defer resp.Body.Close()
+	var data RateResponse
+	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
+		errChan <- err
+		return
+	}
+	// Extract the exchange rate from the response
+	_, ok := data.Rates[fiatCurrency]
+	if ok {
+		resultChan <- data.Rates[fiatCurrency].Rate
+	} else {
+		errChan <- fmt.Errorf("unexpected response format")
+	}
+
 }
