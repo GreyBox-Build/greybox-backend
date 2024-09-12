@@ -26,12 +26,13 @@ func ConvertTokenToNative(currentNativeUsdEquivalent, TokenAmount string) string
 
 }
 
+// this now calculate 0.5 percent
 func CalculateOnePercent(amount string) string {
 	// Convert the string to float64
 	amountFloat, _ := strconv.ParseFloat(amount, 64)
 
-	// Calculate 1% of the amount
-	onePercent := amountFloat * 0.01
+	// Calculate 0.5% of the amount
+	onePercent := amountFloat * 0.005
 
 	// Convert the result back to a string
 	onePercentStr := strconv.FormatFloat(onePercent, 'f', -1, 64)

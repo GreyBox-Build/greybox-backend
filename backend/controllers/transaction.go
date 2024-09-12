@@ -812,3 +812,50 @@ func GetExchangeRate(c *gin.Context) {
 		})
 	}
 }
+
+func MobileMoneyAmountToReceive(c *gin.Context) {
+	amount := c.Query("amount")
+	currency := c.Query("currency")
+	asset := c.Query("cryptoAsset")
+	transType := c.Query("type")
+	rateChan := make(chan string)
+	errChan := make(chan error)
+	go apis.GetMobileMoneyExhangeRate(currency, rateChan, errChan)
+	percent_reduction := utils.CalculateOnePercent(amount)
+	amountConv, _ := strconv.ParseFloat(amount, 32)
+	percentConv, _ := strconv.ParseFloat(percent_reduction, 32)
+	newAmount := amountConv - percentConv
+	select {
+	case rate := <-rateChan:
+		AssetAmount := ""
+		data := map[string]string{
+			"asset": strings.ToUpper(asset),
+		}
+		switch transType {
+		case "on-ramp":
+			AssetAmount = utils.ConvertTokenToNative(rate, strconv.FormatFloat(newAmount, 'f', 2, 64))
+		case "off-ramp":
+			AssetAmount = utils.ConvertAssetToFiat(rate, strconv.FormatFloat(newAmount, 'f', 2, 64))
+			data["asset"] = strings.ToUpper(currency)
+		}
+
+		data["amount"] = AssetAmount
+
+		c.JSON(200, gin.H{
+			"errors": false,
+			"status": "calculated amount to receive",
+			"data":   data,
+		})
+		return
+
+	case err := <-errChan:
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	case <-time.After(10 * time.Second):
+		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
+		return
+	}
+
+}
