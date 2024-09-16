@@ -853,7 +853,7 @@ func MobileMoneyAmountToReceive(c *gin.Context) {
 			"error": err.Error(),
 		})
 		return
-	case <-time.After(10 * time.Second):
+	case <-time.After(15 * time.Second):
 		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
 		return
 	}
