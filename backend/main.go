@@ -56,6 +56,11 @@ func main() {
 		chains.GET("", controllers.FetchChain)
 	}
 
+	networks := r.Group("/api/v1/networks")
+	{
+		networks.GET("", controllers.FetchNetwork)
+	}
+
 	XchangeRate := r.Group("/api/v1/exchange-rate")
 	{
 		XchangeRate.GET("", controllers.GetExchangeRate)

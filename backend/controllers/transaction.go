@@ -307,6 +307,28 @@ func GetDestinationBankAccount(c *gin.Context) {
 	c.JSON(http.StatusBadRequest, gin.H{"error": "no available bank found for region: " + countryCode})
 }
 
+func FetchNetwork(c *gin.Context) {
+
+	root, _ := os.Getwd()
+
+	jsonFilePath := filepath.Join(root, "/templates", "/network.json")
+
+	jsonData, err := os.ReadFile(jsonFilePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var data []serializers.NetworkData
+	err = json.Unmarshal(jsonData, &data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": data, "status": "fetched accepted networks for mobile money", "errors": false})
+}
+
 func GenerateReference(c *gin.Context) {
 	reference := models.GenerateRequestReference()
 	ref := map[string]string{

@@ -60,3 +60,10 @@ type AdminForm struct {
 	Key       string `json:"key"`
 	UserEmail string `json:"user_email"`
 }
+
+type NetworkData struct {
+	CountryCode  string   `json:"countryCode"`
+	CountryName  string   `json:"countryName"`
+	CurrencyCode string   `json:"currencyCode"`
+	Networks     []string `json:"networks"`
+}

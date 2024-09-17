@@ -1,0 +1,32 @@
+[
+    {
+        "countryCode":"GH",
+        "countryName":"Ghana",
+        "currencyCode":"GHS",
+        "networks":[
+            "MTN",
+            "VODAFONE",
+            "TIGO",
+            "AIRTEL"
+        ]
+    },
+    {
+        "countryCode":"TZ",
+        "countryName":"Tanzania",
+        "currencyCode":"TZS",
+        "networks":[
+            "MTN",
+            "VODACOM",
+            "TIGO",
+            "AIRTEL"
+        ]
+    },
+    {
+        "countryCode":"KH",
+        "countryName":"Kenya",
+        "currencyCode":"KES",
+        "networks":[
+            "MPESA"
+        ]
+    }
+]
