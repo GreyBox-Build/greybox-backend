@@ -8,7 +8,8 @@
             "VODAFONE",
             "TIGO",
             "AIRTEL"
-        ]
+        ],
+        "mobileCode":"+233"
     },
     {
         "countryCode":"TZ",
@@ -19,7 +20,8 @@
             "VODACOM",
             "TIGO",
             "AIRTEL"
-        ]
+        ],
+        "mobileCode":"+255"
     },
     {
         "countryCode":"KH",
@@ -27,6 +29,7 @@
         "currencyCode":"KES",
         "networks":[
             "MPESA"
-        ]
+        ],
+        "mobileCode":"+254"
     }
 ]

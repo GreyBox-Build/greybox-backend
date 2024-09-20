@@ -109,3 +109,23 @@ type OffRamp struct {
 	AccountName    string `json:"accountName"`
 	CurrencyCode   string `json:"currencyCode"`
 }
+
+type Collection struct {
+	CustomerName  string `json:"customerName"`
+	CustomerEmail string `json:"customerEmail"`
+	PhoneNumber   string `json:"phoneNumber"`
+	CountryCode   string `json:"countryCode"`
+	Network       string `json:"network"`
+	Amount        int    `json:"amount"`
+}
+
+type Transfer struct {
+	DigitalNetwork string `json:"digitalNetwork"`
+	DigitalAsset   string `json:"digitalAsset"`
+	WalletAddress  string `json:"walletAddress"`
+}
+
+type Payment struct {
+	Collection Collection `json:"collection"`
+	Transfer   Transfer   `json:"transfer"`
+}

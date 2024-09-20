@@ -405,3 +405,50 @@ func GetTransactionByHashXLM(hash string) (serializers.TransactionXLM, error) {
 
 	return respData, nil
 }
+
+type MobileMoneyResponse struct {
+	Success bool       `json:"success"`
+	Message string     `json:"message"`
+	Data    MobileData `json:"data"`
+}
+
+type MobileData struct {
+	PartnerRequestID    string `json:"PartnerRequestID"`
+	CollectionRequestID string `json:"CollectionRequestID"`
+	ResponseCode        int    `json:"ResponseCode"`
+	ResponseDescription string `json:"ResponseDescription"`
+}
+
+func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
+	apiUrl := "https://sandbox.hurupay.com/v1/collections/mobile/initialize_transaction"
+	client := &http.Client{}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return MobileMoneyResponse{}, err
+	}
+
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return MobileMoneyResponse{}, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return MobileMoneyResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return MobileMoneyResponse{}, errors.New("failed to perform transaction")
+	}
+
+	respData := MobileMoneyResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		return MobileMoneyResponse{}, err
+	}
+
+	return respData, nil
+}

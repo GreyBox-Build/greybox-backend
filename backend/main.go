@@ -119,6 +119,7 @@ func main() {
 		transV2.POST("/on-ramp", controllers.OnRampV2)
 		transV2.POST("/off-ramp", controllers.OffRampV2)
 		transV2.GET("/on-ramp/mobile/equivalent-amount", controllers.MobileMoneyAmountToReceive)
+		transV2.POST("/on-ramp/mobile", controllers.MobileMoneyOnRamp)
 
 	}
 

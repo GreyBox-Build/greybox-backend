@@ -881,3 +881,27 @@ func MobileMoneyAmountToReceive(c *gin.Context) {
 	}
 
 }
+
+func MobileMoneyOnRamp(c *gin.Context) {
+	var input serializers.Payment
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	if input.Transfer.DigitalAsset == "CUSD" {
+		input.Transfer.DigitalAsset = "cUSD"
+	}
+
+	resp, err := apis.OnRampMobileMoney(input)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "mobile money on ramp initiated",
+		"data":   resp,
+	})
+
+}

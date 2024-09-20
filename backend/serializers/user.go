@@ -66,4 +66,5 @@ type NetworkData struct {
 	CountryName  string   `json:"countryName"`
 	CurrencyCode string   `json:"currencyCode"`
 	Networks     []string `json:"networks"`
+	MobileCode   string   `json:"mobileCode"`
 }
