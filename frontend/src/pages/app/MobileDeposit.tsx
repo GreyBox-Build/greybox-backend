@@ -21,37 +21,11 @@ const MobileDeposit = () => {
 
   // Yet to use this fetched network
   const { data: network } = useGetNetworksQuery({});
-  console.log(networks);
+  console.log(network.data);
 
-  // dummy one
-  const fetchedData = [
-    {
-      countryCode: "GH",
-      countryName: "Ghana",
-      currencyCode: "GHS",
-      networks: ["MTN", "VODAFONE", "TIGO", "AIRTEL"],
-      mobileCode: "+233",
-    },
-    {
-      countryCode: "TZ",
-      countryName: "Tanzania",
-      currencyCode: "TZS",
-      networks: ["MTN", "VODACOM", "TIGO", "AIRTEL"],
-      mobileCode: "+255",
-    },
-    {
-      countryCode: "KH",
-      countryName: "Kenya",
-      currencyCode: "KES",
-      networks: ["MPESA"],
-      mobileCode: "+254",
-    },
-  ];
-
-  // Function to update fields based on country code selection
   const handleCountrySelect = (countryCode: string) => {
-    const selected = fetchedData.find(
-      (country) => country.countryCode === countryCode
+    const selected = network?.data?.find(
+      (country: any) => country.countryCode === countryCode
     );
     if (selected) {
       setSelectedCountryCode(selected.countryCode);
@@ -150,7 +124,7 @@ const MobileDeposit = () => {
               state={openCountry}
               title="Select Country"
               placeholder="Search Country"
-              childList={fetchedData.map((country) => ({
+              childList={network?.data.map((country: any) => ({
                 name: country.countryCode,
               }))}
               onPickChild={(list) => handleCountrySelect(list?.name)}
