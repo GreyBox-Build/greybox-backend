@@ -31,6 +31,7 @@ import { useSnackbar } from "notistack";
 const BankTransferDeposit = () => {
   const navigate = useNavigate();
   const { currentData: user } = useGetAuthUserQuery({});
+
   const userData = user?.data?.personal_details;
   const [localErrors, setLocalErrors] = useState<ZodIssue[]>([]);
   const copyText = useCopyTextToClipboard();

@@ -29,6 +29,7 @@ import AMLPolicy from "./pages/app/AMLPolicy";
 import AppLayout from "./pages/app/AppLayout";
 import BankTransferDeposit from "./pages/app/BankTransferDeposit";
 import BankWithdrawal from "./pages/app/BankWithdrawal";
+import MobileDeposit from "./pages/app/MobileDeposit";
 
 export const routes = createBrowserRouter([
   {
@@ -90,6 +91,11 @@ export const routes = createBrowserRouter([
   {
     path: "/deposit-via-bank-transfer",
     element: <BankTransferDeposit />,
+  },
+
+  {
+    path: "/deposit-mobile-money",
+    element: <MobileDeposit />,
   },
   {
     path: "/deposit-via-exchange",
