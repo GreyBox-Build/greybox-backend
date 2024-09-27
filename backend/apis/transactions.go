@@ -442,6 +442,11 @@ func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
+		errorResponse := map[string]interface{}{}
+		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
+			return MobileMoneyResponse{}, err
+		}
+		fmt.Println("error response: ", errorResponse)
 		return MobileMoneyResponse{}, errors.New("failed to perform transaction")
 	}
 
