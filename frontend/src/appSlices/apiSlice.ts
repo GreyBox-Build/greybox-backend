@@ -126,10 +126,10 @@ export const apiSlice = createApi({
       }),
     }),
     onrampMobile: builder.mutation({
-      query: (details) => ({
+      query: (requestData) => ({
         url: "/v2/transaction/on-ramp/mobile",
         method: "POST",
-        body: details,
+        body: requestData,
       }),
       invalidatesTags: ["User"],
     }),

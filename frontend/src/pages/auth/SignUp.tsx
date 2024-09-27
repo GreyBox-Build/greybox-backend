@@ -55,7 +55,7 @@ const SignUp = () => {
       }, 5000);
     } catch (error: any) {
       enqueueSnackbar(
-        error?.data?.error ? error?.data?.error : "Connction failed!",
+        error?.data?.error ? error?.data?.error : "Connection failed!",
         { variant: "success" }
       );
     }

@@ -18,6 +18,15 @@ export const createUserSchema = z.object({
   chain: z.string().min(1, { message: "Select chain" }),
 });
 
+export const mobileDepositSchema = z.object({
+  phoneNumber: z.string(), // At least 10 digits
+  countryCode: z
+    .string()
+    .length(2, "Country code must be exactly 2 characters"),
+  network: z.enum(["MPESA", "AIRTEL", "TIGO", "VODAFONE", "MTN"]),
+  amount: z.string().min(1, "Amount must be at least 1"),
+});
+
 export const obtainTokenSchema = z.object({
   email: z
     .string()
