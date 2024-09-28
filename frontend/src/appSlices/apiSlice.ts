@@ -113,6 +113,26 @@ export const apiSlice = createApi({
         body: user,
       }),
     }),
+
+    getMobileEquivAmount: builder.query({
+      query: ({ amount, currency, cryptoAsset, type }) => ({
+        url: `/v2/transaction/on-ramp/mobile/equivalent-amount?amount=${amount}&currency=${currency}&type=${type}&cryptoAsset=${cryptoAsset}`,
+      }),
+    }),
+
+    getNetworks: builder.query({
+      query: () => ({
+        url: "/v1/networks",
+      }),
+    }),
+    onrampMobile: builder.mutation({
+      query: (requestData) => ({
+        url: "/v2/transaction/on-ramp/mobile",
+        method: "POST",
+        body: requestData,
+      }),
+      invalidatesTags: ["User"],
+    }),
   }),
 });
 
@@ -131,4 +151,7 @@ export const {
   useGetTransactionQuery,
   useGetExchangeRateQuery,
   useSignUrlMutation,
+  useGetMobileEquivAmountQuery,
+  useGetNetworksQuery,
+  useOnrampMobileMutation,
 } = apiSlice;
