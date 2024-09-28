@@ -25,9 +25,18 @@ export const TextInput = ({
 }: FormFieldProps) => {
   const formatInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (localType === "figure") {
-      return e.target.value
-        .replace(/[^0-9]/g, "")
-        .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      const value = e.target.value
+      .replace(/[^0-9.]/g, "") // Allow digits and decimal points
+      .replace(/(\..*?)\..*/g, '$1'); // Allow only one decimal point
+  
+    const parts = value.split("."); // Split into whole and decimal parts
+  
+    const formattedWholePart = parts[0]
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ","); // Format the whole part with commas
+  
+    const decimalPart = parts.length > 1 ? `.${parts[1]}` : ""; // Retain the decimal part if it exists
+  
+    return formattedWholePart + decimalPart;
     }
 
     if (localType === "number") {
