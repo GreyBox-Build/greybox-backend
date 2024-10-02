@@ -30,6 +30,8 @@ import AppLayout from "./pages/app/AppLayout";
 import BankTransferDeposit from "./pages/app/BankTransferDeposit";
 import BankWithdrawal from "./pages/app/BankWithdrawal";
 import MobileDeposit from "./pages/app/MobileDeposit";
+import AdminSignIn from "./pages/admin/Sign-in";
+import AdminDashboard from "./pages/admin/Dashboard";
 
 export const routes = createBrowserRouter([
   {
@@ -152,6 +154,14 @@ export const routes = createBrowserRouter([
   {
     path: "/payment-details",
     element: <PaymentDetails />,
+  },
+  {
+    path: "/admin",
+    element: <AdminSignIn />,
+  },
+  {
+    path: "/dashboard",
+    element: <AdminDashboard />,
   },
   {
     path: "*",
