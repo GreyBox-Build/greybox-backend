@@ -57,6 +57,15 @@ type Constraints struct {
 	Min string `json:"min"`
 }
 
+type PayoutResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    struct {
+		PayoutRequestID string `json:"payoutRequestId"`
+		EscrowAddress   string `json:"escrowAddress"`
+	} `json:"data"`
+}
+
 func GetUserTransactions(chain, walletAddress, category string, pageSize uint64) (map[string]interface{}, error) {
 	url := ""
 	switch category {
@@ -456,4 +465,77 @@ func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 	}
 
 	return respData, nil
+}
+
+func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, error) {
+	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction"
+	client := &http.Client{}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return PayoutResponse{}, err
+	}
+
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return PayoutResponse{}, err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return PayoutResponse{}, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		errorResponse := map[string]interface{}{}
+		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
+			return PayoutResponse{}, err
+		}
+		fmt.Println("error response: ", errorResponse)
+		return PayoutResponse{}, errors.New("failed to perform transaction")
+	}
+
+	respData := PayoutResponse{}
+	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
+		return PayoutResponse{}, err
+	}
+
+	return respData, nil
+}
+
+func OffRampMobileFinalize(data serializers.TransactionDetails) error {
+	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction"
+	client := &http.Client{}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	req.Header.Set("Content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		errorResponse := map[string]interface{}{}
+		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
+			return err
+		}
+		fmt.Println("error response: ", errorResponse)
+		return errors.New("failed to perform transaction")
+	}
+
+	return nil
 }

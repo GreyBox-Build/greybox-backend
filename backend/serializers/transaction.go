@@ -129,3 +129,36 @@ type Payment struct {
 	Collection Collection `json:"collection"`
 	Transfer   Transfer   `json:"transfer"`
 }
+
+type TransactionRequest struct {
+	SendingAddress string `json:"sendingAddress"`
+	AmountSending  string `json:"amountSending"`
+	Network        string `json:"network"`
+	Token          string `json:"token"`
+}
+
+type MobileOffRamp struct {
+	SendingAddress string `json:"sendingAddress"`
+	AmountSending  string `json:"amountSending"`
+	Network        string `json:"network"`
+	Token          string `json:"token"`
+	CustomerName   string `json:"customerName"`
+	PhoneNumber    string `json:"phoneNumber"`
+	CountryCode    string `json:"countryCode"`
+	MobileProvider string `json:"mobileProvider"`
+}
+
+type TransactionDetails struct {
+	Collection struct {
+		TransactionHash string `json:"transactionHash"`
+		PayoutRequestID string `json:"payoutRequestId"`
+		Network         string `json:"network"`
+		Token           string `json:"token"`
+	} `json:"collection"`
+	Transfer struct {
+		CustomerName string `json:"customerName"`
+		PhoneNumber  string `json:"phoneNumber"`
+		CountryCode  string `json:"countryCode"`
+		Network      string `json:"network"`
+	} `json:"transfer"`
+}

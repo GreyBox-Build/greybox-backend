@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stellar/go/support/log"
 )
 
 func RetrieveOnRampParamsV1(c *gin.Context) {
@@ -904,4 +905,107 @@ func MobileMoneyOnRamp(c *gin.Context) {
 		"data":   resp,
 	})
 
+}
+
+func MobileMoneyOffRamp(c *gin.Context) {
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	var input serializers.MobileOffRamp
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	if input.Token == "CUSD" {
+		input.Token = "cUSD"
+	}
+	if user.AccountAddress != input.SendingAddress {
+		c.JSON(400, gin.H{"error": "invalid account address"})
+		return
+	}
+	data := serializers.TransactionRequest{
+		SendingAddress: input.SendingAddress,
+		AmountSending:  input.AmountSending,
+		Network:        input.Network,
+		Token:          input.Token,
+	}
+
+	resp, err := apis.OffRampMobileMoney(data)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	go func() {
+		var hash string // Declare the hash variable outside the switch statement
+		switch input.Network {
+		case "CELO":
+			var err error
+			hash, _, err = apis.PerformTransactionCelo(input.AmountSending, resp.Data.EscrowAddress, user.PrivateKey, false)
+			if err != nil {
+				log.Error(err)
+				return // Exit early in case of error
+			}
+		case "XLM":
+			transferData := serializers.TransferXLM{
+				Amount:        input.AmountSending,
+				To:            resp.Data.EscrowAddress,
+				FromSecret:    user.PrivateKey,
+				Initialize:    false,
+				Token:         "USDC",
+				IssuerAccount: user.AccountAddress,
+				FromAccount:   user.AccountAddress,
+			}
+			txData, _, err := apis.PerformTransactionXLM(transferData)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			txID := txData["txId"]
+			hash = txID
+
+		}
+
+		transaction := serializers.TransactionDetails{
+			Collection: struct {
+				TransactionHash string `json:"transactionHash"`
+				PayoutRequestID string `json:"payoutRequestId"`
+				Network         string `json:"network"`
+				Token           string `json:"token"`
+			}{
+				TransactionHash: hash, // Use the hash from the transaction
+				PayoutRequestID: resp.Data.PayoutRequestID,
+				Network:         input.Network,
+				Token:           input.Token,
+			},
+			Transfer: struct {
+				CustomerName string `json:"customerName"`
+				PhoneNumber  string `json:"phoneNumber"`
+				CountryCode  string `json:"countryCode"`
+				Network      string `json:"network"`
+			}{
+				CustomerName: input.CustomerName,
+				PhoneNumber:  input.PhoneNumber,
+				CountryCode:  input.CountryCode,
+				Network:      input.Network,
+			},
+		}
+		if err := apis.OffRampMobileFinalize(transaction); err != nil {
+			log.Error(err)
+			return
+		}
+	}()
+
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "mobile money off ramp initiated",
+	})
 }
