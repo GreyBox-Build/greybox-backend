@@ -489,7 +489,8 @@ func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, er
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	fmt.Println("status code: ", resp.StatusCode)
+	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		errorResponse := map[string]interface{}{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			fmt.Println("error response: ", errorResponse)
@@ -529,7 +530,7 @@ func OffRampMobileFinalize(data serializers.TransactionDetails) error {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		errorResponse := map[string]interface{}{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			return err
