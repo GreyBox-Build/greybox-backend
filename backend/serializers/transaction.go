@@ -150,15 +150,17 @@ type MobileOffRamp struct {
 
 type TransactionDetails struct {
 	Collection struct {
-		TransactionHash string `json:"transactionHash"`
-		PayoutRequestID string `json:"payoutRequestId"`
-		Network         string `json:"network"`
-		Token           string `json:"token"`
+		TransactionHash   string `json:"transactionHash"`
+		PayoutRequestID   string `json:"payoutRequestId"`
+		Network           string `json:"network"`
+		Token             string `json:"token"`
+		CollectionMessage string `json:"collection message"`
 	} `json:"collection"`
 	Transfer struct {
-		CustomerName string `json:"customerName"`
-		PhoneNumber  string `json:"phoneNumber"`
-		CountryCode  string `json:"countryCode"`
-		Network      string `json:"network"`
+		CustomerName    string `json:"customerName"`
+		PhoneNumber     string `json:"phoneNumber"`
+		CountryCode     string `json:"countryCode"`
+		Network         string `json:"network"`
+		TransferMessage string `json:"transfer message"`
 	} `json:"transfer"`
 }
