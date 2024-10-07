@@ -973,34 +973,29 @@ func MobileMoneyOffRamp(c *gin.Context) {
 			hash = txID
 
 		}
-		collectMessage := fmt.Sprintf("You have received %s %s from %s", input.AmountSending, input.Token, input.SendingAddress)
 
 		transaction := serializers.TransactionDetails{
 			Collection: struct {
-				TransactionHash   string `json:"transactionHash"`
-				PayoutRequestID   string `json:"payoutRequestId"`
-				Network           string `json:"network"`
-				Token             string `json:"token"`
-				CollectionMessage string `json:"collection message"`
+				TransactionHash string `json:"transactionHash"`
+				PayoutRequestID string `json:"payoutRequestId"`
+				Network         string `json:"network"`
+				Token           string `json:"token"`
 			}{
-				TransactionHash:   hash, // Use the hash from the transaction
-				PayoutRequestID:   resp.Data.PayoutRequestID,
-				Network:           input.Network,
-				Token:             input.Token,
-				CollectionMessage: collectMessage,
+				TransactionHash: hash, // Use the hash from the transaction
+				PayoutRequestID: resp.Data.PayoutRequestID,
+				Network:         input.Network,
+				Token:           input.Token,
 			},
 			Transfer: struct {
-				CustomerName    string `json:"customerName"`
-				PhoneNumber     string `json:"phoneNumber"`
-				CountryCode     string `json:"countryCode"`
-				Network         string `json:"network"`
-				TransferMessage string `json:"transfer message"`
+				CustomerName string `json:"customerName"`
+				PhoneNumber  string `json:"phoneNumber"`
+				CountryCode  string `json:"countryCode"`
+				Network      string `json:"network"`
 			}{
-				CustomerName:    input.CustomerName,
-				PhoneNumber:     input.PhoneNumber,
-				CountryCode:     input.CountryCode,
-				Network:         input.Network,
-				TransferMessage: collectMessage,
+				CustomerName: input.CustomerName,
+				PhoneNumber:  input.PhoneNumber,
+				CountryCode:  input.CountryCode,
+				Network:      input.Network,
 			},
 		}
 		if err := apis.OffRampMobileFinalize(transaction); err != nil {

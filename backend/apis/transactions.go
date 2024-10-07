@@ -468,7 +468,7 @@ func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 }
 
 func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, error) {
-	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction"
+	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction/request"
 	client := &http.Client{}
 
 	jsonData, err := json.Marshal(data)
@@ -534,7 +534,7 @@ func OffRampMobileFinalize(data serializers.TransactionDetails) error {
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			return err
 		}
-		fmt.Println("error response: ", errorResponse)
+		fmt.Println("error response finalize: ", errorResponse)
 		return errors.New("failed to perform transaction")
 	}
 
