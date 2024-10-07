@@ -492,6 +492,7 @@ func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, er
 	if resp.StatusCode != 200 {
 		errorResponse := map[string]interface{}{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
+			fmt.Println("error response: ", errorResponse)
 			return PayoutResponse{}, err
 		}
 		fmt.Println("error response: ", errorResponse)
