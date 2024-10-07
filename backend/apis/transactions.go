@@ -529,6 +529,7 @@ func OffRampMobileFinalize(data serializers.TransactionDetails) error {
 		return err
 	}
 	defer resp.Body.Close()
+	fmt.Println("status code: ", resp.StatusCode)
 
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		errorResponse := map[string]interface{}{}
