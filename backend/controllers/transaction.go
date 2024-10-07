@@ -998,6 +998,7 @@ func MobileMoneyOffRamp(c *gin.Context) {
 				Network:      input.MobileProvider,
 			},
 		}
+		time.Sleep(3 * time.Minute)
 		if err := apis.OffRampMobileFinalize(transaction); err != nil {
 			log.Error(err)
 			return
