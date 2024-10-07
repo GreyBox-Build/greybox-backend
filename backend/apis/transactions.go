@@ -512,6 +512,7 @@ func OffRampMobileFinalize(data serializers.TransactionDetails) error {
 	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction"
 	client := &http.Client{}
 
+	fmt.Println("data: ", data)
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return err
