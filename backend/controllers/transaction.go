@@ -983,7 +983,7 @@ func MobileMoneyOffRamp(c *gin.Context) {
 			}{
 				TransactionHash: hash, // Use the hash from the transaction
 				PayoutRequestID: resp.Data.PayoutRequestID,
-				Network:         input.Network,
+				Network:         input.MobileProvider,
 				Token:           input.Token,
 			},
 			Transfer: struct {
