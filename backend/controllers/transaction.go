@@ -983,7 +983,7 @@ func MobileMoneyOffRamp(c *gin.Context) {
 			}{
 				TransactionHash: hash, // Use the hash from the transaction
 				PayoutRequestID: resp.Data.PayoutRequestID,
-				Network:         input.MobileProvider,
+				Network:         input.Network,
 				Token:           input.Token,
 			},
 			Transfer: struct {
@@ -995,7 +995,7 @@ func MobileMoneyOffRamp(c *gin.Context) {
 				CustomerName: input.CustomerName,
 				PhoneNumber:  input.PhoneNumber,
 				CountryCode:  input.CountryCode,
-				Network:      input.Network,
+				Network:      input.MobileProvider,
 			},
 		}
 		if err := apis.OffRampMobileFinalize(transaction); err != nil {
