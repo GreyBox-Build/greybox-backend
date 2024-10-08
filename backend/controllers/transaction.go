@@ -615,6 +615,7 @@ func VerifyOnRamp(c *gin.Context) {
 	case "Reject":
 		deposit.Status = "Rejected"
 	}
+	_ = deposit.UpdateDepositRequest()
 	c.JSON(200, gin.H{
 		"errors": false,
 		"status": "request verified successfully",
@@ -802,6 +803,7 @@ func VerifyOffRamp(c *gin.Context) {
 		emails := []string{user.Email}
 		_ = mails.UserOffRampMail(emails, data)
 	}()
+	_ = withdrawal.UpdateWithdrawalRequest()
 	c.JSON(200, gin.H{
 		"errors": false,
 		"status": "request verified successfully",
