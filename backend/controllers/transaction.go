@@ -519,6 +519,7 @@ func VerifyOnRamp(c *gin.Context) {
 		case "CELO":
 			fmt.Println("master wallet address: ", masterWallet.PublicAddress)
 			fmt.Println("private key: ", masterWallet.PrivateKey)
+			fmt.Println("meunic: ", masterWallet.Mnemonic)
 			txHash, code, err := apis.PerformTransactionCelo(deposit.AssetEquivalent, user.AccountAddress, masterWallet.PrivateKey, false)
 			if err != nil {
 				c.JSON(code, gin.H{"error": err.Error(), "message": "transaction failed"})
