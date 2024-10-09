@@ -179,6 +179,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey string, isNative boo
 		if err = json.Unmarshal(body, &result); err != nil {
 			return "", 500, err
 		}
+		fmt.Println("result:", result)
 
 		errMsg = "failed to perform transaction. most likely insufficient funds"
 
