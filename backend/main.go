@@ -99,8 +99,11 @@ func main() {
 
 	notification := r.Group("/api/v1/notification")
 	{
-		//notification.Use(middlewares.JwtAuthMiddleware())
-		notification.POST("/register-hmac", controllers.RegisterHmac)
+		notification.Use(middlewares.WebhookSignatureMiddleware())
+		notification.POST("/on-ramp", controllers.OnRampNotification)
+		notification.POST("/off-ramp", controllers.OffRampNotification)
+
+		//notification.POST("/register-hmac", controllers.RegisterHmac)
 	}
 
 	master := r.Group("/api/v1")

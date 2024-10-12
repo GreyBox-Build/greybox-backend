@@ -6,7 +6,6 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
-	"fmt"
 	"net/http"
 	"os"
 
@@ -231,7 +230,6 @@ func GetAuthenticatedUser(c *gin.Context) {
 		})
 		return
 	}
-	fmt.Println("user private key: ", user.PrivateKey)
 
 	balanceChan := make(chan float32)
 	errorChan := make(chan error)
