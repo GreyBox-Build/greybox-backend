@@ -8,6 +8,14 @@ import (
 	"gorm.io/gorm"
 )
 
+type RequestType string
+
+// Define constants for the possible values of the enum
+const (
+	OnRamp  RequestType = "On-ramp"
+	OffRamp RequestType = "Off-ramp"
+)
+
 type Transaction struct {
 	gorm.Model
 	UserID             uint    `gorm:"index" json:"user_id"`
@@ -67,6 +75,32 @@ type WithdrawalRequest struct {
 	Asset          string    `json:"asset"`
 	EquivalentFiat string    `json:"equivalent_fiat"`
 	FiatCurrency   string    `json:"fiat_currency"`
+}
+
+type HurupayRequest struct {
+	gorm.Model
+	Amount          string      `json:"amount"`
+	CountryCurrency string      `json:"country_currency"`
+	AccountNumber   string      `json:"account_number"`
+	UserId          int32       `gorm:"index" json:"user_id"`
+	User            User        `gorm:"foreignKey:UserId" json:"user"`
+	RequestId       string      `gorm:"index" json:"request_id"`
+	Status          string      `json:"status"`
+	MobileNetwork   string      `json:"mobile_network"`
+	ConfirmedAt     time.Time   `json:"confirmed_at"`
+	CryptoChain     string      `json:"crypto_chain"`
+	Token           string      `json:"token"`
+	CountryCode     string      `json:"country_code"`
+	MobileNumber    string      `json:"mobile_number"`
+	RequestType     RequestType `json:"request_type"`
+}
+
+func (h *HurupayRequest) SaveHurupayRequest() error {
+	return db.Create(h).Error
+}
+
+func (h *HurupayRequest) UpdateHurupayRequest() error {
+	return db.Save(h).Error
 }
 
 func (d *DepositRequest) SaveDepositRequest() error {
@@ -222,4 +256,13 @@ func GetWithdrawalRequest(id int) (*WithdrawalRequest, error) {
 		return nil, err
 	}
 	return &withdrawalRequest, nil
+}
+
+func GetHurupayRequestRequestId(requestId string) (*HurupayRequest, error) {
+	var hurupayRequest HurupayRequest
+	err := db.Preload("User").First(&hurupayRequest, "request_id = ?", requestId).Error
+	if err != nil {
+		return nil, err
+	}
+	return &hurupayRequest, nil
 }

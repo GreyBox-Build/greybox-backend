@@ -429,6 +429,16 @@ type MobileData struct {
 	ResponseDescription string `json:"ResponseDescription"`
 }
 
+type MobilePayoutResponse struct {
+	Success bool   `json:"success"`
+	Message string `json:"message"`
+	Data    struct {
+		ResultCode        int    `json:"ResultCode"`
+		PartnerRequestID  string `json:"PartnerRequestID"`
+		ResultDescription string `json:"ResultDescription"`
+	} `json:"data"`
+}
+
 func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 	apiUrl := "https://sandbox.hurupay.com/v1/collections/mobile/initialize_transaction"
 	client := &http.Client{}
@@ -509,38 +519,41 @@ func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, er
 	return respData, nil
 }
 
-func OffRampMobileFinalize(data serializers.TransactionDetails) error {
+func OffRampMobileFinalize(data serializers.TransactionDetails) (MobilePayoutResponse, error) {
 	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction"
 	client := &http.Client{}
 
 	fmt.Println("data: ", data)
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return err
+		return MobilePayoutResponse{}, err
 	}
 
 	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return err
+		return MobilePayoutResponse{}, err
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
 	req.Header.Set("Content-type", "application/json")
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return MobilePayoutResponse{}, err
 	}
 	defer resp.Body.Close()
-	fmt.Println("status code: ", resp.StatusCode)
 
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		errorResponse := map[string]interface{}{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
-			return err
+			return MobilePayoutResponse{}, err
 		}
 		fmt.Println("error response finalize: ", errorResponse)
-		return errors.New("failed to perform transaction")
+		return MobilePayoutResponse{}, errors.New("failed to perform transaction")
+	}
+	var output MobilePayoutResponse
+	if err := json.NewDecoder(resp.Body).Decode(&output); err != nil {
+		return MobilePayoutResponse{}, err
 	}
 
-	return nil
+	return output, nil
 }

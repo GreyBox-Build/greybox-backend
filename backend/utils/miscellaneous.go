@@ -126,3 +126,8 @@ func FormatAmountWithCommas(amount float64) string {
 
 	return result.String() + "." + decimalPart
 }
+
+func LastPart(url, sep string) string {
+	parts := strings.Split(url, sep)
+	return parts[len(parts)-1]
+}

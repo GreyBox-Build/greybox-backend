@@ -53,5 +53,6 @@ func Migrate(db *gorm.DB) {
 	db.AutoMigrate(&WalletAddress{})
 	db.AutoMigrate(&DepositRequest{})
 	db.AutoMigrate(&WithdrawalRequest{})
+	db.AutoMigrate(&HurupayRequest{})
 
 }
