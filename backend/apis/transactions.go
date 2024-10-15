@@ -440,7 +440,7 @@ type MobilePayoutResponse struct {
 }
 
 func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
-	apiUrl := "https://sandbox.hurupay.com/v1/collections/mobile/initialize_transaction"
+	apiUrl := "https://api.hurupay.com/v1/collections/mobile/initialize_transaction"
 	client := &http.Client{}
 
 	jsonData, err := json.Marshal(data)
@@ -479,7 +479,7 @@ func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 }
 
 func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, error) {
-	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction/request"
+	apiUrl := "https://api.hurupay.com/v1/payouts/mobile/initialize_transaction/request"
 	client := &http.Client{}
 
 	jsonData, err := json.Marshal(data)
@@ -520,7 +520,7 @@ func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, er
 }
 
 func OffRampMobileFinalize(data serializers.TransactionDetails) (MobilePayoutResponse, error) {
-	apiUrl := "https://sandbox.hurupay.com/v1/payouts/mobile/initialize_transaction"
+	apiUrl := "https://api.hurupay.com/v1/payouts/mobile/initialize_transaction"
 	client := &http.Client{}
 
 	fmt.Println("data: ", data)
