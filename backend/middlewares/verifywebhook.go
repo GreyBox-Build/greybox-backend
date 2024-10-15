@@ -33,7 +33,7 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		switch c.Request.URL.Path {
 		case "/api/v1/notification/on-ramp":
 			secret = os.Getenv("WEBHOOK_ONRAMP_PUBLIC_KEY")
-		case "//api/v1/notification/off-ramp":
+		case "/api/v1/notification/off-ramp":
 			secret = os.Getenv("WEBHOOK_OFFRAMP_PUBLIC_KEY")
 		default:
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook path"})
