@@ -39,7 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	//gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.ReleaseMode)
 
 	db := models.InitializeDB()
 	models.Migrate(db)
