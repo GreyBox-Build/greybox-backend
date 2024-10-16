@@ -13,6 +13,7 @@ import (
 func VerifyWebhookSignature(body string, signature string, publicKeyStr string) (bool, error) {
 	// Decode the PEM-encoded public key string
 	block, _ := pem.Decode([]byte(publicKeyStr))
+
 	//if block == nil || block.Type != "PUBLIC KEY" {
 	//	return false, errors.New("failed to decode PEM block containing public key")
 	//}

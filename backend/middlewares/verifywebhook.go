@@ -44,6 +44,8 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 			fmt.Println("Invalid webhook path")
 			return
 		}
+		fmt.Println("public key", secret)
+		fmt.Println("signature", signature)
 
 		// Verify the webhook signature
 		flag, err := signing.VerifyWebhookSignature(bodyString, signature, secret)
