@@ -10,10 +10,9 @@ import (
 	"errors"
 )
 
-func VerifyWebhookSignature(body string, signature string, publicKeyStr string) (bool, error) {
-	// Decode the PEM-encoded public key string
-	block, _ := pem.Decode([]byte(publicKeyStr))
-
+func VerifyWebhookSignature(body string, signature string, publicKeyPem []byte) (bool, error) {
+	// Decode the PEM-encoded public key
+	block, _ := pem.Decode(publicKeyPem)
 	if block == nil {
 		return false, errors.New("failed to decode PEM block containing public key")
 	}

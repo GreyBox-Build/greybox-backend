@@ -13,6 +13,7 @@ import (
 
 func WebhookSignatureMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Read the request body
 		bodyBytes, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Unable to read request body"})
@@ -20,6 +21,7 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Reassign the body to allow further reads down the middleware chain
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
 		bodyString := string(bodyBytes)
@@ -32,23 +34,32 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 			fmt.Println("Missing signature")
 			return
 		}
-
-		var secret string
+		dir, _ := os.Getwd()
+		// Determine the PEM file path based on the webhook path
+		var pemFilePath string
 		switch c.Request.URL.Path {
 		case "/api/v1/notification/on-ramp":
-			secret = os.Getenv("WEBHOOK_ONRAMP_PUBLIC_KEY")
+			pemFilePath = dir + "onramp-public.pem"
 		case "/api/v1/notification/off-ramp":
-			secret = os.Getenv("WEBHOOK_OFFRAMP_PUBLIC_KEY")
+			pemFilePath = dir + "offramp-public.pem"
 		default:
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook path"})
 			fmt.Println("Invalid webhook path")
 			return
 		}
-		fmt.Println("public key", secret)
+
+		// Read the PEM file using os.ReadFile
+		publicKey, err := os.ReadFile(pemFilePath)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Unable to read public key file"})
+			fmt.Println("Unable to read public key file", err)
+			return
+		}
+
 		fmt.Println("signature", signature)
 
 		// Verify the webhook signature
-		flag, err := signing.VerifyWebhookSignature(bodyString, signature, secret)
+		flag, err := signing.VerifyWebhookSignature(bodyString, signature, publicKey)
 		if err != nil || !flag {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid signature"})
 			fmt.Println("Invalid signature", err)
