@@ -13,11 +13,10 @@ import (
 func VerifyWebhookSignature(body string, signature string, publicKeyStr string) (bool, error) {
 	// Decode the PEM-encoded public key string
 	block, _ := pem.Decode([]byte(publicKeyStr))
-	if block == nil || block.Type != "PUBLIC KEY" {
-		return false, errors.New("failed to decode PEM block containing public key")
-	}
+	//if block == nil || block.Type != "PUBLIC KEY" {
+	//	return false, errors.New("failed to decode PEM block containing public key")
+	//}
 
-	// Parse the decoded public key to *rsa.PublicKey
 	pubKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
 		return false, err
@@ -40,7 +39,7 @@ func VerifyWebhookSignature(body string, signature string, publicKeyStr string) 
 	// Verify the signature using the RSA public key
 	err = rsa.VerifyPKCS1v15(rsaPublicKey, crypto.SHA256, hashedData[:], decodedSignature)
 	if err != nil {
-		return false, errors.New("signature verification failed")
+		return false, err
 	}
 
 	return true, nil
