@@ -85,8 +85,8 @@ func processEvent(eventType string, request *models.HurupayRequest, trans *model
 	case "collections.successful":
 		request.Status = "Completed"
 		trans.Status = "Completed"
-		_ = trans.SaveTransaction()
-		_ = request.SaveHurupayRequest()
+		_ = trans.UpdateTransaction()
+		_ = request.UpdateHurupayRequest()
 
 		nativeAmount, err := utils.PerformDepositofNativeCalculation(trans.Amount, "USD", request.User.CryptoCurrency)
 		if err != nil {
@@ -100,8 +100,8 @@ func processEvent(eventType string, request *models.HurupayRequest, trans *model
 		request.Status = strings.ToUpper(utils.LastPart(eventType, "."))
 		trans.Status = strings.ToUpper(utils.LastPart(eventType, "."))
 		// Save the updated request and transaction
-		_ = trans.SaveTransaction()
-		return request.SaveHurupayRequest()
+		_ = trans.UpdateTransaction()
+		return request.UpdateHurupayRequest()
 	}
 }
 
@@ -174,8 +174,8 @@ func processOffRampEvent(eventType string, request *models.HurupayRequest, trans
 		trans.Status = strings.ToUpper(utils.LastPart(eventType, "."))
 
 	}
-	_ = trans.SaveTransaction()
-	return request.SaveHurupayRequest()
+	_ = trans.UpdateTransaction()
+	return request.UpdateHurupayRequest()
 }
 
 func OffRampNotification(c *gin.Context) {

@@ -1029,7 +1029,7 @@ func handleOffRampTransaction(input serializers.MobileOffRamp, user models.User,
 		return
 	}
 
-	if err := storeHurupayRequest(input, user, output); err != nil {
+	if err := storeHurupayRequest(input, user, output, resp.Data.PayoutRequestID); err != nil {
 		log.Error(err)
 	}
 }
@@ -1088,7 +1088,7 @@ func prepareTransactionDetails(input serializers.MobileOffRamp, resp apis.Payout
 }
 
 // Store the Hurupay request to the database
-func storeHurupayRequest(input serializers.MobileOffRamp, user models.User, output apis.MobilePayoutResponse) error {
+func storeHurupayRequest(input serializers.MobileOffRamp, user models.User, output apis.MobilePayoutResponse, requestId string) error {
 	request := models.HurupayRequest{
 		Amount:          input.AmountSending,
 		UserId:          int32(user.ID),
@@ -1099,7 +1099,7 @@ func storeHurupayRequest(input serializers.MobileOffRamp, user models.User, outp
 		Token:           input.Token,
 		MobileNetwork:   input.MobileProvider,
 		CryptoChain:     input.Network,
-		RequestId:       output.Data.PartnerRequestID,
+		RequestId:       requestId,
 		CountryCurrency: input.CountryCode,
 	}
 	return request.SaveHurupayRequest()

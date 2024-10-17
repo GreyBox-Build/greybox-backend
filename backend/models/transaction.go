@@ -82,9 +82,9 @@ type HurupayRequest struct {
 	Amount          string      `json:"amount"`
 	CountryCurrency string      `json:"country_currency"`
 	AccountNumber   string      `json:"account_number"`
-	UserId          int32       `gorm:"index" json:"user_id"`
+	UserId          int32       `json:"user_id"`
 	User            User        `gorm:"foreignKey:UserId" json:"user"`
-	RequestId       string      `gorm:"index" json:"request_id"`
+	RequestId       string      `json:"request_id"`
 	Status          string      `json:"status"`
 	MobileNetwork   string      `json:"mobile_network"`
 	ConfirmedAt     time.Time   `json:"confirmed_at"`
@@ -154,6 +154,9 @@ func (t *Transaction) SaveTransaction() error {
 	return db.Create(t).Error
 }
 
+func (t *Transaction) UpdateTransaction() error {
+	return db.Save(t).Error
+}
 func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 	var transaction Transaction
 	err := db.Preload("User").Where("hash = ? AND chain = ?", hash, chain).First(&transaction).Error
