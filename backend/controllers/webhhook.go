@@ -5,6 +5,7 @@ import (
 	"backend/models"
 	"backend/serializers"
 	"backend/utils"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -28,6 +29,7 @@ func OnRampNotification(c *gin.Context) {
 
 	trans, err := createTransaction(request, input)
 	if err != nil {
+		fmt.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -35,6 +37,7 @@ func OnRampNotification(c *gin.Context) {
 	// Fetch the master wallet for the user's cryptocurrency
 	masterWallet, err := models.FetchMasterWallet(request.User.CryptoCurrency)
 	if err != nil {
+		fmt.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -42,6 +45,7 @@ func OnRampNotification(c *gin.Context) {
 	// Process the event based on the event type
 	err = processEvent(input.EventType, request, trans, &masterWallet)
 	if err != nil {
+		fmt.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
