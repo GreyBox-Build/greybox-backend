@@ -923,7 +923,7 @@ func MobileMoneyOnRamp(c *gin.Context) {
 	request.Token = input.Transfer.DigitalAsset
 	request.MobileNetwork = input.Collection.Network
 	request.CryptoChain = input.Transfer.DigitalNetwork
-	request.RequestId = resp.Data.PartnerRequestID
+	request.RequestId = resp.Data.CollectionRequestID
 	request.CountryCurrency = input.Collection.CountryCode
 	if err := request.SaveHurupayRequest(); err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
