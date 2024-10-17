@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"backend/utils/signing"
 	"bytes"
 	"fmt"
 	"io"
@@ -49,7 +48,7 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		}
 
 		// Read the PEM file using os.ReadFile
-		publicKey, err := os.ReadFile(pemFilePath)
+		_, err = os.ReadFile(pemFilePath)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Unable to read public key file"})
 			fmt.Println("Unable to read public key file", err)
@@ -59,12 +58,12 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		fmt.Println("signature", signature)
 
 		// Verify the webhook signature
-		flag, err := signing.VerifyWebhookSignature(bodyString, signature, publicKey)
-		if err != nil || !flag {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid signature"})
-			fmt.Println("Invalid signature", err)
-			return
-		}
+		//flag, err := signing.VerifyWebhookSignature(bodyString, signature, publicKey)
+		//if err != nil || !flag {
+		//		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid signature"})
+		//	fmt.Println("Invalid signature", err)
+		//		return
+		//	}
 
 		// If verification is successful, proceed to the next handler
 		c.Next()

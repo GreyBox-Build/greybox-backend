@@ -99,7 +99,7 @@ func main() {
 
 	notification := r.Group("/api/v1/notification")
 	{
-		//notification.Use(middlewares.WebhookSignatureMiddleware())
+		notification.Use(middlewares.WebhookSignatureMiddleware())
 		notification.POST("/on-ramp", controllers.OnRampNotification)
 		notification.POST("/off-ramp", controllers.OffRampNotification)
 
