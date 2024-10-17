@@ -39,9 +39,9 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		var pemFilePath string
 		switch c.Request.URL.Path {
 		case "/api/v1/notification/on-ramp":
-			pemFilePath = dir + "onramp-public.pem"
+			pemFilePath = dir + "/onramp-public.pem"
 		case "/api/v1/notification/off-ramp":
-			pemFilePath = dir + "offramp-public.pem"
+			pemFilePath = dir + "/offramp-public.pem"
 		default:
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook path"})
 			fmt.Println("Invalid webhook path")
