@@ -23,13 +23,6 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		// Reassign the body to allow further reads down the middleware chain
 		c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 
-		ipAddress := c.ClientIP()
-
-		fmt.Println("ipAddress", ipAddress)
-
-		bodyString := string(bodyBytes)
-		fmt.Println("body", bodyString)
-
 		// Get the signature from the header
 		signature := c.GetHeader("x-webhook-signature")
 		if signature == "" {

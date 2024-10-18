@@ -166,9 +166,10 @@ func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 	return &transaction, nil
 }
 
-func GetTransactionsByUserID(userId uint, chain string) ([]*Transaction, error) {
+func GetTransactionsByUserID(userId uint) ([]*Transaction, error) {
 	var transactions []*Transaction
-	err := db.Preload("User").Where("user_id = ? AND chain = ?", userId, chain).Order("created_at desc").Find(&transactions).Error
+
+	err := db.Preload("User").Where("user_id = ?", userId).Find(&transactions).Error
 	if err != nil {
 		return nil, err
 	}

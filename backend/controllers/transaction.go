@@ -76,8 +76,7 @@ func GetUserTransactions(c *gin.Context) {
 		})
 		return
 	}
-	chain := c.Query("chain")
-	transactions, err := models.GetTransactionsByUserID(userId, strings.ToUpper(chain))
+	transactions, err := models.GetTransactionsByUserID(userId)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),

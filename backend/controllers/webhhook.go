@@ -16,6 +16,7 @@ import (
 func OnRampNotification(c *gin.Context) {
 	var input serializers.Event
 	if err := c.ShouldBindJSON(&input); err != nil {
+		fmt.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -23,6 +24,7 @@ func OnRampNotification(c *gin.Context) {
 	// Fetch the request based on the EventObject ID
 	request, err := models.GetHurupayRequestRequestId(input.EventObject.ID)
 	if err != nil {
+		fmt.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -89,6 +91,7 @@ func processEvent(eventType string, request *models.HurupayRequest, trans *model
 		_ = request.UpdateHurupayRequest()
 
 		nativeAmount, err := utils.PerformDepositofNativeCalculation(trans.Amount, "USD", request.User.CryptoCurrency)
+		fmt.Println("error", err.Error())
 		if err != nil {
 			return err
 		}
@@ -122,7 +125,7 @@ func processCeloTransaction(nativeAmount string, user *models.User, masterWallet
 		hash, _, _ := apis.PerformTransactionCelo(nativeAmount, user.AccountAddress, masterWallet.PrivateKey, true)
 
 		nativeTrans := createNativeTransaction(user, masterWallet, hash, nativeAmount, "CELO")
-		nativeTrans.SaveTransaction()
+		_ = nativeTrans.SaveTransaction()
 	})
 }
 
@@ -140,7 +143,7 @@ func processXlmTransaction(nativeAmount string, user *models.User, masterWallet 
 
 		id := txData["txId"]
 		nativeTrans := createNativeTransaction(user, masterWallet, id, nativeAmount, "XLM")
-		nativeTrans.SaveTransaction()
+		_ = nativeTrans.SaveTransaction()
 	})
 }
 
