@@ -6,7 +6,6 @@ import (
 	"backend/serializers"
 	"backend/utils"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
@@ -72,7 +71,7 @@ func createTransaction(request *models.HurupayRequest, input serializers.Event) 
 	trans.Asset = strings.ToUpper(input.EventObject.BlockchainToken)
 	trans.Chain = input.EventObject.BlockchainNetwork
 	trans.TransactionType = "Fungible Token"
-	trans.Amount = strconv.FormatInt(int64(input.EventObject.TokenAmount), 10)
+	trans.Amount = fmt.Sprintf("%d", input.EventObject.TokenAmount)
 	trans.Status = "Pending"
 
 	if err := trans.SaveTransaction(); err != nil {
