@@ -1,0 +1,51 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Step 1: Checkout the code
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    # Step 2: Configure AWS credentials
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+    # Step 3: Get EC2 Public IP
+    - name: Get EC2 Public IP
+      id: ec2info
+      run: |
+        EC2_PUBLIC_IP=$(aws ec2 describe-instances --instance-ids ${{ secrets.AWS_EC2_INSTANCE_ID }} \
+          --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
+        echo "EC2_PUBLIC_IP=${EC2_PUBLIC_IP}" >> $GITHUB_ENV
+
+    # Step 4: Add SSH key for EC2
+    - name: Add SSH key
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+
+    # Step 5: Copy the updated files to EC2
+    - name: Copy files to EC2
+      run: |
+        scp -o StrictHostKeyChecking=no -r ./ ${{ secrets.AWS_SSH_USER }}@$EC2_PUBLIC_IP:/app/greybox-backend
+
+    # Step 6: Deploy to EC2
+    - name: Deploy to EC2
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.AWS_SSH_USER }}@$EC2_PUBLIC_IP << 'EOF'
+          cd /app/greybox-backend
+          docker-compose down
+          docker-compose up --build -d
+        EOF
