@@ -27,9 +27,11 @@ const Dashboard = () => {
   const { currentData: userData, isFetching } = useGetAuthUserQuery({});
 
   const { currentData: transactions, isFetching: isFetchingTransactions } =
-    useGetTransactionQuery(userData?.data?.personal_details?.crypto_currency, {
+    useGetTransactionQuery(userData?.data?.personal_details?.crypto_currency.toLowerCase(), {
       refetchOnMountOrArgChange: true,
     });
+
+  console.log(transactions);
 
   const depositArray = transactions?.data?.filter(
     (transaction: any) => transaction?.transaction_sub_type === "Deposit"

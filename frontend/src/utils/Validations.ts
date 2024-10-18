@@ -20,10 +20,8 @@ export const createUserSchema = z.object({
 
 export const mobileDepositSchema = z.object({
   phoneNumber: z.string(), // At least 10 digits
-  country: z
-    .string().min(2, "Select country"),
-  countryCode: z
-    .string().min(2, "Select country"),
+  country: z.string().min(2, "Select country"),
+  countryCode: z.string().min(2, "Select country"),
   network: z.string().min(2, "Select network"),
   amount: z.string().min(1, "Amount must be at least 1"),
 });

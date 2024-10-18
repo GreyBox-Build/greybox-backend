@@ -34,9 +34,7 @@ const Intro = () => {
             Simplifying <span className=" text-orange-1">Cross-border </span>
             Payments in Africa
           </h2>
-          <p className="mt-[21px] text-[1.25rem] leading-[27.5px]">
-            Move Money Across Borders Seamlessly
-          </p>
+
           <div className="mt-[78px] flex flex-col md:flex-row md:items-center gap-[28px]">
             <HomeButton
               label="Learn More"

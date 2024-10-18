@@ -133,6 +133,67 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["User"],
     }),
+
+    offrampMobile: builder.mutation({
+      query: (sentData) => ({
+        url: "/v2/transaction/off-ramp/mobile",
+        method: "POST",
+        body: sentData,
+      }),
+      invalidatesTags: ["User"],
+    }),
+
+    adminGetOffRampWithdrawalReq: builder.query({
+      query: () => ({
+        url: `/v1/requests/off-ramp?chain&hash&address&account_number&status`,
+      }),
+    }),
+    getTransHistory: builder.query({
+      query: () => ({
+        url: `/v1/transaction?chain=CELO`,
+      }),
+    }),
+    // adminGetOffRampWithdrawalReq: builder.query({
+    //   query: ({ chain, hash, address, account_number, status }) => ({
+    //     url: `/v1/requests/off-ramp?${chain}&${hash}&${address}}&${account_number}&${status}`,
+    //   }),
+    // }),
+    adminOffRampRetrieveData: builder.query({
+      query: (id) => ({
+        url: `v1/requests/off-ramp/:${id}`,
+      }),
+    }),
+    adminOnRampRetrieveDataReq: builder.query({
+      query: (id) => ({
+        url: `v1/requests/on-ramp/:${id}`,
+      }),
+    }),
+    adminOnRampRetrieveWithParams: builder.query({
+      query: () => ({
+        url: `v1/requests/on-ramp?$ref&$cu`,
+      }),
+    }),
+    // adminOnRampRetrieveWithParams: builder.query({
+    //   query: ({ ref, cu }) => ({
+    //     url: `v1/requests/on-ramp?${ref}&${cu}`,
+    //   }),
+    // }),
+
+    adminVerifyOnRampReqWithId: builder.mutation({
+      query: ({ id, action }) => ({
+        url: `v1/requests/on-ramp/${id}/verify`, // Make sure the `id` is used directly in the URL
+        method: "POST",
+        body: action, // Send the action payload
+      }),
+    }),
+
+    adminVerifyOffRampReqWithId: builder.mutation({
+      query: ({ id, actionBankRef }) => ({
+        url: `v1/requests/on-ramp/:${id}/verify`,
+        method: "POST",
+        body: actionBankRef,
+      }),
+    }),
   }),
 });
 
@@ -154,4 +215,11 @@ export const {
   useGetMobileEquivAmountQuery,
   useGetNetworksQuery,
   useOnrampMobileMutation,
+  useOfframpMobileMutation,
+  useGetTransHistoryQuery,
+  useAdminGetOffRampWithdrawalReqQuery,
+  useAdminOnRampRetrieveDataReqQuery,
+  useAdminOnRampRetrieveWithParamsQuery,
+  useAdminVerifyOnRampReqWithIdMutation,
+  useAdminVerifyOffRampReqWithIdMutation,
 } = apiSlice;
