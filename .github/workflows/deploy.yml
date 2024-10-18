@@ -12,11 +12,11 @@ jobs:
     steps:
     # Step 1: Checkout the code
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     # Step 2: Configure AWS credentials
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v3
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -30,22 +30,26 @@ jobs:
           --query "Reservations[0].Instances[0].PublicIpAddress" --output text)
         echo "EC2_PUBLIC_IP=${EC2_PUBLIC_IP}" >> $GITHUB_ENV
 
-    # Step 4: Add SSH key for EC2
-    - name: Add SSH key
-      uses: webfactory/ssh-agent@v0.7.0
-      with:
-        ssh-private-key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
-
-    # Step 5: Copy the updated files to EC2
+    # Step 4: Copy files to EC2
     - name: Copy files to EC2
-      run: |
-        scp -o StrictHostKeyChecking=no -r ./ ${{ secrets.AWS_SSH_USER }}@$EC2_PUBLIC_IP:/app/greybox-backend
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ env.EC2_PUBLIC_IP }}
+        username: ${{ secrets.AWS_SSH_USER }}
+        key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+        source: "./"
+        target: "/app/greybox-backend"
+        rm: true  # Remove any previous files in the directory (optional)
 
-    # Step 6: Deploy to EC2
+    # Step 5: Deploy to EC2
     - name: Deploy to EC2
-      run: |
-        ssh -o StrictHostKeyChecking=no ${{ secrets.AWS_SSH_USER }}@$EC2_PUBLIC_IP << 'EOF'
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ env.EC2_PUBLIC_IP }}
+        username: ${{ secrets.AWS_SSH_USER }}
+        key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+        script: |
           cd /app/greybox-backend
           docker-compose down
           docker-compose up --build -d
-        EOF
+
