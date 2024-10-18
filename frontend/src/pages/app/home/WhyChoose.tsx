@@ -31,12 +31,10 @@ const WhyChoose = () => {
   );
   return (
     <section className=" pb-[100px] px-[25px] md:px-[66px] bg-white">
-      <h2 className="text-[1.125rem] text-orange-1 text-center font-[700] leading-[24.75px]">
-        QUALITY SERVICES
+      <h2 className="text-[1.125rem] md:text-[2.225rem] text-orange-1 text-center font-[700] leading-[24.75px]">
+        WHY CHOOSE GREYBOX
       </h2>
-      <h3 className="text-[2rem] text-black-2 text-center font-[700] leading-[41.14px] mt-[12px]">
-        Why You Should Choose Greybox
-      </h3>
+
       <section className="flex flex-col lg:flex-row gap-[35px] mt-[30px] md:justify-center">
         <div className="flex flex-col md:flex-row gap-[35px]">
           <ReasonsCard
@@ -48,7 +46,7 @@ const WhyChoose = () => {
           <ReasonsCard
             img={<StabilityIcon />}
             text="Stability"
-            subText="Enjoy stable transactions"
+            subText="Protect against currency weakness"
             extraClass="bg-grey-1"
           />
         </div>

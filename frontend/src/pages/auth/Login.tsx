@@ -32,7 +32,7 @@ const Login = () => {
       enqueueSnackbar(
         error?.data?.error ? error?.data?.error : "Connction failed!",
         { variant: "success" }
-      );
+      ); 
     }
   };
   return (

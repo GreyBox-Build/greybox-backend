@@ -56,7 +56,7 @@ const Testimonials = () => {
           <div className="w-full min-h-[400px] flex flex-col items-center justify-center gap-y-[27px]">
             <TestimonialsCard
               userImg={<User1Picture />}
-              userName="Koshi, Tema"
+              userName="Koshie, Tema"
               comment="“Greybox is easy to use and saves us the trouble of waiting days before our suppliers receive funds”"
             />
             <TestimonialsCard

@@ -9,11 +9,11 @@ const About = () => {
           <AboutLady />
         </section>
         <section className="w-full md:w-[50%] flex flex-col md:block">
-          <h2 className="text-[1.125rem] text-orange-1 font-[700] leading-[24.75px]">
+          <h2 className="text-[1.525rem]  text-orange-1 font-[700] leading-[24.75px]">
             ABOUT US
           </h2>
           <p className="text-[2rem] text-black-2 font-[700] leading-[40.63px] max-w-[456px] mt-[12px]">
-            Trusted Platform Anytime & Anywhere
+            Trusted Payment Platform Anytime, Anywhere
           </p>
           <div className="my-[26px]">
             <FiveStars />
