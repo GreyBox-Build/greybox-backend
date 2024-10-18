@@ -39,7 +39,6 @@ jobs:
         key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
         source: "./"
         target: "app/greybox-backend"
-        rm: true  # Remove any previous files in the directory (optional)
 
     # Step 5: Deploy to EC2
     - name: Deploy to EC2
