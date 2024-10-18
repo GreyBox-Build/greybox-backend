@@ -25,7 +25,7 @@ FROM nginx:latest
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copy the certificates
-#COPY ./*.pem /etc/nginx/certs/live/apis.greyboxpay.com/
+COPY ./*.pem /etc/nginx/certs/live/apis.greyboxpay.com/
 
 # Copy the custom nginx configuration file
 COPY ./docker/nginx/development/default.conf /etc/nginx/conf.d/default.conf.template
