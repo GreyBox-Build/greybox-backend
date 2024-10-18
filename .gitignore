@@ -1,6 +1,4 @@
 grey-box-api.pem
 csr.pem
-backend/.env
-*.env
 offramp-public.pem
 onramp-public.pem
