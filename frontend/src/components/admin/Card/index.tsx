@@ -17,7 +17,10 @@ const Card: React.FC<CardProps> = ({ name, amount, interest }) => {
         <div className="bg-[#E1F4E4] px-1 flex gap-2 items-center rounded-[2px]">
           <p>
             {" "}
-            {interest > 999 ? `${(interest / 1000).toFixed(1)}` : interest}%
+            {interest > 999
+              ? `${(interest / 1000).toFixed(2)}`
+              : interest.toFixed(2)}
+            %
           </p>
 
           <span className="text-green-500">

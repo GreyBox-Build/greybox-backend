@@ -32,6 +32,8 @@ import BankWithdrawal from "./pages/app/BankWithdrawal";
 import MobileDeposit from "./pages/app/MobileDeposit";
 import AdminSignIn from "./pages/admin/Sign-in";
 import AdminDashboard from "./pages/admin/Dashboard";
+import DashboardInner from "./pages/admin/DashboardInner";
+import Summary from "./pages/admin/Summary";
 
 export const routes = createBrowserRouter([
   {
@@ -160,8 +162,15 @@ export const routes = createBrowserRouter([
     element: <AdminSignIn />,
   },
   {
-    path: "/dashboard",
+    path: "/adminDashboard",
     element: <AdminDashboard />,
+    children: [
+      {
+        path: "",
+        element: <DashboardInner />,
+      },
+      { path: "summary", element: <Summary /> },
+    ],
   },
   {
     path: "*",

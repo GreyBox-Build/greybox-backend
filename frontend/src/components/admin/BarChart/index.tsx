@@ -1,5 +1,9 @@
-import React from "react";
+// src/components/BarChart.tsx
+import React, { useEffect, useState } from "react";
 import { Bar } from "react-chartjs-2";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../app/store"; // Import the RootState type for typing the selector
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -23,52 +27,74 @@ ChartJS.register(
 // Define the types for the monthly orders data
 interface MonthlyOrder {
   month: string;
-  amount: number;
+  total: number;
+}
+
+interface Data {
+  labels: string[];
+  datasets: {
+    label: string;
+    data: number[];
+    backgroundColor: ("#CD5928" | "#FCF2EE")[];
+    borderWidth: number;
+    borderRadius: number;
+  }[];
+}
+
+// Define the structure of the state slice for graphData
+interface GraphDataState {
+  adminLogin: MonthlyOrder[]; // This should match your MonthlyTotal type
 }
 
 const BarChart: React.FC = () => {
   // Monthly orders data
-  const monthlyOrders: MonthlyOrder[] = [
-    { month: "Jan", amount: 120 },
-    { month: "Feb", amount: 150 },
-    { month: "Mar", amount: 90 },
-    { month: "Apr", amount: 200 },
-    { month: "May", amount: 170 },
-    { month: "Jun", amount: 250 },
-    { month: "Jul", amount: 300 },
-    { month: "Aug", amount: 220 },
-    { month: "Sep", amount: 180 },
-    { month: "Oct", amount: 210 },
-    { month: "Nov", amount: 160 },
-    { month: "Dec", amount: 240 },
-  ];
+  const monthlyTotals = useSelector(
+    (state: RootState) => state.graphData
+  ) as GraphDataState;
 
   const currentMonth: number = new Date().getMonth();
 
-  // Bar chart data
-  const data = {
-    labels: monthlyOrders.map((order) => order.month),
+  // Initialize chartData with a default structure
+  const [chartData, setChartData] = useState<Data>({
+    labels: [],
     datasets: [
       {
         label: "Monthly Orders",
-        data: monthlyOrders.map((order) => order.amount),
-        backgroundColor: monthlyOrders.map((_, index) =>
-          index === currentMonth ? "#CD5928" : "#FCF2EE"
-        ),
-
+        data: [],
+        backgroundColor: [],
         borderWidth: 0,
         borderRadius: 8,
       },
     ],
-  };
+  });
+
+  // Update chartData when monthlyTotals or currentMonth changes
+  useEffect(() => {
+    const data = {
+      labels: monthlyTotals.adminLogin.map((order) => order.month.slice(0, 3)),
+      datasets: [
+        {
+          label: "Monthly Orders",
+          data: monthlyTotals.adminLogin.map((order) => order.total),
+          backgroundColor: monthlyTotals.adminLogin.map((_, index) =>
+            index === currentMonth ? "#CD5928" : "#FCF2EE"
+          ),
+          borderWidth: 0,
+          borderRadius: 8,
+        },
+      ],
+    };
+
+    setChartData(data);
+  }, [monthlyTotals, currentMonth]);
 
   // Bar chart options
   const options = {
     responsive: true,
-    maintainAspectRatio: false, // To control the height manually
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        display: false, // Hide the legend
+        display: false,
       },
       tooltip: {
         callbacks: {
@@ -79,36 +105,36 @@ const BarChart: React.FC = () => {
     scales: {
       x: {
         grid: {
-          display: false, // Hide grid lines on the x-axis
+          display: false,
         },
         title: {
           display: false,
           text: "Months",
         },
         border: {
-          display: false, // Hide the x-axis line
+          display: false,
         },
       },
       y: {
         min: 0,
         grid: {
-          display: false, // Hide grid lines on the x-axis
+          display: false,
         },
-        display: false, // Hides the Y-axis
-        // Limits the Y-axis value to 100 per scale
+        display: false,
       },
     },
   };
+
   return (
     <>
       <div>
         <p className="font-medium">Monthly Transactions:</p>
         <p className="font-bold text-2xl">
-          ${monthlyOrders[currentMonth].amount}
+          {monthlyTotals.adminLogin[currentMonth]?.total || 0}
         </p>
       </div>
       <div style={{ height: "130px" }} className="mt-4">
-        <Bar data={data} options={options} />
+        <Bar data={chartData} options={options} />
       </div>
     </>
   );

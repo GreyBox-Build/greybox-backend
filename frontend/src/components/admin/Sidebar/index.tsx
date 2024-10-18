@@ -1,15 +1,29 @@
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { FiSend } from "react-icons/fi";
 import { AiOutlineHome } from "react-icons/ai";
 import { MdOutlineLogout } from "react-icons/md";
+
 const Sidebar = () => {
+  const navigate = useNavigate();
   const links = [
-    { name: "dashboard", to: "/dashboard", img: <AiOutlineHome size={24} /> },
-    { name: "Report", to: "/report", img: <FiSend size={24} /> },
-    { name: "Confirmed", to: "/confirm", img: <FiSend size={24} /> },
-    { name: "Setting", to: "/setting", img: <FiSend size={24} /> },
+    {
+      name: "dashboard",
+      to: "/adminDashboard",
+      img: <AiOutlineHome size={24} />,
+    },
+    { name: "Report", to: "summary", img: <FiSend size={24} /> },
+    { name: "Confirmed", to: "Set", img: <FiSend size={24} /> },
+    { name: "Setting", to: "setting", img: <FiSend size={24} /> },
   ];
+
+  const logoutFunc = () => {
+    localStorage.removeItem("adminLogin");
+    localStorage.removeItem("access_token");
+
+    navigate("/admin");
+  };
+
   return (
     <div className="w-full ">
       <div className="w-full flex justify-center  ">
@@ -27,6 +41,7 @@ const Sidebar = () => {
                   }`
                 }
                 to={link.to}
+                end
               >
                 <span>{link.img}</span>
                 <span className="capitalize font-medium">{link.name}</span>
@@ -42,7 +57,7 @@ const Sidebar = () => {
           <span>
             <MdOutlineLogout size={24} />
           </span>
-          <span>Logout</span>
+          <span onClick={logoutFunc}>Logout</span>
         </div>
       </nav>
     </div>

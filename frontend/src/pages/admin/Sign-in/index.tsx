@@ -6,10 +6,20 @@ import { useSnackbar } from "notistack";
 import { useState } from "react";
 import "./index.css";
 import { FormButton } from "../../../components/buttons/FormButton";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { FaRegEyeSlash } from "react-icons/fa6";
+import { useObtainTokenMutation } from "../../../appSlices/apiSlice";
+import { useNavigate } from "react-router-dom";
 
 const AdminSignIn = () => {
+  const handleChange = () => {
+    localStorage.setItem("adminLogin", "true");
+  };
+
   const [typeChange, setTypeChange] = useState("password");
   const [passwordChange, setPasswordChange] = useState(true);
+  const [obtainToken, { isLoading }] = useObtainTokenMutation();
+  const navigate = useNavigate();
 
   const changeType = () => {
     setTypeChange(typeChange === "password" ? "text" : "password");
@@ -17,7 +27,7 @@ const AdminSignIn = () => {
   };
   const { enqueueSnackbar } = useSnackbar();
 
-  const { register, handleSubmit, control } = useForm({
+  const { register, handleSubmit } = useForm({
     defaultValues: {
       email: "",
       password: "",
@@ -26,8 +36,20 @@ const AdminSignIn = () => {
   });
 
   // Handle form submission and extract input values
-  const handleObtainToken = (data: any) => {
-    console.log("Form Data:", data);
+  const handleObtainToken = async (data: any) => {
+    try {
+      const response: any = await obtainToken(data).unwrap();
+      if (response.status) {
+        localStorage.setItem("access_token", response?.data?.access_token);
+        handleChange();
+        navigate("/adminDashboard");
+      }
+    } catch (error: any) {
+      enqueueSnackbar(
+        error?.data?.error ? error?.data?.error : "Connection failed!",
+        { variant: "success" }
+      );
+    }
   };
 
   return (
@@ -71,14 +93,17 @@ const AdminSignIn = () => {
                   className="outline-none focus:bg-white py-3 px-6 bg-white w-full rounded-[8px]"
                   {...register("password")}
                 />
-                <img
-                  src={`images/${
-                    typeChange === "password" ? "eye" : "slash"
-                  }.png`}
-                  alt=""
-                  className="absolute right-4 top-3 cursor-pointer"
+
+                <div
+                  className="absolute right-4 top-3 cursor-pointer transition-all duration-300 "
                   onClick={changeType}
-                />
+                >
+                  {typeChange === "password" ? (
+                    <MdOutlineRemoveRedEye size={24} />
+                  ) : (
+                    <FaRegEyeSlash size={24} />
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex flex-row gap-4">
@@ -94,7 +119,7 @@ const AdminSignIn = () => {
             <FormButton
               label="Login"
               extraClass="mt-6 !bg-orange-1 hover:!bg-orange-1/80"
-              // loading={isLoading}
+              loading={isLoading}
             />
           </form>
         </div>

@@ -1,9 +1,13 @@
 import React from "react";
 import { useDispatch } from "react-redux";
 import { setSearchQuery } from "../../../adminSlices/searchSlice";
+import { useGetAuthUserQuery } from "../../../appSlices/apiSlice";
 
 const Header = () => {
   const dispatch = useDispatch();
+
+  const { currentData: userData, isFetching } = useGetAuthUserQuery({});
+  const personInfo = userData?.data?.personal_details;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setSearchQuery(event.target.value));
@@ -37,8 +41,8 @@ const Header = () => {
               alt="profile pics"
             />
             <div>
-              <p>Kwekwu Peter</p>
-              <p>@kwekwupeter</p>
+              <p>{!isFetching ? `${personInfo?.last_name} ` : "Kwekwu John"}</p>
+              <p>{!isFetching ? personInfo?.email : "@Samuel"} </p>
             </div>
           </div>
         </div>

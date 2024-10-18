@@ -69,11 +69,11 @@ const Contact = () => {
               desc="+233 2022680388"
               icon={<PhoneIcon />}
             />
-            <ContactCard
+            {/* <ContactCard
               title="Address"
               desc="Denovo Plaza, Community 10. Tema"
               icon={<LocationIcon />}
-            />
+            /> */}
           </div>
         </section>
         <form className="bg-white rounded-[16px] md:rounded-[0px_16px_16px_0px] px-[34px] pt-[52px] pb-[26px]  w-full md:w-[70%] shadow-md">

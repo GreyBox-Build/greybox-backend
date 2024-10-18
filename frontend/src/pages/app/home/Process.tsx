@@ -48,7 +48,7 @@ const Process = () => {
             <ProcessCard
               sn="02."
               text="Deposit"
-              subText="Fund your account with your local currency"
+              subText="Fund your Greybox account with your local currency"
             />
             <ProcessCard
               sn="03."
