@@ -1,5 +1,7 @@
 package serializers
 
+import "encoding/json"
+
 type Hmac struct {
 	HmacSecret string `json:"hmacSecret"`
 }
@@ -29,18 +31,18 @@ type Webhook struct {
 }
 
 type EventObject struct {
-	Type               string `json:"type"`
-	ID                 string `json:"id"`
-	Partner            string `json:"partner"`
-	CustomerName       string `json:"customer_name"`
-	CollectionCurrency string `json:"collection_currency"`
-	CollectionRail     string `json:"collection_rail"`
-	CollectionAmount   int    `json:"collection_amount"`
-	BlockchainNetwork  string `json:"blockchain_network"`
-	BlockchainToken    string `json:"blockchain_token"`
-	BlockchainProof    string `json:"blockchain_proof"`
-	TokenAmount        int    `json:"token_amount"`
-	Description        string `json:"description"`
+	Type               string      `json:"type"`
+	ID                 string      `json:"id"`
+	Partner            string      `json:"partner"`
+	CustomerName       string      `json:"customer_name"`
+	CollectionCurrency string      `json:"collection_currency"`
+	CollectionRail     string      `json:"collection_rail"`
+	CollectionAmount   int         `json:"collection_amount"`
+	BlockchainNetwork  string      `json:"blockchain_network"`
+	BlockchainToken    string      `json:"blockchain_token"`
+	BlockchainProof    string      `json:"blockchain_proof"`
+	TokenAmount        json.Number `json:"token_amount"`
+	Description        string      `json:"description"`
 }
 
 type Event struct {

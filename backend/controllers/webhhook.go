@@ -71,7 +71,7 @@ func createTransaction(request *models.HurupayRequest, input serializers.Event) 
 	trans.Asset = strings.ToUpper(input.EventObject.BlockchainToken)
 	trans.Chain = input.EventObject.BlockchainNetwork
 	trans.TransactionType = "Fungible Token"
-	trans.Amount = fmt.Sprintf("%d", input.EventObject.TokenAmount)
+	trans.Amount = input.EventObject.TokenAmount.String()
 	trans.Status = "Pending"
 
 	if err := trans.SaveTransaction(); err != nil {
