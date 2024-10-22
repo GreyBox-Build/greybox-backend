@@ -1018,9 +1018,9 @@ func handleOffRampTransaction(input serializers.MobileOffRamp, user models.User,
 		log.Error(err)
 		return
 	}
+	fmt.Println("hash: ", hash)
 
 	transaction := prepareTransactionDetails(input, resp, hash)
-	time.Sleep(1 * time.Minute)
 
 	output, err := apis.OffRampMobileFinalize(transaction)
 	if err != nil || output.Data.ResultCode != 0 {
