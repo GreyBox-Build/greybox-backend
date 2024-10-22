@@ -44,8 +44,7 @@ func OnRampNotification(c *gin.Context) {
 	}
 
 	// Process the event based on the event type
-	err = processEvent(input.EventType, request, trans, &masterWallet)
-	if err != nil {
+	if err = processEvent(input.EventType, *request, *trans, masterWallet); err != nil {
 		fmt.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -81,7 +80,7 @@ func createTransaction(request *models.HurupayRequest, input serializers.Event) 
 }
 
 // Process event based on event type
-func processEvent(eventType string, request *models.HurupayRequest, trans *models.Transaction, masterWallet *models.MasterWallet) error {
+func processEvent(eventType string, request models.HurupayRequest, trans models.Transaction, masterWallet models.MasterWallet) error {
 	switch eventType {
 	case "collections.successful":
 		request.Status = "Completed"
@@ -108,12 +107,12 @@ func processEvent(eventType string, request *models.HurupayRequest, trans *model
 }
 
 // Handle native transaction processing for CELO and XLM
-func processNativeTransaction(crypto string, nativeAmount string, request *models.HurupayRequest, masterWallet *models.MasterWallet) error {
+func processNativeTransaction(crypto string, nativeAmount string, request models.HurupayRequest, masterWallet models.MasterWallet) error {
 	switch crypto {
 	case "CELO":
-		go processCeloTransaction(nativeAmount, &request.User, masterWallet)
+		go processCeloTransaction(nativeAmount, &request.User, &masterWallet)
 	case "XLM":
-		go processXlmTransaction(nativeAmount, &request.User, masterWallet)
+		go processXlmTransaction(nativeAmount, &request.User, &masterWallet)
 	}
 	return nil
 }
