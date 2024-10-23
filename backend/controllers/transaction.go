@@ -967,6 +967,9 @@ func MobileMoneyOffRamp(c *gin.Context) {
 		respondWithError(c, http.StatusBadRequest, err.Error())
 		return
 	}
+	if err := storeHurupayRequest(input, user, resp.Data.PayoutRequestID); err != nil {
+		log.Error(err)
+	}
 
 	go handleOffRampTransaction(input, user, resp)
 
@@ -1016,7 +1019,6 @@ func handleOffRampTransaction(input serializers.MobileOffRamp, user models.User,
 
 	if err != nil {
 		log.Error(err)
-		return
 	}
 	fmt.Println("hash: ", hash)
 
@@ -1028,9 +1030,6 @@ func handleOffRampTransaction(input serializers.MobileOffRamp, user models.User,
 		return
 	}
 
-	if err := storeHurupayRequest(input, user, resp.Data.PayoutRequestID); err != nil {
-		log.Error(err)
-	}
 }
 
 // Execute the CELO transaction

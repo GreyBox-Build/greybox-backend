@@ -49,6 +49,8 @@ jobs:
         key: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
         script: |
           cd app/greybox-backend
+          sudo su
+          chmod 700 *.pem
           docker-compose down
           docker-compose up --build -d
 
