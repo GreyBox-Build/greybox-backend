@@ -89,7 +89,6 @@ func processEvent(eventType string, request models.HurupayRequest, trans models.
 		_ = request.UpdateHurupayRequest()
 
 		nativeAmount, err := utils.PerformDepositofNativeCalculation(trans.Amount, "USD", request.User.CryptoCurrency)
-		fmt.Println("error", err.Error())
 		if err != nil {
 			return err
 		}
