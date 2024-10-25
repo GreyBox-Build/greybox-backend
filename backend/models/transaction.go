@@ -35,6 +35,7 @@ type Transaction struct {
 	CounterAddress     string  `json:"counter_address"`
 	TokenId            *string `json:"token_id"`
 	Asset              string  `json:"asset"`
+	RequestId          string  `json:"request_id"`
 }
 
 type DepositRequest struct {
@@ -269,4 +270,13 @@ func GetHurupayRequestRequestId(requestId string) (*HurupayRequest, error) {
 		return nil, err
 	}
 	return &hurupayRequest, nil
+}
+
+func GetTransactionByRequestId(requestId string) (*Transaction, error) {
+	var transaction Transaction
+	err := db.Preload("User").Where("request_id = ?", requestId).First(&transaction).Error
+	if err != nil {
+		return nil, err
+	}
+	return &transaction, nil
 }

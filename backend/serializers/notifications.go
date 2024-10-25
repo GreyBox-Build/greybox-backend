@@ -37,7 +37,7 @@ type EventObject struct {
 	CustomerName       string      `json:"customer_name"`
 	CollectionCurrency string      `json:"collection_currency"`
 	CollectionRail     string      `json:"collection_rail"`
-	CollectionAmount   int         `json:"collection_amount"`
+	CollectionAmount   json.Number `json:"collection_amount"`
 	BlockchainNetwork  string      `json:"blockchain_network"`
 	BlockchainToken    string      `json:"blockchain_token"`
 	BlockchainProof    string      `json:"blockchain_proof"`

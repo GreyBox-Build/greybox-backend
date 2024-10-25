@@ -19,6 +19,7 @@ func OnRampNotification(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Println("onramp request body: ", input)
 
 	// Fetch the request based on the EventObject ID
 	request, err := models.GetHurupayRequestRequestId(input.EventObject.ID)
@@ -56,22 +57,31 @@ func OnRampNotification(c *gin.Context) {
 // Create a transaction from the request and event input
 func createTransaction(request *models.HurupayRequest, input serializers.Event) (*models.Transaction, error) {
 	var trans models.Transaction
-	hash := utils.LastPart(input.EventObject.BlockchainProof, "/")
+	previousTrans, err := models.GetTransactionByRequestId(request.RequestId)
+	if err == nil && previousTrans != nil {
+		hash := utils.LastPart(input.EventObject.BlockchainProof, "/")
+		previousTrans.Hash = hash
+		previousTrans.TransactionId = hash
+		previousTrans.Address = request.User.AccountAddress
+		previousTrans.TransactionSubType = "Deposit"
+		if request.RequestType == models.OffRamp {
+			previousTrans.TransactionSubType = "Withdrawal"
+		}
+		previousTrans.Asset = strings.ToUpper(input.EventObject.BlockchainToken)
+		previousTrans.Chain = input.EventObject.BlockchainNetwork
+		previousTrans.TransactionType = "Fungible Token"
+		trans.Amount = input.EventObject.TokenAmount.String()
+		if request.RequestType == models.OffRamp {
+			previousTrans.Amount = input.EventObject.CollectionAmount.String()
+		}
+		previousTrans.Status = "Pending"
+		return previousTrans, nil
+	}
+
 	trans.UserID = request.User.ID
 	trans.User = request.User
-	trans.Hash = hash
 	trans.Description = input.EventObject.Description
-	trans.TransactionId = hash
-	trans.Address = request.User.AccountAddress
-	trans.TransactionSubType = "Deposit"
-	if request.RequestType == models.OffRamp {
-		trans.TransactionSubType = "Withdrawal"
-	}
-	trans.Asset = strings.ToUpper(input.EventObject.BlockchainToken)
-	trans.Chain = input.EventObject.BlockchainNetwork
-	trans.TransactionType = "Fungible Token"
-	trans.Amount = input.EventObject.TokenAmount.String()
-	trans.Status = "Pending"
+	trans.RequestId = request.RequestId
 
 	if err := trans.SaveTransaction(); err != nil {
 		return nil, err
@@ -184,6 +194,7 @@ func OffRampNotification(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Println("offramp request body: ", input)
 
 	// Fetch the request based on the EventObject ID
 	request, err := models.GetHurupayRequestRequestId(input.EventObject.ID)
