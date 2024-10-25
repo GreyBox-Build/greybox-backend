@@ -51,7 +51,5 @@ jobs:
           cd app/greybox-backend
           docker-compose down
           docker-compose stop
-          sudo su
-          chmod 700 *.pem
           docker-compose up --build -d
 
