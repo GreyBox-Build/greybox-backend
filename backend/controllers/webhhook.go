@@ -82,6 +82,10 @@ func createTransaction(request *models.HurupayRequest, input serializers.Event) 
 	trans.User = request.User
 	trans.Description = input.EventObject.Description
 	trans.RequestId = request.RequestId
+	trans.TransactionSubType = "Deposit"
+	if request.RequestType == models.OffRamp {
+		trans.TransactionSubType = "Withdrawal"
+	}
 
 	if err := trans.SaveTransaction(); err != nil {
 		return nil, err
