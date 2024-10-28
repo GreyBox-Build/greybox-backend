@@ -968,7 +968,8 @@ func MobileMoneyOffRamp(c *gin.Context) {
 		return
 	}
 	if err := storeHurupayRequest(input, user, resp.Data.PayoutRequestID); err != nil {
-		log.Error(err)
+		respondWithError(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	go handleOffRampTransaction(input, user, resp)
