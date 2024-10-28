@@ -45,21 +45,23 @@ const AllTransaction = () => {
                     {findSubArray(
                       groupByDate(transactionArray)[0]?.transactions,
                       date
-                    )?.map((details: any, index: number) => {
-                      return (
-                        <TransactionHistoryCard
-                          key={index}
-                          label={details?.transaction_sub_type}
-                          status={details.status}
-                          channel={details.description}
-                          time={moment(details?.CreatedAt).format("h:mm A")}
-                          amount={`${details.amount}${details?.asset}`}
-                          index={index}
-                          length={transactionArray?.length}
-                          onClick={() => {}}
-                        />
-                      );
-                    })}
+                    )
+                      ?.reverse()
+                      .map((details: any, index: number) => {
+                        return (
+                          <TransactionHistoryCard
+                            key={index}
+                            label={details?.transaction_sub_type}
+                            status={details.status}
+                            channel={details.description}
+                            time={moment(details?.CreatedAt).format("h:mm A")}
+                            amount={`${details.amount} ${details?.asset}`}
+                            index={index}
+                            length={transactionArray?.length}
+                            onClick={() => {}}
+                          />
+                        );
+                      })}
                   </div>
                 );
               }

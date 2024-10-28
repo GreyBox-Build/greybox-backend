@@ -57,7 +57,7 @@ const SendMobileMoney = () => {
       sendingAddress: personal_details.account_address,
       amountSending: data.amount?.replace(/,/g, ""),
       network: personal_details.crypto_currency,
-      token: personal_details.crypto_currency === "CELO" ? "CUSD" : "USDC",
+      token: personal_details.crypto_currency === "CELO" ? "cUSD" : "USDC",
       customerName: `${personal_details.first_name} ${personal_details.last_name}`,
       phoneNumber: selectCountryCodeByCountry(network?.data) + data.phoneNumber,
       countryCode: data.countryCode,
@@ -72,7 +72,6 @@ const SendMobileMoney = () => {
         navigate("/dashboard");
       }, 3000);
     } catch (error: any) {
-      console.log(error);
       enqueueSnackbar(error?.data?.error, { variant: "warning" });
     }
   };
