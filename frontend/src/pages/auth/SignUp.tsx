@@ -10,8 +10,8 @@ import { TextInput } from "../../components/inputs/TextInput";
 import { Link, useNavigate } from "react-router-dom";
 import { FormButton } from "../../components/buttons/FormButton";
 import { useState } from "react";
-import SelectBox from "../../components/modals/SelectBox";
-import { countryData, currencyData } from "../../utils/Dummies";
+
+import { countryData, currencyDataT } from "../../utils/Dummies";
 import { useForm } from "react-hook-form";
 import { createUserSchema } from "../../utils/Validations";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,8 +20,10 @@ import {
   useGetChainsQuery,
 } from "../../appSlices/apiSlice";
 import { useSnackbar } from "notistack";
+import SelectBoxT from "../../components/modals/SelectBoxT";
 
 const SignUp = () => {
+  // console.log(currencyData, countryData);
   const navigate = useNavigate();
   const [openCurrency, setOpenCurrency] = useState<boolean>(false);
   const [openCountry, setOpenCountry] = useState<boolean>(false);
@@ -43,6 +45,8 @@ const SignUp = () => {
     resolver: zodResolver(createUserSchema),
   });
   const { currentData: chains } = useGetChainsQuery({});
+
+  console.log(chains);
 
   const handleCreateUser = async (data: any) => {
     const updatedData = { ...data, country_code: getValues("country_code") };
@@ -155,22 +159,24 @@ const SignUp = () => {
               </Link>
             </section>
 
-            <SelectBox
+            <SelectBoxT
               state={openCurrency}
               title="Select Currency"
               placeholder="Search Currency"
-              childList={currencyData}
+              // type="network"
+              childList={currencyDataT}
               onPickChild={(list) => {
                 setValue("currency", list?.code!);
                 clearErrors("currency");
               }}
               onClose={() => setOpenCurrency(false)}
             />
-            <SelectBox
+            <SelectBoxT
               state={openCountry}
               title="Select Country"
               placeholder="Search Country"
               childList={countryData}
+              // type="countryName"
               onPickChild={(list) => {
                 setValue("country", list?.name);
                 setValue("country_code", list?.code!);
@@ -178,14 +184,15 @@ const SignUp = () => {
               }}
               onClose={() => setOpenCountry(false)}
             />
-            <SelectBox
+            <SelectBoxT
               state={openChain}
               title="Select Chain"
               placeholder="Search Chain"
+              type="chain"
               childList={chains?.data === undefined ? [] : chains?.data}
               onPickChild={(list: any) => {
                 setValue("chain", list?.chain);
-                clearErrors("country");
+                clearErrors("chain");
               }}
               onClose={() => setOpenChain(false)}
             />

@@ -27,9 +27,12 @@ const Dashboard = () => {
   const { currentData: userData, isFetching } = useGetAuthUserQuery({});
 
   const { currentData: transactions, isFetching: isFetchingTransactions } =
-    useGetTransactionQuery(userData?.data?.personal_details?.crypto_currency.toLowerCase(), {
-      refetchOnMountOrArgChange: true,
-    });
+    useGetTransactionQuery(
+      userData?.data?.personal_details?.crypto_currency.toLowerCase(),
+      {
+        refetchOnMountOrArgChange: true,
+      }
+    );
 
   console.log(transactions);
 
@@ -149,21 +152,23 @@ const Dashboard = () => {
                         {findSubArray(
                           groupByDate(transactionArray)[0]?.transactions,
                           date
-                        )?.map((details: any, index: number) => {
-                          return (
-                            <DetailsCard
-                              key={index}
-                              label={details?.transaction_sub_type}
-                              time={moment(details?.timestamp).format(
-                                "hh:mm A"
-                              )}
-                              amount={`${details?.amount}${details?.asset}`}
-                              index={index}
-                              length={date?.length}
-                              onClick={() => {}}
-                            />
-                          );
-                        })}
+                        )
+                          ?.reverse()
+                          ?.map((details: any, index: number) => {
+                            return (
+                              <DetailsCard
+                                key={index}
+                                label={details?.transaction_sub_type}
+                                time={moment(details?.timestamp).format(
+                                  "hh:mm A"
+                                )}
+                                amount={`${details?.amount}${details?.asset}`}
+                                index={index}
+                                length={date?.length}
+                                onClick={() => {}}
+                              />
+                            );
+                          })}
                       </div>
                     );
                   }

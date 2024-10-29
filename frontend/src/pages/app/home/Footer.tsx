@@ -19,13 +19,10 @@ const Footer = () => {
   return (
     <section className="min-h-[500px] bg-pink-1 pt-[100px] px-[25px] md:px-[5%] lg:px-[10%]">
       <section className="w-full p-[54px_25px] bg-orange-1 text-white rounded-[24px] flex flex-col items-center">
-        <h2 className="text-center text-[2.5rem] font-[600] leading-[51.43px]">
+        <h2 className="text-center text-[2.5rem] font-[600] leading-[51.43px] mb-8">
           Get started and live the Greybox experience !
         </h2>
-        <p className=" text-center text-[1rem] leading-[22px] max-w-[631px] mt-[26px] mb-[65px]">
-          Ready to experience hassle-free cross-border payments? Sign up for a
-          Greybox account today and reimagine the way you move money.
-        </p>
+
         <HomeButton
           label="Get Started"
           onClick={() => navigate("/sign-up")}
@@ -43,10 +40,10 @@ const Footer = () => {
             <a href="https://instagram.com/greybox_">
               <RiInstagramFill size={30} />
             </a>
-            <a href="https://linkedin.com/in/Greybox">
+            <a href="https://linkedin.com/company/greyboxpay">
               <FaLinkedin size={30} />
             </a>
-            <a href="https://facebook.com/Greybox">
+            <a href="https://facebook.com/profile.php?id=100089993932799">
               <FaFacebookSquare size={30} />
             </a>
             <a href="https://x.com/@greyboxpay">

@@ -10,7 +10,7 @@ type ChildListProps = {
 
 type ChildListPropsArray = ChildListProps[];
 
-const SelectBox = ({
+const SelectBoxT = ({
   state,
   title,
   placeholder,
@@ -48,12 +48,10 @@ const SelectBox = ({
           onFocus={() => setSearchValue("")}
         />
         <section className="flex flex-col gap-y-[8px]">
-          {type === "countryName"
+          {type === "chain"
             ? childList
                 .filter((child: any) =>
-                  child.countryName
-                    .toLowerCase()
-                    .includes(searchValue.toLowerCase())
+                  child.name.toLowerCase().includes(searchValue.toLowerCase())
                 )
                 .map((list: any, index) => (
                   <div
@@ -68,17 +66,7 @@ const SelectBox = ({
                     }}
                   >
                     <div className="flex items-center gap-x-[11px]">
-                      {list.logo ? (
-                        <div
-                          className={`w-[30px] h-[30px] rounded-[50%] flex items-center justify-center ${
-                            selectedIndex === index
-                              ? "bg-orange-2"
-                              : "bg-grey-1"
-                          }`}
-                        >
-                          {list.logo}
-                        </div>
-                      ) : list.image_url ? (
+                      {list.image_url ? (
                         <img
                           src={list?.image_url}
                           alt="logo"
@@ -89,13 +77,8 @@ const SelectBox = ({
                       )}
                       <div className="flex flex-col gap-y-[3px]">
                         <p className=" text-black-2 text-[0.875rem] leading-[18px] ">
-                          {changeFirstLetterToUpperCase(list?.countryName)}
+                          {changeFirstLetterToUpperCase(list?.name)}
                         </p>
-                        {list.code && (
-                          <p className="text-black-3 text-[0.875rem] leading-[12px]">
-                            {list.code}
-                          </p>
-                        )}
                         {list.chain && (
                           <p className="text-black-3 text-[0.875rem] leading-[12px]">
                             {list.chain}
@@ -149,7 +132,7 @@ const SelectBox = ({
                 ))
             : childList
                 .filter((child: any) =>
-                  child?.countryName
+                  child?.name
                     ?.toLowerCase()
                     .includes(searchValue?.toLowerCase())
                 )
@@ -217,4 +200,4 @@ const SelectBox = ({
   );
 };
 
-export default SelectBox;
+export default SelectBoxT;

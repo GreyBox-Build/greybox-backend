@@ -317,3 +317,21 @@ export const currencyData = [
     code: "KES",
   },
 ];
+
+export const currencyDataT = [
+  {
+    name: "Ghana Cedi",
+    logo: GHFlag(),
+    code: "GHS",
+  },
+  {
+    name: "Nigerian Naira",
+    logo: NGFlag(),
+    code: "NGN",
+  },
+  {
+    name: "Kenyan Shilling",
+    logo: KENFlag(),
+    code: "KES",
+  },
+];
