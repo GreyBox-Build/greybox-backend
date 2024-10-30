@@ -70,7 +70,7 @@ func createTransaction(request *models.HurupayRequest, input serializers.Event) 
 		previousTrans.Asset = strings.ToUpper(input.EventObject.BlockchainToken)
 		previousTrans.Chain = input.EventObject.BlockchainNetwork
 		previousTrans.TransactionType = "Fungible Token"
-		trans.Amount = input.EventObject.TokenAmount.String()
+		previousTrans.Amount = input.EventObject.TokenAmount.String()
 		if request.RequestType == models.OffRamp {
 			previousTrans.Amount = input.EventObject.CollectionAmount.String()
 		}
