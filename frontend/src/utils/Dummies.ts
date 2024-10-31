@@ -196,7 +196,7 @@ export const allTransactionData = [
 
 export const notificationsData = [
   {
-    text: "Scheduled maintenance | between  now and may 2020",
+    text: "Nothing for now maintenance | between  now and may 2020",
     subText: "Lorem Ipsum is a dummy text...",
     date: "18 Jan",
   },

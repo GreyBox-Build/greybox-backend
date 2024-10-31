@@ -150,7 +150,7 @@ const MobileDeposit = () => {
               </div>
 
               <div>
-                <InputLabel text="Select Ntwork Provider" /> {/* Network */}
+                <InputLabel text="Select Network Provider" /> {/* Network */}
                 <TextInput
                   control={control}
                   name="network"

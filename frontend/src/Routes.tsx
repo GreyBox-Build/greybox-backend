@@ -113,10 +113,7 @@ export const routes = createBrowserRouter([
     path: "/withdraw-via-bank",
     element: <BankWithdrawal />,
   },
-  {
-    path: "/withdraw-via-paychant",
-    element: <PaychantWithdrawal />,
-  },
+
   {
     path: "/notifications",
     element: <Notifications />,

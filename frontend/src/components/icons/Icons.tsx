@@ -247,9 +247,11 @@ export const Notification = ({
 }) => (
   <div className="relative" onClick={onClick}>
     <img src="/images/notification.png" alt="" className=" cursor-pointer" />
-    <div className="absolute top-[-1px] right-[-1px] h-[16px] w-[16px] rounded-[50%] bg-orange-1 text-white text-[0.5rem] flex items-center justify-center">
-      {current}
-    </div>
+    {current !== 0 && (
+      <div className="absolute top-[-1px] right-[-1px] h-[16px] w-[16px] rounded-[50%] bg-orange-1 text-white text-[0.5rem] flex items-center justify-center">
+        {current}
+      </div>
+    )}
   </div>
 );
 
