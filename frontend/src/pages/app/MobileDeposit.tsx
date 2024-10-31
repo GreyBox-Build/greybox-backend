@@ -195,7 +195,7 @@ const MobileDeposit = () => {
             />
 
             {/* Network Select Modal */}
-            {/* Country Select Modal */}
+
             <SelectBox
               state={openNetwork}
               title="Select Network"
