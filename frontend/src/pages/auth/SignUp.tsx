@@ -10,8 +10,10 @@ import { TextInput } from "../../components/inputs/TextInput";
 import { Link, useNavigate } from "react-router-dom";
 import { FormButton } from "../../components/buttons/FormButton";
 import { useState } from "react";
+import { FaRegEye } from "react-icons/fa";
 
 import { countryData, currencyDataT } from "../../utils/Dummies";
+import { IoEyeOffOutline } from "react-icons/io5";
 import { useForm } from "react-hook-form";
 import { createUserSchema } from "../../utils/Validations";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +23,7 @@ import {
 } from "../../appSlices/apiSlice";
 import { useSnackbar } from "notistack";
 import SelectBoxT from "../../components/modals/SelectBoxT";
+import InputTextRem from "../../components/InputTextRem";
 
 const SignUp = () => {
   // console.log(currencyData, countryData);
@@ -45,8 +48,6 @@ const SignUp = () => {
     resolver: zodResolver(createUserSchema),
   });
   const { currentData: chains } = useGetChainsQuery({});
-
-  console.log(chains);
 
   const handleCreateUser = async (data: any) => {
     const updatedData = { ...data, country_code: getValues("country_code") };
@@ -132,13 +133,8 @@ const SignUp = () => {
                 }}
                 img={<DropDown />}
               />
-              <TextInput
-                control={control}
-                name="password"
-                placeholder="Password"
-                type="password"
-                img={<LockOpen />}
-              />
+
+              <InputTextRem control={control} name="password" />
             </section>
 
             <FormButton

@@ -150,7 +150,7 @@ const MobileDeposit = () => {
               </div>
 
               <div>
-                <InputLabel text="Select Ntwork Provider" /> {/* Network */}
+                <InputLabel text="Select Network Provider" /> {/* Network */}
                 <TextInput
                   control={control}
                   name="network"
@@ -195,7 +195,7 @@ const MobileDeposit = () => {
             />
 
             {/* Network Select Modal */}
-            {/* Country Select Modal */}
+
             <SelectBox
               state={openNetwork}
               title="Select Network"

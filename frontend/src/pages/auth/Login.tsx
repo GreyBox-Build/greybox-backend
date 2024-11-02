@@ -8,6 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { obtainTokenSchema } from "../../utils/Validations";
 import { useObtainTokenMutation } from "../../appSlices/apiSlice";
 import { useSnackbar } from "notistack";
+import { FaRegEye } from "react-icons/fa";
+import { IoEyeOffOutline } from "react-icons/io5";
+import InputTextRem from "../../components/InputTextRem";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,7 +35,7 @@ const Login = () => {
       enqueueSnackbar(
         error?.data?.error ? error?.data?.error : "Connction failed!",
         { variant: "success" }
-      ); 
+      );
     }
   };
   return (
@@ -58,13 +61,17 @@ const Login = () => {
                 type="email"
                 img={<Mail />}
               />
-              <TextInput
+              {/* <TextInput
                 control={control}
                 name="password"
+                pass={true}
                 placeholder="Password"
+                imgT={<FaRegEye size={24} />}
+                imgP={<IoEyeOffOutline size={24} />}
                 type="password"
                 img={<LockOpen />}
-              />
+              /> */}
+              <InputTextRem control={control} name="password" />
             </section>
             <Link
               to={"/forgot-password"}

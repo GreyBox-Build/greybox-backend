@@ -54,7 +54,7 @@ const Dashboard = () => {
         <div className="w-full md:w-[50.33%] lg:w-[45.33%] min-h-[100vh] bg-grey-2 px-[25px] pt-[51px] pb-[130px]">
           <section className="w-full flex justify-between items-center">
             <Notification
-              current={4}
+              current={0}
               onClick={() => navigate("/notifications")}
             />
             <div>

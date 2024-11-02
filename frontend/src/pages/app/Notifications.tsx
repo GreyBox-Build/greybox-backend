@@ -19,14 +19,15 @@ const Notifications = () => {
             </h2>
           </div>
           <section className="flex flex-col gap-y-[32px] mt-[47px]">
-            {notificationsData.map((note, index) => (
+            {/* {notificationsData.map((note, index) => (
               <NotificationsCard
                 key={index}
                 text={note.text}
                 subText={note.subText}
                 date={note.date}
               />
-            ))}
+            ))} */}
+            <p className="text-center">Nothing for now...</p>
           </section>
         </div>
       }
