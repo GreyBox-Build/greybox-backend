@@ -66,6 +66,18 @@ type PayoutResponse struct {
 	} `json:"data"`
 }
 
+type ErrorDetail struct {
+	Field   string `json:"field"`
+	Message string `json:"message"`
+}
+
+type HurupayErrorResponse struct {
+	Data    interface{}   `json:"data,omitempty"` // Accommodates an empty map or other data types
+	Errors  []ErrorDetail `json:"errors,omitempty"`
+	Message string        `json:"message"`
+	Success bool          `json:"success"`
+}
+
 func GetUserTransactions(chain, walletAddress, category string, pageSize uint64) (map[string]interface{}, error) {
 	url := ""
 	switch category {
@@ -462,12 +474,12 @@ func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		errorResponse := map[string]interface{}{}
+		errorResponse := HurupayErrorResponse{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			return MobileMoneyResponse{}, err
 		}
 		fmt.Println("error response: ", errorResponse)
-		return MobileMoneyResponse{}, errors.New("failed to perform transaction")
+		return MobileMoneyResponse{}, errors.New(errorResponse.Message)
 	}
 
 	respData := MobileMoneyResponse{}
@@ -502,13 +514,13 @@ func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, er
 
 	fmt.Println("status code: ", resp.StatusCode)
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
-		errorResponse := map[string]interface{}{}
+		errorResponse := HurupayErrorResponse{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			fmt.Println("error response: ", errorResponse)
 			return PayoutResponse{}, err
 		}
 		fmt.Println("error response: ", errorResponse)
-		return PayoutResponse{}, errors.New("failed to perform transaction")
+		return PayoutResponse{}, errors.New(errorResponse.Message)
 	}
 
 	respData := PayoutResponse{}
