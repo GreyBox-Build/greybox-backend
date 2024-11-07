@@ -61,16 +61,7 @@ const Login = () => {
                 type="email"
                 img={<Mail />}
               />
-              {/* <TextInput
-                control={control}
-                name="password"
-                pass={true}
-                placeholder="Password"
-                imgT={<FaRegEye size={24} />}
-                imgP={<IoEyeOffOutline size={24} />}
-                type="password"
-                img={<LockOpen />}
-              /> */}
+
               <InputTextRem control={control} name="password" />
             </section>
             <Link

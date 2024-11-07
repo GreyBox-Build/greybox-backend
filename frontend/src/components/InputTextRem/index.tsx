@@ -26,13 +26,13 @@ const InputTextRem: React.FC<InputTextRemProps> = ({ control, name }) => {
               placeholder="Password"
             />
             <span
-              className="absolute right-3 top-2 cursor-pointer"
+              className="absolute right-5 top-3 cursor-pointer"
               onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? (
-                <FaRegEye size={24} />
+                <FaRegEye size={24} className="text-[#525252]" />
               ) : (
-                <IoEyeOffOutline size={24} />
+                <IoEyeOffOutline size={24} className="text-[#525252]" />
               )}
             </span>
           </div>

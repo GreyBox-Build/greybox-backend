@@ -100,8 +100,7 @@ const BankTransferDeposit = () => {
         navigate("/dashboard");
       }, 3000);
     } catch (error: any) {
-      console.log(error);
-      enqueueSnackbar(error?.data?.error, { variant: "success" });
+      enqueueSnackbar(`Failed to perform transaction... ${error}` , { variant: "success" });
     }
   };
 

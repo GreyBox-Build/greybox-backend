@@ -19,6 +19,7 @@ import {
 
 import { setGraphData } from "../../../adminSlices/graphDataSlice";
 import { calculateMonthlyTotals } from "../utils";
+import { FaTimes } from "react-icons/fa";
 
 type TabType = "All" | "pending" | "completed";
 
@@ -30,7 +31,9 @@ const OrdersTable = () => {
   const { enqueueSnackbar } = useSnackbar();
   const dispatch = useDispatch();
   const searchQuery = useSelector((state: RootState) => state.search.query);
-
+  const [bankRef, setBankRef] = useState("");
+  const [openModal, setOpenModal] = useState(false);
+  const [transactionID, setTransactionID] = useState("");
   // Retrieve transactions data from the backend
   const { data, isError } = useAdminOnRampRetrieveWithParamsQuery({});
   const { data: offrampData } = useAdminGetOffRampWithdrawalReqQuery({});
@@ -160,16 +163,39 @@ const OrdersTable = () => {
   };
 
   //================================= Withdrawal Functionalities =================================
-
+  const [withDeposit, setWithDeposit] = useState("Confirm");
+  const confirmTransForWithdrawal = () => {
+    if (transactionID && bankRef) {
+      confirmWithdrawalOrder(transactionID, bankRef);
+      console.log("Confirming withdrawal:", transactionID, bankRef);
+    } else {
+      enqueueSnackbar("Transaction ID or Bank Reference is missing", {
+        variant: "error",
+      });
+    }
+  };
+  const cancelTransForWithdrawal = () => {
+    if (transactionID && bankRef) {
+      cancelWithdrawalOrder(transactionID, bankRef);
+      console.log("Cancelling withdrawal:", transactionID, bankRef);
+    } else {
+      enqueueSnackbar("Transaction ID or Bank Reference is missing", {
+        variant: "error",
+      });
+    }
+  };
   const confirmWithdrawalOrder = async (
     id: string | number,
     bankRef: string | number
   ) => {
     try {
-      const actionPayload = { action: "Verified", bankRef: bankRef };
+      const actionBankRef = {
+        action: "Verified", // Action type
+        bankRef: bankRef, // Bank reference ID
+      };
       const response = await adminVerifyOffRampReqWithId({
         id: id,
-        action: actionPayload,
+        actionBankRef: actionBankRef,
       });
 
       if ("error" in response) {
@@ -198,10 +224,13 @@ const OrdersTable = () => {
     bankRef: string | number
   ) => {
     try {
-      const actionPayload = { action: "Reject", bankRef: bankRef };
+      const actionBankRef = {
+        action: "Reject", // Action type
+        bankRef: bankRef, // Bank reference ID
+      };
       const response = await adminVerifyOffRampReqWithId({
-        id: id,
-        action: actionPayload,
+        id,
+        actionBankRef: actionBankRef,
       });
 
       if ("error" in response) {
@@ -271,164 +300,137 @@ const OrdersTable = () => {
   }, [data, anoData, dispatch, monthlyTotalsDep]);
 
   return (
-    <div className="w-full bg-white py-8 px-10 rounded-2xl flex flex-col gap-4">
-      <p className="text-2xl font-bold ml-3">Transactions</p>
-
-      {/* Tab buttons */}
-      <div className="flex space-x-4 mb-4">
-        {tabs.map((tab) => (
-          <button
-            key={tab.value}
-            className={`px-4 py-2 capitalize rounded-[8px] ${
-              activeTab === tab.value
-                ? "bg-orange-1 text-white"
-                : "bg-[#FDF9F6]"
-            }`}
-            onClick={() => setActiveTab(tab.value)}
-          >
-            {tab.label}
-          </button>
-        ))}
-
-        <select
-          className="outline-none border-none bg-[#FDF9F6]"
-          onChange={(e) => {
-            setType(e.target.value);
-            console.log(type);
-          }}
+    <>
+      {openModal && (
+        <div
+          className={`fixed w-screen h-screen bg-white  ${
+            openModal
+              ? "top-0 transition-[top] duration-500"
+              : "top[-1000px] transition-[top] duration-500"
+          } left-0 right-0 bottom-0 flex items-center justify-center`}
         >
-          <option value="Deposit">Deposit</option>
-          <option value="Withdraw">Withdrawal</option>
-        </select>
-      </div>
+          <div className="w-full max-w-[600px] border border-orange-1 rounded-md p-4 flex flex-col gap-4 relative">
+            <span
+              className="absolute -top-10 -right-7 text-3xl text-orange-1 cursor-pointer hover:rotate-90
+              "
+              onClick={() => setOpenModal(false)}
+            >
+              <FaTimes />
+            </span>
+            <input
+              type="text"
+              className="w-full border  p-2 outline-none"
+              placeholder="Enter the bank ref"
+              onChange={(e) => setBankRef(e.target.value)} // Capture bankRef input
+            />
+            <button
+              className="bg-orange-1 px-10 py-2 rounded-full text-white"
+              onClick={() => {
+                // When Confirm button is clicked, either confirm or cancel the transaction based on the state
+                withDeposit === "Confirm"
+                  ? confirmTransForWithdrawal()
+                  : cancelTransForWithdrawal();
+                setOpenModal(false);
+              }}
+            >
+              {withDeposit === "Confirm"
+                ? " Confirm Transaction"
+                : "Cancel Transaction"}
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="w-full bg-white py-8 px-10 rounded-2xl flex flex-col gap-4">
+        <p className="text-2xl font-bold ml-3">Transactions</p>
 
-      {/* Transaction Table */}
-      <div className="w-full overflow-x-auto">
-        <table className="min-w-full border table-fixed border-gray-300 ">
-          <thead className="bg-[#F5F5F5]">
-            <tr>
-              <th className="border p-2">S/N</th>
-              <th className="border p-2">Name</th>
-              <th className="border p-2">Account No</th>
-              <th className="border p-2">Amount (₦)</th>
-              <th className="border p-2">Amount ($)</th>
-              <th className="border p-2">Date</th>
-              <th className="border p-2">Status</th>
-              <th className="border p-2">Ref</th>
-              {activeTab === "pending" && (
-                <th className="border p-2" colSpan={2}>
-                  Action
-                </th>
-              )}
-            </tr>
-          </thead>
+        {/* Tab buttons */}
+        <div className="flex space-x-4 mb-4">
+          {tabs.map((tab) => (
+            <button
+              key={tab.value}
+              className={`px-4 py-2 capitalize rounded-[8px] ${
+                activeTab === tab.value
+                  ? "bg-orange-1 text-white"
+                  : "bg-[#FDF9F6]"
+              }`}
+              onClick={() => setActiveTab(tab.value)}
+            >
+              {tab.label}
+            </button>
+          ))}
 
-          {/* table body  */}
+          <select
+            className="outline-none border-none bg-[#FDF9F6]"
+            onChange={(e) => {
+              setType(e.target.value);
+            }}
+          >
+            <option value="Deposit">Deposit</option>
+            <option value="Withdraw">Withdrawal</option>
+          </select>
+        </div>
 
-          {type === "Deposit" ? (
-            <tbody>
-              {filteredTransactions.map((transaction, index) => (
-                <tr key={transaction.ID}>
-                  <td className="border-b p-2">{index + 1}</td>
-                  <td className="border-b p-2">{transaction.account_name}</td>
-                  <td className="border-b p-2">{transaction.account_number}</td>
-                  <td className="border-b p-2">₦{transaction.fiat_amount}</td>
-                  <td className="border-b p-2">
-                    ${transaction.asset_equivalent}
-                  </td>
-                  <td className="border-b p-2">
-                    {new Date(transaction.CreatedAt).toLocaleDateString()}
-                  </td>
-                  <td
-                    className={`border-b  ${
-                      transaction.status === "pending"
-                        ? " text-orange-1"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    <span
-                      className={`bg-[#FDF9F6]  px-2 py-1 inline-block rounded-full shadow-sm `}
-                    >
-                      {" "}
-                      {transaction.status}
-                    </span>
-                  </td>
-                  <td className="border-b p-2">{transaction.ref}</td>
-                  {activeTab === "pending" && (
+        {/* Transaction Table */}
+        <div className="w-full overflow-x-auto">
+          <table className="min-w-full border table-fixed border-gray-300 ">
+            <thead className="bg-[#F5F5F5]">
+              <tr>
+                <th className="border p-2">S/N</th>
+                <th className="border p-2">Name</th>
+                <th className="border p-2">Account No</th>
+                <th className="border p-2">Amount (₦)</th>
+                <th className="border p-2">Amount ($)</th>
+                <th className="border p-2">Date</th>
+                <th className="border p-2">Status</th>
+                <th className="border p-2">Ref</th>
+                {activeTab === "pending" && (
+                  <th className="border p-2" colSpan={2}>
+                    Action
+                  </th>
+                )}
+              </tr>
+            </thead>
+
+            {/* table body  */}
+
+            {type === "Deposit" ? (
+              <tbody>
+                {filteredTransactions.map((transaction, index) => (
+                  <tr key={transaction.ID}>
+                    <td className="border-b p-2">{index + 1}</td>
+                    <td className="border-b p-2">{transaction.account_name}</td>
                     <td className="border-b p-2">
-                      <div className="flex items-center gap-2">
-                        {" "}
-                        <button
-                          onClick={() => confirmOrder(transaction.ID)}
-                          className={`bg-[#FDF9F6] flex items-center gap-2 ${
-                            transaction.status === "pending"
-                              ? " text-orange-1"
-                              : "text-gray-700"
-                          } shadowbtn px-3 py-2`}
-                        >
-                          Confirm
-                          <FaCheck size={24} />
-                        </button>
-                        <button
-                          onClick={() => cancelOrder(transaction.ID)}
-                          className={`bg-[#FDF9F6] flex items-center gap-2  ${
-                            transaction.status !== "pending"
-                              ? " text-orange-1"
-                              : "text-gray-700"
-                          } shadowbtn px-3 py-2`}
-                        >
-                          Cancel
-                          <LiaTimesSolid size={24} />
-                        </button>
-                      </div>
+                      {transaction.account_number}
                     </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          ) : (
-            <tbody>
-              {filteredWithTransactions?.map((transaction, index) => (
-                <tr key={transaction.ID}>
-                  <td className="border-b p-2">{index + 1}</td>
-                  <td className="border-b p-2">{transaction.account_name}</td>
-                  <td className="border-b p-2">{transaction.account_number}</td>
-                  <td className="border-b p-2">
-                    ₦{transaction.equivalent_fiat}
-                  </td>
-                  <td className="border-b p-2">${transaction.crypto_amount}</td>
-                  <td className="border-b p-2">
-                    {new Date(transaction.CreatedAt).toLocaleDateString()}
-                  </td>
-                  <td
-                    className={`border-b  ${
-                      transaction.status === "Awaiting Payment"
-                        ? " text-orange-1"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    <span
-                      className={`bg-[#FDF9F6]  px-2 py-1 inline-block rounded-full shadow-sm `}
+                    <td className="border-b p-2">₦{transaction.fiat_amount}</td>
+                    <td className="border-b p-2">
+                      ${transaction.asset_equivalent}
+                    </td>
+                    <td className="border-b p-2">
+                      {new Date(transaction.CreatedAt).toLocaleDateString()}
+                    </td>
+                    <td
+                      className={`border-b  ${
+                        transaction.status === "pending"
+                          ? " text-orange-1"
+                          : "text-gray-700"
+                      }`}
                     >
-                      {" "}
-                      {transaction.status}
-                    </span>
-                  </td>
-                  <td className="border-b p-2">{transaction.bank_ref}</td>
-                  {activeTab === "pending" &&
-                    transaction.status === "Awaiting Payment" && (
+                      <span
+                        className={`bg-[#FDF9F6]  px-2 py-1 inline-block rounded-full shadow-sm `}
+                      >
+                        {transaction.status}
+                      </span>
+                    </td>
+                    <td className="border-b p-2">{transaction.ref}</td>
+                    {activeTab === "pending" && (
                       <td className="border-b p-2">
                         <div className="flex items-center gap-2">
                           {" "}
                           <button
-                            onClick={() =>
-                              confirmWithdrawalOrder(
-                                transaction.ID,
-                                transaction.bank_ref
-                              )
-                            }
+                            onClick={() => confirmOrder(transaction.ID)}
                             className={`bg-[#FDF9F6] flex items-center gap-2 ${
-                              transaction.status === "Awaiting Payment"
+                              transaction.status === "pending"
                                 ? " text-orange-1"
                                 : "text-gray-700"
                             } shadowbtn px-3 py-2`}
@@ -437,14 +439,9 @@ const OrdersTable = () => {
                             <FaCheck size={24} />
                           </button>
                           <button
-                            onClick={() =>
-                              cancelWithdrawalOrder(
-                                transaction.ID,
-                                transaction.bank_ref
-                              )
-                            }
+                            onClick={() => cancelOrder(transaction.ID)}
                             className={`bg-[#FDF9F6] flex items-center gap-2  ${
-                              transaction.status !== "Awaiting Payment"
+                              transaction.status !== "pending"
                                 ? " text-orange-1"
                                 : "text-gray-700"
                             } shadowbtn px-3 py-2`}
@@ -455,13 +452,88 @@ const OrdersTable = () => {
                         </div>
                       </td>
                     )}
-                </tr>
-              ))}
-            </tbody>
-          )}
-        </table>
+                  </tr>
+                ))}
+              </tbody>
+            ) : (
+              <tbody>
+                {filteredWithTransactions?.map((transaction, index) => (
+                  <tr key={transaction.ID}>
+                    <td className="border-b p-2">{index + 1}</td>
+                    <td className="border-b p-2">{transaction.account_name}</td>
+                    <td className="border-b p-2">
+                      {transaction.account_number}
+                    </td>
+                    <td className="border-b p-2">
+                      ₦{transaction.equivalent_fiat}
+                    </td>
+                    <td className="border-b p-2">
+                      ${transaction.crypto_amount}
+                    </td>
+                    <td className="border-b p-2">
+                      {new Date(transaction.CreatedAt).toLocaleDateString()}
+                    </td>
+                    <td
+                      className={`border-b  ${
+                        transaction.status === "Awaiting Payment"
+                          ? " text-orange-1"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      <span
+                        className={`bg-[#FDF9F6]  px-2 py-1 inline-block rounded-full shadow-sm `}
+                      >
+                        {" "}
+                        {transaction.status}
+                      </span>
+                    </td>
+                    <td className="border-b p-2">{transaction.bank_ref}</td>
+                    {activeTab === "pending" &&
+                      transaction.status === "Awaiting Payment" && (
+                        <td className="border-b p-2">
+                          <div className="flex items-center gap-2">
+                            {" "}
+                            <button
+                              onClick={() => {
+                                setTransactionID(transaction.ID);
+                                setOpenModal(true);
+                                setWithDeposit("Confirm");
+                              }}
+                              className={`bg-[#FDF9F6] flex items-center gap-2 ${
+                                transaction.status === "Awaiting Payment"
+                                  ? " text-orange-1"
+                                  : "text-gray-700"
+                              } shadowbtn px-3 py-2`}
+                            >
+                              Confirm
+                              <FaCheck size={24} />
+                            </button>
+                            <button
+                              onClick={() => {
+                                setTransactionID(transaction.ID);
+                                setOpenModal(true);
+                                setWithDeposit("Reject");
+                              }}
+                              className={`bg-[#FDF9F6] flex items-center gap-2  ${
+                                transaction.status !== "Awaiting Payment"
+                                  ? " text-orange-1"
+                                  : "text-gray-700"
+                              } shadowbtn px-3 py-2`}
+                            >
+                              Cancel
+                              <LiaTimesSolid size={24} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                  </tr>
+                ))}
+              </tbody>
+            )}
+          </table>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 
