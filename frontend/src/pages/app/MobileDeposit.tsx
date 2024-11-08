@@ -18,6 +18,7 @@ import { enqueueSnackbar } from "notistack";
 import { TextInput, InputLabel } from "../../components/inputs/TextInput";
 import SelectBox from "../../components/modals/SelectBox";
 import { PhoneInput } from "../../components/inputs/PhoneInput";
+import ProcessingOverlay from "../../components/Processing";
 
 type MobileDepositForm = z.infer<typeof mobileDepositSchema>;
 
@@ -25,7 +26,7 @@ const MobileDeposit = () => {
   const navigate = useNavigate();
   const [openCountry, setOpenCountry] = useState<boolean>(false);
   const [openNetwork, setOpenNetwork] = useState(false);
-
+  const [isProcessing, setIsProcessing] = useState<boolean>(false); // Controls the visibility of the overlay
   const { control, handleSubmit, clearErrors, setValue, watch } = useForm({
     defaultValues: {
       country: "",
@@ -70,11 +71,9 @@ const MobileDeposit = () => {
       enqueueSnackbar(response?.status, { variant: "success" });
       setTimeout(() => {
         navigate("/dashboard");
+        // handleStartProcessing();
       }, 3000);
-
-      console.log(response?.status, requestData);
     } catch (error: any) {
-      console.log(error);
       enqueueSnackbar(error?.data?.error, { variant: "success" });
     }
   };
@@ -99,6 +98,10 @@ const MobileDeposit = () => {
     }
   };
 
+  const handleStartProcessing = (): void => {
+    setIsProcessing(true); // Trigger the overlay
+  };
+
   return (
     <AppLayout
       child={
@@ -120,6 +123,10 @@ const MobileDeposit = () => {
 
           {/* Use handleSubmit to process form data on submission */}
           <div className="w-full  mx-auto p-4">
+            {/* <ProcessingOverlay
+              isProcessing={isProcessing}
+              setIsProcessing={setIsProcessing}
+            /> */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
                 <InputLabel text="Select Country" /> {/* Country Code */}

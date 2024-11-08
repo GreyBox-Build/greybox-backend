@@ -189,7 +189,7 @@ export const apiSlice = createApi({
 
     adminVerifyOffRampReqWithId: builder.mutation({
       query: ({ id, actionBankRef }) => ({
-        url: `v1/requests/on-ramp/:${id}/verify`,
+        url: `v1/requests/off-ramp/${id}/verify`,
         method: "POST",
         body: actionBankRef,
       }),
