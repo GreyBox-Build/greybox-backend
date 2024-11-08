@@ -101,10 +101,10 @@ export const routes = createBrowserRouter([
     path: "/deposit-mobile-money",
     element: <MobileDeposit />,
   },
-  {
-    path: "/deposit-via-exchange",
-    element: <ExchangeDeposit />,
-  },
+  // {
+  //   path: "/deposit-via-exchange",
+  //   element: <ExchangeDeposit />,
+  // },
   {
     path: "/withdrawal-options",
     element: <WithdrawalOption />,

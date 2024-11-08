@@ -154,6 +154,7 @@ const Dashboard = () => {
                           date
                         )
                           ?.reverse()
+                          ?.filter((details: any) => details?.amount) // This filters out transactions where amount is falsy (null, "", undefined, etc.)
                           ?.map((details: any, index: number) => {
                             return (
                               <DetailsCard
@@ -162,7 +163,7 @@ const Dashboard = () => {
                                 time={moment(details?.timestamp).format(
                                   "hh:mm A"
                                 )}
-                                amount={`${details?.amount}${details?.asset}`}
+                                amount={`${details?.amount} ${details?.asset}`}
                                 index={index}
                                 length={date?.length}
                                 onClick={() => {}}
