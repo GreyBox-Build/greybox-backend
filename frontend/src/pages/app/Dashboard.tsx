@@ -34,8 +34,6 @@ const Dashboard = () => {
       }
     );
 
-  console.log(transactions);
-
   const depositArray = transactions?.data?.filter(
     (transaction: any) => transaction?.transaction_sub_type === "Deposit"
   );

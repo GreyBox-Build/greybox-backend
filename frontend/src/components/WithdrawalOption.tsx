@@ -14,6 +14,11 @@ const WithdrawalOption = () => {
             extraClass="bg-grey-1 mb-[8px]"
             onClick={() => navigate("/withdraw-via-bank")}
           />
+          <FlatButton
+            label="Withdraw Via Mobile Money"
+            extraClass="bg-grey-1 mb-[8px]"
+            onClick={() => navigate("/send-via-mobile-money")}
+          />
 
           <FormButton label="Cancel" onClick={() => navigate(-1)} />
         </div>

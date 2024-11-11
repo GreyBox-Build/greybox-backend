@@ -1,9 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { CancelIcon, DropDown } from "../../components/icons/Icons";
 import AppLayout from "./AppLayout";
-// import { InputLabel, TextInput } from "../../components/inputs/TextInput";
+import { InputLabel, TextInput } from "../../components/inputs/TextInput";
 import { FormButton } from "../../components/buttons/FormButton";
-// import SelectBox from "../../components/modals/SelectBox";
+import SelectBox from "../../components/modals/SelectBox";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -15,8 +15,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useOnrampMobileMutation } from "../../appSlices/apiSlice";
 import { enqueueSnackbar } from "notistack";
-import { TextInput, InputLabel } from "../../components/inputs/TextInput";
-import SelectBox from "../../components/modals/SelectBox";
 import { PhoneInput } from "../../components/inputs/PhoneInput";
 import ProcessingOverlay from "../../components/Processing";
 
@@ -26,7 +24,9 @@ const MobileDeposit = () => {
   const navigate = useNavigate();
   const [openCountry, setOpenCountry] = useState<boolean>(false);
   const [openNetwork, setOpenNetwork] = useState(false);
-  const [isProcessing, setIsProcessing] = useState<boolean>(false); // Controls the visibility of the overlay
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [selectedCountry, setSelectedCountry] = useState<any>(null); // State to track selected country
+
   const { control, handleSubmit, clearErrors, setValue, watch } = useForm({
     defaultValues: {
       country: "",
@@ -43,12 +43,9 @@ const MobileDeposit = () => {
   const personal_details = userData?.data?.personal_details;
 
   const { data: network } = useGetNetworksQuery({});
-
   const [onrampMobile, { isLoading }] = useOnrampMobileMutation();
 
   const onSubmit = async (data: MobileDepositForm) => {
-    // Convert phoneNumber and amount to numbers before submitting
-
     const requestData = {
       collection: {
         customerName: `${personal_details.first_name} ${personal_details.last_name}`,
@@ -71,10 +68,9 @@ const MobileDeposit = () => {
       enqueueSnackbar(response?.status, { variant: "success" });
       setTimeout(() => {
         navigate("/dashboard");
-        // handleStartProcessing();
       }, 3000);
     } catch (error: any) {
-      enqueueSnackbar(error?.data?.error, { variant: "success" });
+      enqueueSnackbar(error?.data?.error, { variant: "error" });
     }
   };
 
@@ -99,7 +95,7 @@ const MobileDeposit = () => {
   };
 
   const handleStartProcessing = (): void => {
-    setIsProcessing(true); // Trigger the overlay
+    setIsProcessing(true);
   };
 
   return (
@@ -121,30 +117,23 @@ const MobileDeposit = () => {
             (Bal ${walletInfo?.balance || 0})
           </p>
 
-          {/* Use handleSubmit to process form data on submission */}
           <div className="w-full  mx-auto p-4">
-            {/* <ProcessingOverlay
-              isProcessing={isProcessing}
-              setIsProcessing={setIsProcessing}
-            /> */}
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>
-                <InputLabel text="Select Country" /> {/* Country Code */}
+                <InputLabel text="Select Country" />
                 <TextInput
                   control={control}
                   name="country"
                   placeholder="Country"
                   readOnly
                   type="text"
-                  onClick={() => {
-                    setOpenCountry(true);
-                  }}
+                  onClick={() => setOpenCountry(true)}
                   img={<DropDown />}
                 />
               </div>
 
               <div>
-                <InputLabel text="Phone Number" /> {/* Phone Number */}
+                <InputLabel text="Phone Number" />
                 <PhoneInput
                   name="phoneNumber"
                   control={control}
@@ -157,22 +146,20 @@ const MobileDeposit = () => {
               </div>
 
               <div>
-                <InputLabel text="Select Network Provider" /> {/* Network */}
+                <InputLabel text="Select Network Provider" />
                 <TextInput
                   control={control}
                   name="network"
                   placeholder="Network"
                   readOnly
                   type="text"
-                  onClick={() => {
-                    setOpenNetwork(true);
-                  }}
+                  onClick={() => setOpenNetwork(true)}
                   img={<DropDown />}
                 />
               </div>
 
               <div>
-                <InputLabel text="Enter Amount" /> {/* Amount */}
+                <InputLabel text="Enter Amount" />
                 <TextInput
                   name="amount"
                   control={control}
@@ -181,7 +168,6 @@ const MobileDeposit = () => {
                 />
               </div>
 
-              {/* Submit Button */}
               <FormButton label="Submit" type="submit" loading={isLoading} />
             </form>
 
@@ -196,6 +182,7 @@ const MobileDeposit = () => {
                 setValue("country", list?.countryName);
                 setValue("countryCode", list?.countryCode);
                 setValue("network", "");
+                setSelectedCountry(list); // Update selected country state
                 clearErrors("country");
               }}
               onClose={() => setOpenCountry(false)}
@@ -211,6 +198,7 @@ const MobileDeposit = () => {
                 network?.data ? groupNetworkByCountry(network?.data) : []
               }
               type="network"
+              selectedCountry={selectedCountry} // Pass the selected country here
               onPickChild={(list: any) => {
                 setValue("network", list);
                 clearErrors("network");
