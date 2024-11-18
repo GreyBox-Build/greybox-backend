@@ -16,6 +16,7 @@ const SelectBox = ({
   placeholder,
   childList,
   type,
+  selectedCountry, // Add selectedCountry here
   onPickChild,
   onClose,
 }: {
@@ -23,12 +24,15 @@ const SelectBox = ({
   title: string;
   placeholder: string;
   childList: ChildListPropsArray;
+  selectedCountry?: any; // Type the selectedCountry prop
   type?: string;
   onPickChild: (list: ChildListProps) => void;
   onClose: () => void;
 }) => {
   const [searchValue, setSearchValue] = useState<string>("");
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+
+  const isGhana = selectedCountry?.countryName === "Ghana"; // Check if the selected country is Ghana
 
   return (
     <Modal
@@ -133,7 +137,15 @@ const SelectBox = ({
                     <div className="flex items-center gap-x-[11px]">
                       <div className="flex flex-col gap-y-[3px]">
                         <p className=" text-black-2 text-[0.875rem] leading-[18px] ">
-                          {changeFirstLetterToUpperCase(list)}
+                          {isGhana
+                            ? list.toUpperCase() === "VODAFONE"
+                              ? "TELECEL"
+                              : list.toUpperCase() === "TIGO"
+                              ? "AT (TIGO)"
+                              : list.toUpperCase() === "AIRTEL"
+                              ? "AT (AIRTEL)"
+                              : list.toUpperCase()
+                            : list.toUpperCase()}
                         </p>
                       </div>
                     </div>

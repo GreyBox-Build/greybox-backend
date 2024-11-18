@@ -15,7 +15,7 @@ const SendOption = () => {
             onClick={() => navigate("/send-via-mobile-money")}
           />
           <FlatButton
-            label="Send Via Bank"
+            label="Send Via Bank - (Nigeria)"
             extraClass="bg-[transparent] mb-[34px]"
             onClick={() => navigate("/send-via-bank")}
           />
