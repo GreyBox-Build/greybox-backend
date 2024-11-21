@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { GHFlag, KENFlag, NGFlag } from "../components/icons/Icons";
+import { GHFlag, KENFlag, TANZFlag, NGFlag } from "../components/icons/Icons";
 
 export const depositData = [
   {
@@ -298,6 +298,11 @@ export const countryData = [
     logo: KENFlag(),
     code: "KEN",
   },
+  {
+    name: "Tanzania",
+    logo: TANZFlag(),
+    code: "TZ",
+  },
 ];
 
 export const currencyData = [
@@ -316,6 +321,11 @@ export const currencyData = [
     logo: KENFlag(),
     code: "KES",
   },
+  {
+    name: "Tanzania Shilling",
+    logo: TANZFlag(),
+    code: "TZS",
+  },
 ];
 
 export const currencyDataT = [
@@ -333,5 +343,10 @@ export const currencyDataT = [
     name: "Kenyan Shilling",
     logo: KENFlag(),
     code: "KES",
+  },
+  {
+    name: "Tanzania Shilling",
+    logo: TANZFlag(),
+    code: "TZS",
   },
 ];

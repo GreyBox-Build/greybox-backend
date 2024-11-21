@@ -237,6 +237,9 @@ export const NGFlag = () => (
 export const KENFlag = () => (
   <img src="/images/kenFlag.png" alt="" className=" w-[12px] h-[9.29px]" />
 );
+export const TANZFlag = () => (
+  <img src="/images/tanzania.png" alt="" className=" w-[12px] h-[9.29px]" />
+);
 
 export const Notification = ({
   current,
