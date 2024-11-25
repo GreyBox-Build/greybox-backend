@@ -127,8 +127,9 @@ type Transfer struct {
 }
 
 type Payment struct {
-	Collection Collection `json:"collection"`
-	Transfer   Transfer   `json:"transfer"`
+	Collection   Collection `json:"collection"`
+	Transfer     Transfer   `json:"transfer"`
+	DeveloperFee string     `json:"developerFee"`
 }
 
 type TransactionRequest struct {
@@ -161,6 +162,6 @@ type TransactionDetails struct {
 		PhoneNumber  string `json:"phoneNumber"`
 		CountryCode  string `json:"countryCode"`
 		Network      string `json:"network"`
-		DeveloperFee string `json:"developerFee"`
 	} `json:"transfer"`
+	DeveloperFee string `json:"developerFee"`
 }
