@@ -891,7 +891,7 @@ func MobileMoneyOnRamp(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	input.Transfer.DeveloperFee = "0.25"
+	input.DeveloperFee = "0.25" // update is needed
 
 	if input.Transfer.DigitalAsset == "CUSD" {
 		input.Transfer.DigitalAsset = "cUSD"
@@ -1078,15 +1078,15 @@ func prepareTransactionDetails(input serializers.MobileOffRamp, resp apis.Payout
 			PhoneNumber  string `json:"phoneNumber"`
 			CountryCode  string `json:"countryCode"`
 			Network      string `json:"network"`
-			DeveloperFee string `json:"developerFee"`
 		}{
 			CustomerName: input.CustomerName,
 			PhoneNumber:  input.PhoneNumber,
 			CountryCode:  input.CountryCode,
 			Network:      input.MobileProvider,
-			DeveloperFee: "0.25",
 		},
+		DeveloperFee: "0.25",
 	}
+
 }
 
 // Store the Hurupay request to the database
