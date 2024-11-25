@@ -454,6 +454,7 @@ type MobilePayoutResponse struct {
 func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 	apiUrl := "https://api.hurupay.com/v1/collections/mobile/initialize_transaction"
 	client := &http.Client{}
+	fmt.Println("onramp data: ", data)
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
