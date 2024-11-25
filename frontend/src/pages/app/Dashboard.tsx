@@ -158,7 +158,7 @@ const Dashboard = () => {
                               <DetailsCard
                                 key={index}
                                 label={details?.transaction_sub_type}
-                                time={moment(details?.timestamp).format(
+                                time={moment(details?.CreatedAt).format(
                                   "hh:mm A"
                                 )}
                                 amount={`${details?.amount} ${details?.asset}`}
