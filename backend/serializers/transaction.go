@@ -123,6 +123,7 @@ type Transfer struct {
 	DigitalNetwork string `json:"digitalNetwork"`
 	DigitalAsset   string `json:"digitalAsset"`
 	WalletAddress  string `json:"walletAddress"`
+	DeveloperFee   string `json:"developerFee"`
 }
 
 type Payment struct {
@@ -160,5 +161,6 @@ type TransactionDetails struct {
 		PhoneNumber  string `json:"phoneNumber"`
 		CountryCode  string `json:"countryCode"`
 		Network      string `json:"network"`
+		DeveloperFee string `json:"developerFee"`
 	} `json:"transfer"`
 }
