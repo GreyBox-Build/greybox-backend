@@ -1,34 +1,24 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
+// src/i18n.ts
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import HttpApi from 'i18next-http-backend';
+import LanguageDetector from 'i18next-browser-languagedetector';
 
-export const resources = {
-  en: {
-    translation: {
-      welcome: "Welcome to the app!",
-      description: "This is an example description.",
+// i18Next initialization
+i18n
+  .use(HttpApi) // Load translations from external files
+  .use(LanguageDetector) // Detect user's language
+  .use(initReactI18next) // Bind i18Next to React
+  .init({
+    fallbackLng: 'en', // Fallback language if detection fails
+    supportedLngs: ['en', 'fr', 'es'], // List of supported languages
+    debug: true, // Enable console debugging
+    interpolation: {
+      escapeValue: false, // React already handles XSS
     },
-  },
-  fr: {
-    translation: {
-      welcome: "Bienvenue dans l'application!",
-      description: "Ceci est un exemple de description.",
+    backend: {
+      loadPath: '/locales/{{lng}}/{{ns}}.json', // Translation files location
     },
-  },
-};
-
-i18n.use(initReactI18next).init({
-  missingKeyHandler: (lng, ns, key) => {
-    console.warn(
-      `Missing key "${key}" in namespace "${ns}" for language "${lng}"`
-    );
-  },
-  resources,
-  lng: "en",
-  debug: true, // Enable debug mode
-  fallbackLng: "en",
-  interpolation: {
-    escapeValue: false,
-  },
-});
+  });
 
 export default i18n;
