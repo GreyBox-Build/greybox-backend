@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
-const Example: React.FC = () => {
-  const { t, i18n } = useTranslation();
+const LanguageSelector = () => {
+  const { t, i18n }: { t: any; i18n: any } = useTranslation();
 
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
@@ -11,11 +11,11 @@ const Example: React.FC = () => {
     <div>
       <h1>{t("welcome")}</h1>
       <p>{t("description")}</p>
-
       <button onClick={() => changeLanguage("en")}>English</button>
       <button onClick={() => changeLanguage("fr")}>French</button>
+      <button onClick={() => changeLanguage("es")}>Spanish</button>
     </div>
   );
 };
 
-export default Example;
+export default LanguageSelector;
