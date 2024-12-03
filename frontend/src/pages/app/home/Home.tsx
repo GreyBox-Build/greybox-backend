@@ -1,3 +1,4 @@
+import Example from "../../../components/language";
 import { useScrollToTop } from "../../../utils/ScrollToTop";
 import About from "./About";
 import Footer from "./Footer";
@@ -13,6 +14,7 @@ const Home = () => {
   useScrollToTop();
   return (
     <>
+      <Example />
       <Navigation />
       <Intro />
       <Services />

@@ -9,6 +9,7 @@ import {
   StyledMaterialDesignContent,
 } from "./utils/SnackbarProvider";
 
+
 const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
