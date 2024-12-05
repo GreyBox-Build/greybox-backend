@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/static/css/main.0eb5b98c.css",
+    "main.js": "/static/js/main.a23eadde.js",
+    "static/js/38.781a9e71.chunk.js": "/static/js/38.781a9e71.chunk.js",
+    "static/media/grey-box-bg.png": "/static/media/grey-box-bg.005295af5772d22a51d2.png",
+    "index.html": "/index.html",
+    "main.0eb5b98c.css.map": "/static/css/main.0eb5b98c.css.map",
+    "main.a23eadde.js.map": "/static/js/main.a23eadde.js.map",
+    "38.781a9e71.chunk.js.map": "/static/js/38.781a9e71.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0eb5b98c.css",
+    "static/js/main.a23eadde.js"
+  ]
+}
