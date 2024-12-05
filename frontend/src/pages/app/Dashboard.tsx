@@ -91,16 +91,15 @@ const Dashboard = () => {
 
             <section className="w-full flex justify-center px-[51px] gap-x-[55px] mt-[15px]">
               <QuickLink
-                icon={<Deposit />}
-                label="Deposit"
-                onClick={() => navigate("/deposit-options")}
-              />
-              <QuickLink
                 icon={<SendQ />}
                 label="Send"
                 onClick={() => navigate("/send-options")}
               />
-
+              <QuickLink
+                icon={<Deposit />}
+                label="Deposit"
+                onClick={() => navigate("/deposit-options")}
+              />
               <QuickLink
                 icon={<Withdraw />}
                 label="Withdraw"

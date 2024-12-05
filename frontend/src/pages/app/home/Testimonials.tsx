@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   FiveStarsSmall,
   User1Picture,
@@ -6,6 +7,7 @@ import {
 } from "../../../components/icons/Icons";
 
 const Testimonials = () => {
+  const { t }: { t: any } = useTranslation();
   const TestimonialsCard = ({
     userImg,
     userName,
@@ -40,16 +42,13 @@ const Testimonials = () => {
       <div className="w-full flex flex-col md:flex-row items-center justify-center gap-x-[2%] gap-y-[20px]">
         <section className="w-full md:w-[50%] ">
           <h2 className="text-[1.125rem] text-orange-1 font-[700] leading-[24.75px]">
-            TESTIMONIALS
+            {t("testimonial")}
           </h2>
           <p className="max-w-[471px] text-[2rem] text-black-2 font-[700] leading-[40.63px] mt-[12px] ">
-            What Our Clients Say About Us
+            {t("testimonialTitle")}
           </p>
           <p className="text-[1rem] text-justify text-black-3 leading-[22px] max-w-[491px] mt-[20px]">
-            At Greybox Technologies, Inc., we're passionate about transforming
-            the way businesses and individuals in Africa manage their finances.
-            Our mission is to provide a reliable, low-cost solution for
-            cross-border payments and remittances.
+            {t("testimonialSubTitle")}
           </p>
         </section>
         <section className=" bg-round-grey-bg bg-center bg-contain bg-no-repeat w-full md:w-[50%]">
@@ -57,18 +56,18 @@ const Testimonials = () => {
             <TestimonialsCard
               userImg={<User1Picture />}
               userName="Koshie, Tema"
-              comment="“Greybox is easy to use and saves us the trouble of waiting days before our suppliers receive funds”"
+              comment={t("test1")}
             />
             <TestimonialsCard
               userImg={<User2Picture />}
               userName="Fred, Accra"
-              comment="“With Greybox, I don't have to worry about cedi depreciation against the dollar. That is a huge relief”"
+              comment={t("test2")}
               right
             />
             <TestimonialsCard
               userImg={<User3Picture />}
               userName="Akua, Tema"
-              comment="“Greybox gave me the convenience of serving my clients outside my country without any delays.”"
+              comment={t("test3")}
             />
           </div>
         </section>
