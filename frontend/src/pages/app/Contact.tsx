@@ -9,8 +9,10 @@ import { HomeButton } from "../../components/buttons/HomeButton";
 import { ContactTextInput } from "../../components/inputs/ContactTextInput";
 import { ContactTextArea } from "../../components/inputs/ContactTextArea";
 import { useScrollToTop } from "../../utils/ScrollToTop";
+import { useTranslation } from "react-i18next";
 
 const Contact = () => {
+  const { t }: { t: any } = useTranslation();
   const ContactCard = ({
     icon,
     title,
@@ -39,23 +41,20 @@ const Contact = () => {
         <Navigation />
         <div className="flex flex-col items-center px-[25px]">
           <h2 className="text-center text-[2rem] text-black-2 font-[700] leading-[40.63px] mt-[64px] mb-[16px]">
-            Contact Us
+            {t("contactUs")}
           </h2>
           <p className="text-center text-[1rem] text-black-3 leading-[22px] max-w-[725px]">
-            At Greybox Technologies, Inc., we're passionate about transforming
-            the way businesses and individuals in Africa manage their finances.
-            Our mission is to provide a reliable, low-cost solution for
-            cross-border payments and remittances.
+            {t("contactUsTitle")}
           </p>
         </div>
       </section>
       <section className="flex flex-col md:flex-row px-[25px] md:px-[5%] lg:px-[10%] py-[81px] justify-center gap-y-[74px]">
         <section className="rounded-[16px] md:rounded-[16px_0px_0px_16px] bg-orange-1 p-[61px_45px] text-white shadow-md">
           <h2 className="text-[1.5rem] font-[600] leading-[24px]">
-            Contact Information
+            {t("contactInformation")}
           </h2>
           <p className="text-[0.875rem] text-grey-5 leading-[18px] max-w-[297px]">
-            If you have any questions or concerns, please contact us
+            {t("contactInformationTitle")}
           </p>
 
           <div className="flex flex-col gap-y-[40px] mt-[51px]">
@@ -84,7 +83,7 @@ const Contact = () => {
           </section>
 
           <HomeButton
-            label="Send Message"
+            label={t("sendMessage")}
             onClick={() => {}}
             extraClass="bg-orange-1 text-white w-[225px]"
           />

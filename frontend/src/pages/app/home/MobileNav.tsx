@@ -3,22 +3,24 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Close, Menu } from "@mui/icons-material";
 import { LogoTextIcon } from "../../../components/icons/Icons";
 import { HomeButton } from "../../../components/buttons/HomeButton";
+import { useTranslation } from "react-i18next";
 
 const MobileNav = () => {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { t }: { t: any } = useTranslation();
 
   const navigation = [
     {
-      name: "Home",
+      name: t("home"),
       href: "/",
     },
     {
-      name: "About",
+      name: t("about"),
       href: "/about-greybox",
     },
     {
-      name: "Contact",
+      name: t("contact"),
       href: "/contact",
     },
   ];
@@ -69,7 +71,7 @@ const MobileNav = () => {
           );
         })}
         <HomeButton
-          label="Get Started"
+          label={`${t("getStarted")}`}
           onClick={() => navigate("/sign-up")}
           extraClass="text-white bg-orange-1 w-[197px]"
         />

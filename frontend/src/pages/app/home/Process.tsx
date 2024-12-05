@@ -1,6 +1,8 @@
+import { useTranslation } from "react-i18next";
 import { ProcessGuy } from "../../../components/icons/Icons";
 
 const Process = () => {
+  const { t }: { t: any } = useTranslation();
   const ProcessCard = ({
     sn,
     text,
@@ -34,26 +36,26 @@ const Process = () => {
       <div className="w-full flex flex-col-reverse md:flex-row items-center justify-center gap-x-[2%]">
         <section className="w-full md:w-[48%] ">
           <h2 className="text-[1.125rem] text-orange-1 font-[700] leading-[24.75px] mt-[20px] md:mt-0">
-            OUR PROCESS
+            {t("ourProcess")}
           </h2>
           <p className="max-w-[456px] text-[2rem] text-black-2 font-[700] leading-[40.63px] mt-[12px] ">
-            Using Greybox is as simple as these three steps:
+            {t("ourProcessTitle")}
           </p>
           <div className="mt-[72px]">
             <ProcessCard
               sn="01."
-              text="Sign up"
-              subText="Sign up to create your greybox account"
+              text={t("signUp")}
+              subText={t("signUpTitle")}
             />
             <ProcessCard
               sn="02."
-              text="Deposit"
-              subText="Fund your Greybox account with your local currency"
+              text={t("deposit")}
+              subText={t("depositTitle")}
             />
             <ProcessCard
               sn="03."
-              text="Send"
-              subText="Send funds to your loved ones Accross Africa"
+              text={t("send")}
+              subText={t("sendTitle")}
               last
             />
           </div>

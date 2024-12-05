@@ -13,18 +13,20 @@ import {
 import { FaLinkedin, FaFacebookSquare, FaWhatsapp } from "react-icons/fa";
 import { RiInstagramFill } from "react-icons/ri";
 import { FaSquareXTwitter } from "react-icons/fa6";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t }: { t: any } = useTranslation();
   const navigate = useNavigate();
   return (
     <section className="min-h-[500px] bg-pink-1 pt-[100px] px-[25px] md:px-[5%] lg:px-[10%]">
       <section className="w-full p-[54px_25px] bg-orange-1 text-white rounded-[24px] flex flex-col items-center">
         <h2 className="text-center text-[2.5rem] font-[600] leading-[51.43px] mb-8">
-          Get started and live the Greybox experience !
+          {t("getStartedWithGreyBox")}
         </h2>
 
         <HomeButton
-          label="Get Started"
+          label={t("getStarted")}
           onClick={() => navigate("/sign-up")}
           extraClass="border-white w-[204px]"
         />
