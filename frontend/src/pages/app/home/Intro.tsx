@@ -33,7 +33,7 @@ const Intro = () => {
         <section>
           <h2 className="max-w-[597px] text-[3rem] font-[700] leading-[66px]">
             {t("simplifying")}{" "}
-            <span className=" text-orange-1">{t("getStarted")} </span>
+            <span className=" text-orange-1">{t("crossBorder")} </span>
             {t("payment")}
           </h2>
 
