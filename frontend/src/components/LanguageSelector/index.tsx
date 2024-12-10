@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MdLanguage } from "react-icons/md";
-import { FaLanguage } from "react-icons/fa";
+import { RxCaretDown } from "react-icons/rx";
 const LanguageSelector = () => {
   const { i18n }: { t: any; i18n: any } = useTranslation();
 
@@ -12,16 +11,18 @@ const LanguageSelector = () => {
 
   return (
     <>
-      <div className="flex gap-3 fixed left-2 top-20 z-30  ">
-        <MdLanguage
-          // size={30}
-          className="text-orange-1 cursor-pointer border border-white text-4xl  bg-white rounded-full "
+      <div className="flex gap-3   relative">
+        <p
+          className="flex gap-1 items-center cursor-pointer"
           onClick={() => setShowLanguage(!showLanguage)}
           title="Translate (English/French"
-        />
+        >
+          <span>{i18n.language === "en" ? "English" : "French"} </span>{" "}
+          <RxCaretDown />
+        </p>
 
         {showLanguage && (
-          <div className="bg-orange-1 flex flex-col rounded-sm absolute text-white  left-2 top-12">
+          <div className="bg-orange-1 flex flex-col rounded-sm absolute text-white  -left-5 top-8">
             {" "}
             <button
               onClick={() => {

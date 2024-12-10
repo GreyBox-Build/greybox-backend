@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { Close, Menu } from "@mui/icons-material";
 import { LogoTextIcon } from "../../../components/icons/Icons";
 import { HomeButton } from "../../../components/buttons/HomeButton";
+import LanguageSelector from "../../../components/LanguageSelector";
 import { useTranslation } from "react-i18next";
 
 const MobileNav = () => {
@@ -29,8 +30,13 @@ const MobileNav = () => {
     <nav className="block md:hidden relative">
       <section className="flex items-center justify-between p-[15px_25px]">
         <LogoTextIcon />
-        <div onClick={() => setIsOpen(true)} className="cursor-pointer ">
-          <Menu className="text-black-1" />
+
+        <div className="flex items-center gap-5">
+          {" "}
+          <LanguageSelector />
+          <div onClick={() => setIsOpen(true)} className="cursor-pointer ">
+            <Menu className="text-black-1" />
+          </div>
         </div>
       </section>
 

@@ -3,7 +3,7 @@ import { LogoTextIcon } from "../../../components/icons/Icons";
 import { HomeButton } from "../../../components/buttons/HomeButton";
 import MobileNav from "./MobileNav";
 import { useTranslation } from "react-i18next";
-
+import LanguageSelector from "../../../components/LanguageSelector";
 const Navigation = () => {
   const navigate = useNavigate();
   const { t }: { t: any } = useTranslation();
@@ -13,6 +13,7 @@ const Navigation = () => {
         <LogoTextIcon />
         <section className="flex items-center gap-x-[77px] ">
           <div className="flex items-center gap-x-[34px]">
+            <LanguageSelector />
             <Link to={"/"} className="text-[1rem] text-black-2 leading-[22px]">
               {t("home")}
             </Link>

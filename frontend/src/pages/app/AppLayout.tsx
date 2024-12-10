@@ -3,7 +3,6 @@ import { Cards, Home, More, Send, Wallet } from "../../components/icons/Icons";
 import { Menu } from "../../components/Cards";
 import { useGetAuthUserQuery } from "../../appSlices/apiSlice";
 import { useEffect } from "react";
-import LanguageSelector from "../../components/LanguageSelector";
 
 const AppLayout = ({ child }: { child: React.ReactNode }) => {
   const navigate = useNavigate();
@@ -19,7 +18,6 @@ const AppLayout = ({ child }: { child: React.ReactNode }) => {
 
   return (
     <div className=" bg-grey-box-bg bg-cover bg-no-repeat w-full min-h-[100vh] flex justify-center">
-      <LanguageSelector />
       {child}
       <section className="w-full h-[54px] flex justify-between fixed bottom-0 bg-grey-1 p-[5px_24px] md:p-[5px_65px]">
         <Menu
