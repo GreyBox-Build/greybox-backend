@@ -10,7 +10,6 @@ import { ContactTextInput } from "../../components/inputs/ContactTextInput";
 import { ContactTextArea } from "../../components/inputs/ContactTextArea";
 import { useScrollToTop } from "../../utils/ScrollToTop";
 import { useTranslation } from "react-i18next";
-import LanguageSelector from "../../components/LanguageSelector";
 
 const Contact = () => {
   const { t }: { t: any } = useTranslation();
@@ -38,8 +37,6 @@ const Contact = () => {
   useScrollToTop();
   return (
     <>
-      {" "}
-      <LanguageSelector />
       <section>
         <section className=" bg-pink-1 pb-[69px] flex flex-col">
           <Navigation />

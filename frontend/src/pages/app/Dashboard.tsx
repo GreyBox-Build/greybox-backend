@@ -158,7 +158,7 @@ const Dashboard = () => {
                                 key={index}
                                 label={details?.transaction_sub_type}
                                 time={moment(details?.CreatedAt).format(
-                                  "hh:mm A"
+                                  "DD/MMM/YY, hh:mm A"
                                 )}
                                 amount={`${details?.amount} ${details?.asset}`}
                                 index={index}

@@ -14,7 +14,6 @@ const Home = () => {
   useScrollToTop();
   return (
     <>
-      <LanguageSelector />
       <Navigation />
       <Intro />
       <Services />
