@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FaRegEye } from "react-icons/fa";
 import { IoEyeOffOutline } from "react-icons/io5";
 import { Controller } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 interface InputTextRemProps {
   control: any;
@@ -10,7 +11,7 @@ interface InputTextRemProps {
 
 const InputTextRem: React.FC<InputTextRemProps> = ({ control, name }) => {
   const [showPassword, setShowPassword] = useState(false);
-
+  const { t }: { t: any } = useTranslation();
   return (
     <Controller
       control={control}
@@ -23,7 +24,7 @@ const InputTextRem: React.FC<InputTextRemProps> = ({ control, name }) => {
               value={value}
               onChange={onChange}
               className="flex-grow w-full h-[90%] text-black-3 placeholder:text-black-3 text-[0.875rem] leading-[18px] bg-transparent outline-none px-2"
-              placeholder="Password"
+              placeholder={t("Password")}
             />
             <span
               className="absolute right-5 top-3 cursor-pointer"

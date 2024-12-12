@@ -24,6 +24,7 @@ import {
 import { useSnackbar } from "notistack";
 import SelectBoxT from "../../components/modals/SelectBoxT";
 import InputTextRem from "../../components/InputTextRem";
+import { useTranslation } from "react-i18next";
 
 const SignUp = () => {
   // console.log(currencyData, countryData);
@@ -33,7 +34,7 @@ const SignUp = () => {
   const [openChain, setOpenChain] = useState<boolean>(false);
   const [createUser, { isLoading }] = useCreateUserMutation();
   const { enqueueSnackbar } = useSnackbar();
-
+  const { t }: { t: any } = useTranslation();
   const { control, handleSubmit, clearErrors, setValue, getValues } = useForm({
     defaultValues: {
       first_name: "",
@@ -72,38 +73,39 @@ const SignUp = () => {
         <div className="w-full md:w-[50.33%] lg:w-[45.33%] min-h-[100vh] bg-grey-1 p-[51px_25px]">
           <BackArrow />
           <h2 className=" text-[2.5rem] text-black-1 font-[700] mt-[50px] leading-[40px]">
-            Sign up
+            {t("signup2")}
           </h2>
           <p className="mt-[13px] text-[0.875rem] text-black-2">
-            Fill in the details below, to create your account.
+            {t("signUpTitle2")}
           </p>
           <form className="mt-[24px]" onSubmit={handleSubmit(handleCreateUser)}>
             <section className="flex flex-col gap-y-[32px]">
               <TextInput
                 control={control}
                 name="first_name"
-                placeholder="First Name"
+                placeholder={t("FirstName")}
                 type="text"
                 img={<Person />}
               />
               <TextInput
                 control={control}
                 name="last_name"
-                placeholder="Last Name"
+                placeholder={t("LastName")}
                 type="text"
                 img={<Person />}
               />
               <TextInput
                 control={control}
                 name="email"
-                placeholder="Email Address"
+                placeholder={t("EmailAddress")}
                 type="email"
                 img={<Mail />}
               />
+
               <TextInput
                 control={control}
                 name="currency"
-                placeholder="Currency"
+                placeholder={t("Currency")}
                 readOnly
                 type="text"
                 onClick={() => {
@@ -114,7 +116,7 @@ const SignUp = () => {
               <TextInput
                 control={control}
                 name="country"
-                placeholder="Country"
+                placeholder={t("Country")}
                 readOnly
                 type="text"
                 onClick={() => {
@@ -122,10 +124,11 @@ const SignUp = () => {
                 }}
                 img={<DropDown />}
               />
+
               <TextInput
                 control={control}
                 name="chain"
-                placeholder="Chain"
+                placeholder={t("Chain")}
                 readOnly
                 type="text"
                 onClick={() => {
@@ -138,20 +141,20 @@ const SignUp = () => {
             </section>
 
             <FormButton
-              label="Continue"
+              label={t("continue")}
               extraClass="mt-[72px]"
               type="submit"
               loading={isLoading}
             />
             <section className="flex flex-col gap-y-[8px] mt-[55px]">
               <p className="text-[0.875rem] text-black-3 leading-[18px]">
-                Already Have an Account?
+                {t("already")}
               </p>
               <Link
                 to={"/sign-in"}
                 className=" text-[0.875rem] text-orange-1 leading-[18px] font-[700]"
               >
-                Login here &gt;
+                {t("loginHere")} &gt;
               </Link>
             </section>
 

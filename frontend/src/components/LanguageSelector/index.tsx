@@ -17,8 +17,7 @@ const LanguageSelector = () => {
           onClick={() => setShowLanguage(!showLanguage)}
           title="Translate (English/French"
         >
-          <span>{i18n.language === "en" ? "English" : "French"} </span>{" "}
-          <RxCaretDown />
+          <span>{i18n.language.toUpperCase()} </span> <RxCaretDown />
         </p>
 
         {showLanguage && (
@@ -32,7 +31,7 @@ const LanguageSelector = () => {
               title="English"
               className=" py-2 px-6 "
             >
-              English
+              EN
             </button>
             <button
               className=" py-2  px-6 border-t"
@@ -41,7 +40,7 @@ const LanguageSelector = () => {
                 setShowLanguage(!showLanguage);
               }}
             >
-              French
+              FR
             </button>{" "}
           </div>
         )}
