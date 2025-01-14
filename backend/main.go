@@ -137,6 +137,9 @@ func main() {
 		requests.GET("/off-ramp/:id", controllers.GetOffRampRequest)
 		requests.POST("/on-ramp/:id/verify", controllers.VerifyOnRamp)
 		requests.POST("/off-ramp/:id/verify", controllers.VerifyOffRamp)
+		requests.GET("hurupay-requests", controllers.ListHurupayRequest)
+		requests.GET("hurupay-requests/:id", controllers.GetHurupayRequest)
+		requests.GET("hurupay-requests/stats", controllers.GetHurupayStats)
 	}
 
 	r.Run(":8080")
