@@ -153,7 +153,8 @@ func NewBorderless() *Borderless {
 	}
 	borderless.Timeout = 10 * time.Second
 	borderless.BaseUrl = os.Getenv("BORDERLESS_BASE_URL")
-	accessToken, found := cache.Get("borderless_access_token")
+	c := cache.New(60*time.Minute, 100*time.Minute)
+	accessToken, found := c.Get("borderless_access_token")
 
 	if !found {
 		method := "POST"
@@ -184,9 +185,10 @@ func NewBorderless() *Borderless {
 			log.Fatal(err)
 		}
 		accessToken = token.AccessToken
-		cache.Set("borderless_access_token", accessToken, time.Duration(token.ExpiresIn-10)*time.Second)
+		c := cache.New(time.Duration(token.ExpiresIn-10)*time.Second, 10*time.Minute)
+		c.Set("borderless_access_token", accessToken, time.Duration(token.ExpiresIn-10)*time.Second)
 	}
-	borderless.accessToken = accessToken
+	borderless.accessToken = accessToken.(string)
 	borderless.Headers["idempotency-key"] = borderless.IdempotencyKey
 	return borderless
 }
