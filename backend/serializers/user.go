@@ -3,16 +3,19 @@ package serializers
 type Chain struct {
 	Celo    string `json:"celo"`
 	Stellar string `json:"stellar"`
+	Polygon string `json:"polygon"`
 }
 
 const (
 	ChainCelo    = "CELO"
 	ChainStellar = "XLM"
+	ChainPolygon = "MATIC"
 )
 
 var Chains = Chain{
 	Celo:    ChainCelo,
 	Stellar: ChainStellar,
+	Polygon: ChainPolygon,
 }
 
 type User struct {

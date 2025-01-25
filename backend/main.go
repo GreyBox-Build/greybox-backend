@@ -108,7 +108,7 @@ func main() {
 
 	master := r.Group("/api/v1")
 	{
-		//master.POST("/master-wallet", controllers.GenerateMasterWallet)
+		master.POST("/master-wallet", controllers.GenerateMasterWallet)
 		master.GET("/master-wallet", controllers.GetMasterWallet)
 
 	}
