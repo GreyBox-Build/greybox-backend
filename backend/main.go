@@ -39,7 +39,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-	gin.SetMode(gin.ReleaseMode)
+	//gin.SetMode(gin.ReleaseMode)
 
 	db := models.InitializeDB()
 	models.Migrate(db)
@@ -49,7 +49,7 @@ func main() {
 	//config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(CORS())
 
-	r.Use(middlewares.AllowedHosts([]string{"localhost:8080", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
+	r.Use(middlewares.AllowedHosts([]string{"localhost", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
 
 	chains := r.Group("/api/v1/chains")
 	{
@@ -137,9 +137,9 @@ func main() {
 		requests.GET("/off-ramp/:id", controllers.GetOffRampRequest)
 		requests.POST("/on-ramp/:id/verify", controllers.VerifyOnRamp)
 		requests.POST("/off-ramp/:id/verify", controllers.VerifyOffRamp)
-		requests.GET("hurupay-requests", controllers.ListHurupayRequest)
-		requests.GET("hurupay-requests/:id", controllers.GetHurupayRequest)
-		requests.GET("hurupay-requests/stats", controllers.GetHurupayStats)
+		requests.GET("/hurupay-requests", controllers.ListHurupayRequest)
+		requests.GET("/hurupay-requests/:id", controllers.GetHurupayRequest)
+		requests.GET("/hurupay-requests/stats", controllers.GetHurupayStats)
 	}
 
 	r.Run(":8080")
