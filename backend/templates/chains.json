@@ -10,5 +10,11 @@
         "name":"stellar",
         "image_url":"https://grey-box.s3.amazonaws.com/chains/stellar.png",
         "availableToken":"USDC"
+    },
+    {
+        "chain":"POLYGON",
+        "name":"matic",
+        "image_url": "https://",
+        "availableToken": "USDC_MATIC"
     }
 ]
