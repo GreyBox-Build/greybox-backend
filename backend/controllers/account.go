@@ -6,10 +6,9 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
+	"github.com/gin-gonic/gin"
 	"net/http"
 	"os"
-
-	"github.com/gin-gonic/gin"
 )
 
 func CreateAccountV2(c *gin.Context) {
@@ -86,6 +85,37 @@ func CreateAccountV2(c *gin.Context) {
 		address, secret := data["address"], data["secret"]
 		user.AccountAddress = address
 		user.PrivateKey = secret
+	case serializers.Chains.Polygon:
+		polygon := apis.NewTatumPolygon()
+		walletResponse, err := polygon.CreateWallet()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon wallet failed",
+			})
+			return
+		}
+		xPub, mnemenic := walletResponse.Xpub, walletResponse.Mnemonic
+		user.Xpub = xPub
+		user.Mnemonic = mnemenic
+		privResponse, err := polygon.GeneratePrivateKey(mnemenic, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon private key failed",
+			})
+			return
+		}
+		user.PrivateKey = privResponse.Key
+		addressResponse, err := polygon.GenerateAddress(xPub, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon address failed",
+			})
+			return
+		}
+		user.AccountAddress = addressResponse.Address
 
 	}
 
@@ -332,6 +362,37 @@ func GenerateMasterWallet(c *gin.Context) {
 		address, secret := data["address"], data["secret"]
 		masterWallet.PublicAddress = address
 		masterWallet.PrivateKey = secret
+	case serializers.Chains.Polygon:
+		polygon := apis.NewTatumPolygon()
+		walletResponse, err := polygon.CreateWallet()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon wallet failed",
+			})
+			return
+		}
+		xPub, mnemenic := walletResponse.Xpub, walletResponse.Mnemonic
+		masterWallet.XpublicAddress = xPub
+		masterWallet.Mnemonic = mnemenic
+		privResponse, err := polygon.GeneratePrivateKey(mnemenic, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon private key failed",
+			})
+			return
+		}
+		masterWallet.PrivateKey = privResponse.Key
+		addressResponse, err := polygon.GenerateAddress(xPub, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon address failed",
+			})
+			return
+		}
+		masterWallet.PublicAddress = addressResponse.Address
 	}
 	masterWallet.WalletChain = input.Asset
 	if err := masterWallet.CreateMasterWallet(); err != nil {
