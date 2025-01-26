@@ -183,41 +183,41 @@ func NewTatumPolygon() *TatumPolygon {
 	}
 }
 
-func (hc *TatumPolygon) CreateWallet() (interface{}, error) {
+func (hc *TatumPolygon) CreateWallet() (CreateWalletResponse, error) {
 	url := fmt.Sprintf("%s/polygon/wallet", hc.BaseUrl)
 	response, err := hc.MakeRequest("POST", url, nil)
 	if err != nil {
-		return response, err
+		return CreateWalletResponse{}, err
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert response to JSON: %w", err)
+		return CreateWalletResponse{}, fmt.Errorf("failed to convert response to JSON: %w", err)
 	}
 	responseData := CreateWalletResponse{}
 	if err := json.Unmarshal(responseBytes, &responseData); err == nil {
 		return responseData, nil
 	}
-	return response, nil
+	return CreateWalletResponse{}, nil
 }
 
-func (hc *TatumPolygon) GenerateAddress(xPub string, index uint) (interface{}, error) {
+func (hc *TatumPolygon) GenerateAddress(xPub string, index uint) (GenerateAddressResponse, error) {
 	url := fmt.Sprintf("%s/polygon/account/address/%s/%d", hc.BaseUrl, xPub, index)
 	response, err := hc.MakeRequest("GET", url, nil)
 	if err != nil {
-		return response, err
+		return GenerateAddressResponse{}, err
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert response to JSON: %w", err)
+		return GenerateAddressResponse{}, fmt.Errorf("failed to convert response to JSON: %w", err)
 	}
 	responseData := GenerateAddressResponse{}
 	if err := json.Unmarshal(responseBytes, &responseData); err == nil {
 		return responseData, nil
 	}
-	return response, nil
+	return GenerateAddressResponse{}, nil
 }
 
-func (hc *TatumPolygon) GeneratePrivateKey(mnemonic string, index uint) (interface{}, error) {
+func (hc *TatumPolygon) GeneratePrivateKey(mnemonic string, index uint) (GeneratePrivateKeyResponse, error) {
 	url := fmt.Sprintf("%s/polygon/wallet/priv", hc.BaseUrl)
 	data := map[string]interface{}{
 		"mnemonic": mnemonic,
@@ -225,24 +225,24 @@ func (hc *TatumPolygon) GeneratePrivateKey(mnemonic string, index uint) (interfa
 	}
 	response, err := hc.MakeRequest("POST", url, data)
 	if err != nil {
-		return response, err
+		return GeneratePrivateKeyResponse{}, err
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert response to JSON: %w", err)
+		return GeneratePrivateKeyResponse{}, fmt.Errorf("failed to convert response to JSON: %w", err)
 	}
 	responseData := GeneratePrivateKeyResponse{}
 	if err := json.Unmarshal(responseBytes, &responseData); err == nil {
 		return responseData, nil
 	}
-	return response, nil
+	return GeneratePrivateKeyResponse{}, nil
 }
 
-func (hc *TatumPolygon) GetAccountTransactions(address string, pageSize uint) (interface{}, error) {
+func (hc *TatumPolygon) GetAccountTransactions(address string, pageSize uint) ([]Transaction, error) {
 	url := fmt.Sprintf("%s/polygon/account/transaction/%s?sort=%s&pageSize=%d", hc.BaseUrl, address, "DESC", pageSize)
 	response, err := hc.MakeRequest("GET", url, nil)
 	if err != nil {
-		return response, err
+		return nil, err
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
@@ -252,28 +252,28 @@ func (hc *TatumPolygon) GetAccountTransactions(address string, pageSize uint) (i
 	if err := json.Unmarshal(responseBytes, &responseData); err == nil {
 		return responseData, nil
 	}
-	return response, nil
+	return nil, nil
 }
 
-func (hc *TatumPolygon) GetTransaction(hash string) (interface{}, error) {
+func (hc *TatumPolygon) GetTransaction(hash string) (Transaction, error) {
 	url := fmt.Sprintf("%s/polygon/transaction/%s", hc.BaseUrl, hash)
 	response, err := hc.MakeRequest("GET", url, nil)
 	if err != nil {
-		return response, err
+		return Transaction{}, err
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert response to JSON: %w", err)
+		return Transaction{}, fmt.Errorf("failed to convert response to JSON: %w", err)
 	}
 	responseData := Transaction{}
 	if err := json.Unmarshal(responseBytes, &responseData); err == nil {
 		return responseData, nil
 	}
-	return response, nil
+	return Transaction{}, nil
 }
 
 // PerformTransaction uses tatum api to perform polygon transaction
-func (hc *TatumPolygon) PerformTransaction(to, amount, privateKey string, currency CurrencyType) (interface{}, error) {
+func (hc *TatumPolygon) PerformTransaction(to, amount, privateKey string, currency CurrencyType) (TransactionHashResponse, error) {
 	url := fmt.Sprintf("%s/polygon/transaction", hc.BaseUrl)
 	data := map[string]interface{}{
 		"to":             to,
@@ -283,15 +283,15 @@ func (hc *TatumPolygon) PerformTransaction(to, amount, privateKey string, curren
 	}
 	response, err := hc.MakeRequest("POST", url, data)
 	if err != nil {
-		return response, err
+		return TransactionHashResponse{}, err
 	}
 	responseBytes, err := json.Marshal(response)
 	if err != nil {
-		return nil, fmt.Errorf("failed to convert response to JSON: %w", err)
+		return TransactionHashResponse{}, fmt.Errorf("failed to convert response to JSON: %w", err)
 	}
 	responseData := TransactionHashResponse{}
 	if err := json.Unmarshal(responseBytes, &responseData); err == nil {
 		return responseData, nil
 	}
-	return response, nil
+	return TransactionHashResponse{}, nil
 }
