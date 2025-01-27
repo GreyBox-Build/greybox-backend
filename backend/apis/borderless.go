@@ -14,6 +14,27 @@ import (
 	"time"
 )
 
+type Deposit struct {
+	ID          string      `json:"id"`
+	Type        string      `json:"type"`
+	Status      string      `json:"status"`
+	Source      Source      `json:"source"`
+	Destination Destination `json:"destination"`
+	CreatedAt   time.Time   `json:"createdAt"`
+	TxHash      *string     `json:"txHash"` // Use a pointer for nullable fields
+	FeeAmount   string      `json:"feeAmount"`
+}
+
+type Source struct {
+	Amount       string `json:"amount"`
+	FiatCurrency string `json:"fiatCurrency"`
+}
+
+type Destination struct {
+	Asset     string `json:"asset"`
+	AccountID string `json:"accountId"`
+}
+
 type TokenResponse struct {
 	AccessToken string `json:"accessToken"`
 	TokenType   string `json:"tokenType"`
@@ -71,14 +92,17 @@ func (hc Borderless) MakeRequest(method, url string, data map[string]interface{}
 	}
 	defer response.Body.Close()
 	// Check for timeout or status code errors
+	log.Printf("getting %s repsonse from %s with data: %v", method, url, data)
 	if response.StatusCode >= 400 {
+		fmt.Println("Response status code:", response.StatusCode)
 		bodyBytes, _ := io.ReadAll(response.Body)
 		var failedResponse map[string]interface{}
 		if jsonErr := json.Unmarshal(bodyBytes, &failedResponse); jsonErr == nil {
 			log.Printf("HTTP error occurred: %s", failedResponse)
-			return nil, errors.New("HTTP error")
+			return failedResponse, errors.New("HTTP error")
 		}
-		return nil, errors.New("an unknown error occurred")
+		fmt.Println("Failed response:", failedResponse)
+		return failedResponse, errors.New("an unknown error occurred")
 	}
 
 	bodyBytes, err := io.ReadAll(response.Body)
@@ -94,7 +118,7 @@ func (hc Borderless) MakeRequest(method, url string, data map[string]interface{}
 	return responseData, nil
 }
 
-func (hc Borderless) MakeDeposit(amount, asset, country, fiat string) (map[string]interface{}, error) {
+func (hc Borderless) MakeDeposit(amount, asset, country, fiat string) (Deposit, error) {
 	requestData := map[string]interface{}{
 		"accountId":     hc.accountID,
 		"amount":        amount,
@@ -110,9 +134,17 @@ func (hc Borderless) MakeDeposit(amount, asset, country, fiat string) (map[strin
 		requestData,
 	)
 	if err != nil {
-		return nil, err
+		return Deposit{}, err
 	}
-	return response, nil
+	responseByte, err := json.Marshal(response)
+	if err != nil {
+		return Deposit{}, fmt.Errorf("failed to serialize deposit response: %w", err)
+	}
+	depositResponse := Deposit{}
+	if err := json.Unmarshal(responseByte, &depositResponse); err != nil {
+		return Deposit{}, fmt.Errorf("failed to parse deposit response: %w", err)
+	}
+	return depositResponse, nil
 
 }
 
@@ -159,6 +191,7 @@ func NewBorderless() *Borderless {
 	if !found {
 		method := "POST"
 		url := fmt.Sprintf("%s/auth/m2m/token", borderless.BaseUrl)
+		borderless.Client = &http.Client{}
 		data := map[string]interface{}{
 			"clientId":     borderless.clientID,
 			"clientSecret": borderless.clientSecret,
@@ -169,7 +202,7 @@ func NewBorderless() *Borderless {
 			data,
 		)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println("Error making request:", err)
 		}
 		jsonData, err := json.Marshal(response)
 		if err != nil {
@@ -189,6 +222,6 @@ func NewBorderless() *Borderless {
 		c.Set("borderless_access_token", accessToken, time.Duration(token.ExpiresIn-10)*time.Second)
 	}
 	borderless.accessToken = accessToken.(string)
-	borderless.Headers["idempotency-key"] = borderless.IdempotencyKey
+	borderless.Headers["idempotency-key"] = borderless.IdempotencyKey.String()
 	return borderless
 }

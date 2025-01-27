@@ -49,7 +49,7 @@ func main() {
 	//config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(CORS())
 
-	r.Use(middlewares.AllowedHosts([]string{"localhost", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
+	r.Use(middlewares.AllowedHosts([]string{"localhost:8080", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
 
 	chains := r.Group("/api/v1/chains")
 	{
@@ -140,6 +140,12 @@ func main() {
 		requests.GET("/hurupay-requests", controllers.ListHurupayRequest)
 		requests.GET("/hurupay-requests/:id", controllers.GetHurupayRequest)
 		requests.GET("/hurupay-requests/stats", controllers.GetHurupayStats)
+	}
+
+	payments := r.Group("/api/v1/payments")
+	{
+		payments.Use(middlewares.JwtAuthMiddleware())
+		payments.POST("/borderless-onramp", controllers.BorderLessOnramp)
 	}
 
 	r.Run(":8080")

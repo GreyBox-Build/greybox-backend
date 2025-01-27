@@ -165,3 +165,10 @@ type TransactionDetails struct {
 	} `json:"transfer"`
 	DeveloperFee string `json:"developerFee"`
 }
+
+type BorderlessOnramp struct {
+	Amount  string `json:"amount"`
+	Asset   string `json:"asset"`
+	Country string `json:"country"`
+	Fiat    string `json:"fiat"`
+}

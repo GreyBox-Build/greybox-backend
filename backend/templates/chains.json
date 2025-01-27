@@ -12,9 +12,9 @@
         "availableToken":"USDC"
     },
     {
-        "chain":"POLYGON",
-        "name":"matic",
+        "chain":"MATIC",
+        "name":"polygon",
         "image_url": "https://",
-        "availableToken": "USDC_MATIC"
+        "availableToken": "USDC_POLYGON"
     }
 ]

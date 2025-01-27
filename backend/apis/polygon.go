@@ -178,14 +178,13 @@ func NewTatumPolygon() *TatumPolygon {
 			"Content-Type": "application/json",
 			"x-api-key":    authKeys,
 			"accept":       "application/json",
-			"timeout":      30,
 		},
 	}
 }
 
 func (hc *TatumPolygon) CreateWallet() (CreateWalletResponse, error) {
 	url := fmt.Sprintf("%s/polygon/wallet", hc.BaseUrl)
-	response, err := hc.MakeRequest("POST", url, nil)
+	response, err := hc.MakeRequest("GET", url, nil)
 	if err != nil {
 		return CreateWalletResponse{}, err
 	}
@@ -201,7 +200,7 @@ func (hc *TatumPolygon) CreateWallet() (CreateWalletResponse, error) {
 }
 
 func (hc *TatumPolygon) GenerateAddress(xPub string, index uint) (GenerateAddressResponse, error) {
-	url := fmt.Sprintf("%s/polygon/account/address/%s/%d", hc.BaseUrl, xPub, index)
+	url := fmt.Sprintf("%s/polygon/address/%s/%d", hc.BaseUrl, xPub, index)
 	response, err := hc.MakeRequest("GET", url, nil)
 	if err != nil {
 		return GenerateAddressResponse{}, err

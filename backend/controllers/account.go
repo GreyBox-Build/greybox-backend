@@ -122,13 +122,13 @@ func CreateAccountV2(c *gin.Context) {
 	if err := user.SaveUser(); err != nil {
 		c.JSON(400, gin.H{
 			"error":   err.Error(),
-			"message": "creating user falied",
+			"message": "creating user failed",
 		})
 		return
 	}
 
 	c.JSON(200, gin.H{
-		"message": "created account successfuly",
+		"message": "created account successfully",
 	})
 }
 
@@ -268,6 +268,15 @@ func GetAuthenticatedUser(c *gin.Context) {
 	case serializers.Chains.Stellar:
 		go func() {
 			balance, err := apis.FetchAccountBalanceXLM(user.AccountAddress)
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			balanceChan <- balance
+		}()
+	case serializers.Chains.Polygon:
+		go func() {
+			balance, err := apis.FetchWalletBalance(user.AccountAddress, "polygon", 10)
 			if err != nil {
 				errorChan <- err
 				return
