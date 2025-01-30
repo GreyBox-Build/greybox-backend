@@ -108,7 +108,7 @@ func main() {
 
 	master := r.Group("/api/v1")
 	{
-		master.POST("/master-wallet", controllers.GenerateMasterWallet)
+		//master.POST("/master-wallet", controllers.GenerateMasterWallet)
 		master.GET("/master-wallet", controllers.GetMasterWallet)
 
 	}
@@ -146,6 +146,12 @@ func main() {
 	{
 		payments.Use(middlewares.JwtAuthMiddleware())
 		payments.POST("/borderless-onramp", controllers.BorderLessOnramp)
+	}
+
+	webhook := r.Group("/api/v1/webhook")
+	webhook.Use(middlewares.SignatureMiddleware("webhook_rsa"))
+	{
+		webhook.POST("/borderless", controllers.BorderlessNotification)
 	}
 
 	r.Run(":8080")
