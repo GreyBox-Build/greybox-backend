@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var borderlessCache = cache.New(60*time.Minute, 100*time.Minute)
+
 type Deposit struct {
 	ID          string      `json:"id"`
 	Type        string      `json:"type"`
@@ -21,7 +23,7 @@ type Deposit struct {
 	Source      Source      `json:"source"`
 	Destination Destination `json:"destination"`
 	CreatedAt   time.Time   `json:"createdAt"`
-	TxHash      *string     `json:"txHash"` // Use a pointer for nullable fields
+	TxHash      *[]string   `json:"txHash"` // Use a pointer for nullable fields
 	FeeAmount   string      `json:"feeAmount"`
 }
 
@@ -43,15 +45,14 @@ type TokenResponse struct {
 
 // Borderless A struct for handling all borderless integrations
 type Borderless struct {
-	accessToken    string
-	clientID       string
-	clientSecret   string
-	accountID      string
-	BaseUrl        string
-	Client         *http.Client
-	Headers        map[string]interface{}
-	Timeout        time.Duration
-	IdempotencyKey uuid.UUID
+	accessToken  string
+	clientID     string
+	clientSecret string
+	accountID    string
+	BaseUrl      string
+	Client       *http.Client
+	Headers      map[string]interface{}
+	Timeout      time.Duration
 }
 
 // MakeRequest makes an HTTP request with retry logic and error handling
@@ -76,6 +77,7 @@ func (hc Borderless) MakeRequest(method, url string, data map[string]interface{}
 	log.Printf("Making %s request to %s with data: %v", method, url, data)
 	var response *http.Response
 	retries := 3
+	hc.Client = &http.Client{}
 	for i := 0; i < retries; i++ {
 		response, err = hc.Client.Do(req)
 		if err == nil {
@@ -125,14 +127,18 @@ func (hc Borderless) MakeDeposit(amount, asset, country, fiat string) (Deposit, 
 		"asset":         asset,
 		"country":       country,
 		"fiat":          fiat,
-		"paymentMethod": "wire",
+		"paymentMethod": "Wire",
 	}
+	idempotencyKey := uuid.New()
+	fmt.Println("Idempotency key:", idempotencyKey)
+	hc.Headers["idempotency-key"] = idempotencyKey.String()
 	// Make the request
 	response, err := hc.MakeRequest(
 		"POST",
 		fmt.Sprintf("%s/deposits", hc.BaseUrl),
 		requestData,
 	)
+	fmt.Println("Response:", response)
 	if err != nil {
 		return Deposit{}, err
 	}
@@ -185,9 +191,9 @@ func NewBorderless() *Borderless {
 	}
 	borderless.Timeout = 10 * time.Second
 	borderless.BaseUrl = os.Getenv("BORDERLESS_BASE_URL")
-	c := cache.New(60*time.Minute, 100*time.Minute)
-	accessToken, found := c.Get("borderless_access_token")
 
+	// Check for token in the cache
+	accessToken, found := borderlessCache.Get("borderless_access_token")
 	if !found {
 		method := "POST"
 		url := fmt.Sprintf("%s/auth/m2m/token", borderless.BaseUrl)
@@ -196,14 +202,12 @@ func NewBorderless() *Borderless {
 			"clientId":     borderless.clientID,
 			"clientSecret": borderless.clientSecret,
 		}
-		response, err := borderless.MakeRequest(
-			method,
-			url,
-			data,
-		)
+		response, err := borderless.MakeRequest(method, url, data)
 		if err != nil {
 			fmt.Println("Error making request:", err)
+			log.Fatal(err)
 		}
+
 		jsonData, err := json.Marshal(response)
 		if err != nil {
 			fmt.Println("Error marshalling map:", err)
@@ -217,11 +221,16 @@ func NewBorderless() *Borderless {
 			fmt.Println("Error unmarshalling JSON:", err)
 			log.Fatal(err)
 		}
+
 		accessToken = token.AccessToken
-		c := cache.New(time.Duration(token.ExpiresIn-10)*time.Second, 10*time.Minute)
-		c.Set("borderless_access_token", accessToken, time.Duration(token.ExpiresIn-10)*time.Second)
+		borderlessCache.Set(
+			"borderless_access_token",
+			accessToken,
+			time.Duration(token.ExpiresIn-10)*time.Second,
+		)
 	}
+
 	borderless.accessToken = accessToken.(string)
-	borderless.Headers["idempotency-key"] = borderless.IdempotencyKey.String()
+	borderless.Headers["Authorization"] = fmt.Sprintf("Bearer %s", borderless.accessToken)
 	return borderless
 }
