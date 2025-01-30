@@ -217,3 +217,18 @@ func OffRampNotification(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"errors": false, "status": "processed notification successfully"})
 }
+
+func BorderlessNotification(c *gin.Context) {
+	var input utils.WebhookEvent
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Println("borderless request body: ", input)
+	flag, err := utils.BorderlessWebhookHandler(input)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(200, gin.H{"success": flag, "status": "processed notification successfully"})
+}
