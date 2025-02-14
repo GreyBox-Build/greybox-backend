@@ -1,10 +1,9 @@
 package middlewares
 
 import (
+	"backend/models"
 	"backend/utils/tokens"
 	"net/http"
-
-	"backend/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -40,7 +39,7 @@ func IsAdmin() gin.HandlerFunc {
 			return
 		}
 		if user.Role != "Admin" {
-			c.AbortWithStatusJSON(403, gin.H{"error": "You dont have permission to perform this action"})
+			c.AbortWithStatusJSON(403, gin.H{"error": "You don't have permission to perform this action"})
 			c.Abort()
 			return
 		}

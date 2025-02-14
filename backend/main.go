@@ -80,6 +80,19 @@ func main() {
 		publicV2.POST("/register", controllers.CreateAccountV2)
 	}
 
+	kyc := r.Group("/api/v1/kyc")
+	{
+		// kyc.Use(middlewares.JwtAuthMiddleware())
+		kyc.POST("/mine", controllers.GetUserKYC)
+		kyc.GET("", controllers.GetKYCS)
+		// .Use(middlewares.IsAdmin())
+		kyc.POST("", controllers.CreateKYC)
+		kyc.PATCH("", controllers.UpdateKYC)
+		kyc.PATCH("/:id/approve", controllers.ApproveKYC)
+		kyc.PATCH("/:id/reject", controllers.RejectKYC)
+		kyc.DELETE("/:id", controllers.DeleteKYC)
+	}
+
 	user := r.Group("/api/v1/auth")
 	{
 		user.Use(middlewares.JwtAuthMiddleware())
