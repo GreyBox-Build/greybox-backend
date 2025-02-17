@@ -172,3 +172,13 @@ type BorderlessOnramp struct {
 	Country string `json:"country"`
 	Fiat    string `json:"fiat"`
 }
+
+type MakeWithdrawalBorderless struct {
+	Currency          string `json:"currency"`
+	BankId            uint64 `json:"bank_id"`
+	AccountHolderName string `json:"account_holder_name"`
+	Amount            string `json:"amount"`
+	PaymentPurpose    string `json:"payment_purpose"`
+	AccountNumber     string `json:"account_number"`
+	AccountType       string `json:"account_type"`
+}

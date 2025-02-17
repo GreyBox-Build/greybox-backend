@@ -2,3 +2,4 @@ grey-box-api.pem
 csr.pem
 offramp-public.pem
 onramp-public.pem
+script.py
