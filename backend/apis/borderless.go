@@ -1,17 +1,19 @@
 package apis
 
 import (
+	"backend/models"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/patrickmn/go-cache"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/patrickmn/go-cache"
 )
 
 var borderlessCache = cache.New(60*time.Minute, 100*time.Minute)
@@ -94,7 +96,7 @@ func (hc Borderless) MakeRequest(method, url string, data map[string]interface{}
 	}
 	defer response.Body.Close()
 	// Check for timeout or status code errors
-	log.Printf("getting %s repsonse from %s with data: %v", method, url, data)
+	log.Printf("getting %s response from %s with data: %v", method, url, data)
 	if response.StatusCode >= 400 {
 		fmt.Println("Response status code:", response.StatusCode)
 		bodyBytes, _ := io.ReadAll(response.Body)
@@ -233,4 +235,49 @@ func NewBorderless() *Borderless {
 	borderless.accessToken = accessToken.(string)
 	borderless.Headers["Authorization"] = fmt.Sprintf("Bearer %s", borderless.accessToken)
 	return borderless
+}
+
+func (hc Borderless) CreateCustomerIdentity(identity models.BorderlessIdentity) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"firstName":   identity.FirstName,
+		"lastName":    identity.LastName,
+		"taxId":       identity.TaxId,
+		"dateOfBirth": identity.DateOfBirth,
+		"email":       identity.Email,
+		"phone":       identity.Phone,
+		"address":     identity.Address,
+	}
+	response, err := hc.MakeRequest(
+		"POST",
+		fmt.Sprintf("%s/identities/personal", hc.BaseUrl),
+		requestData,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (hc Borderless) UploadCustomerIdentityDocument(identityId string, kyc models.KYC) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"issuingCountry": "US",
+		"type":           kyc.IDType,
+		"issuedDate":     kyc.IssueDate,
+		"expiryDate":     kyc.ExpiryDate,
+		"imageFront":     fmt.Sprintf("image/200*200;%s", kyc.FrontPhoto),
+		"imageBack":      fmt.Sprintf("image/200*200;%s", kyc.BackPhoto),
+	}
+
+	response, err := hc.MakeRequest(
+		"PUT",
+		fmt.Sprintf("%s/identities/%s/documents", hc.BaseUrl, identityId),
+		requestData,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+
 }

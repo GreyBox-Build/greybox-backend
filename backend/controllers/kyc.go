@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"backend/apis"
 	"backend/models"
 	"backend/serializers"
 	"backend/utils/tokens"
@@ -37,6 +38,15 @@ func GetUserKYC(c *gin.Context) {
 		IDType:          kyc.IDType,
 		IssueDate:       kyc.IssueDate,
 		ExpiryDate:      kyc.ExpiryDate,
+		TaxId:           kyc.TaxId,
+		IdNumber:        kyc.IdNumber,
+		DateOfBirth:     kyc.DateOfBirth,
+		StreetAddress:   kyc.StreetAddress,
+		City:            kyc.City,
+		State:           kyc.State,
+		PostalCode:      kyc.PostalCode,
+		Country:         kyc.Country,
+		Phone:           kyc.Phone,
 		Status:          serializers.KYCStatus(kyc.Status),
 		RejectionReason: kyc.RejectionReason,
 		CreatedAt:       kyc.CreatedAt,
@@ -76,6 +86,15 @@ func GetKYCS(c *gin.Context) {
 			IDType:          kyc.IDType,
 			IssueDate:       kyc.IssueDate,
 			ExpiryDate:      kyc.ExpiryDate,
+			TaxId:           kyc.TaxId,
+			IdNumber:        kyc.IdNumber,
+			DateOfBirth:     kyc.DateOfBirth,
+			StreetAddress:   kyc.StreetAddress,
+			City:            kyc.City,
+			State:           kyc.State,
+			PostalCode:      kyc.PostalCode,
+			Country:         kyc.Country,
+			Phone:           kyc.Phone,
 			Status:          serializers.KYCStatus(kyc.Status),
 			RejectionReason: kyc.RejectionReason,
 			CreatedAt:       kyc.CreatedAt,
@@ -103,10 +122,21 @@ func CreateKYC(c *gin.Context) {
 
 	// Bind form data
 	var request struct {
-		Email      string `form:"email" binding:"required,email"`
-		IDType     string `form:"id_type" binding:"required"`
-		IssueDate  string `form:"issue_date" binding:"required"`
-		ExpiryDate string `form:"expiry_date" binding:"required"`
+		Email         string `form:"email" binding:"required,email"`
+		IDType        string `form:"id_type" binding:"required"`
+		IssueDate     string `form:"issue_date" binding:"required"`
+		ExpiryDate    string `form:"expiry_date" binding:"required"`
+		TaxId         string `form:"tax_id" binding:"required"`
+		IdNumber      string `form:"id_number" binding:"required"`
+		DateOfBirth   string `form:"date_of_birth" binding:"required"`
+		FrontPhoto    string `form:"front_photo" binding:"required"`
+		BackPhoto     string `form:"back_photo" binding:"required"`
+		Phone         string `form:"phone" binding:"required"`
+		StreetAddress string `form:"street_address" binding:"required"`
+		City          string `form:"city" binding:"required"`
+		State         string `form:"state" binding:"required"`
+		PostalCode    string `form:"postal_code" binding:"required"`
+		Country       string `form:"country" binding:"required"`
 	}
 
 	if err := c.ShouldBind(&request); err != nil {
@@ -249,13 +279,22 @@ func CreateKYC(c *gin.Context) {
 
 	// Construct KYC model object
 	kyc := &models.KYC{
-		UserID:     user.ID,
-		IDType:     request.IDType,
-		IssueDate:  request.IssueDate,
-		ExpiryDate: request.ExpiryDate,
-		FrontPhoto: frontBase64,
-		BackPhoto:  backBase64,
-		Status:     models.Pending,
+		UserID:        user.ID,
+		IDType:        request.IDType,
+		IssueDate:     request.IssueDate,
+		ExpiryDate:    request.ExpiryDate,
+		FrontPhoto:    frontBase64,
+		BackPhoto:     backBase64,
+		Status:        models.Pending,
+		IdNumber:      request.IdNumber,
+		TaxId:         request.TaxId,
+		DateOfBirth:   request.DateOfBirth,
+		Phone:         request.Phone,
+		StreetAddress: request.StreetAddress,
+		City:          request.City,
+		State:         request.State,
+		PostalCode:    request.PostalCode,
+		Country:       request.Country,
 	}
 
 	if err := kyc.CreateKYC(); err != nil {
@@ -283,10 +322,21 @@ func UpdateKYC(c *gin.Context) {
 
 	// Bind form data
 	var request struct {
-		Email      string `form:"email" binding:"required,email"`
-		IDType     string `form:"id_type" binding:"required"`
-		IssueDate  string `form:"issue_date" binding:"required"`
-		ExpiryDate string `form:"expiry_date" binding:"required"`
+		Email         string `form:"email" binding:"required,email"`
+		IDType        string `form:"id_type" binding:"required"`
+		IssueDate     string `form:"issue_date" binding:"required"`
+		ExpiryDate    string `form:"expiry_date" binding:"required"`
+		TaxId         string `form:"tax_id" binding:"required"`
+		IdNumber      string `form:"id_number" binding:"required"`
+		DateOfBirth   string `form:"date_of_birth" binding:"required"`
+		FrontPhoto    string `form:"front_photo" binding:"required"`
+		BackPhoto     string `form:"back_photo" binding:"required"`
+		Phone         string `form:"phone" binding:"required"`
+		StreetAddress string `form:"street_address" binding:"required"`
+		City          string `form:"city" binding:"required"`
+		State         string `form:"state" binding:"required"`
+		PostalCode    string `form:"postal_code" binding:"required"`
+		Country       string `form:"country" binding:"required"`
 	}
 
 	if err := c.ShouldBind(&request); err != nil {
@@ -414,11 +464,20 @@ func UpdateKYC(c *gin.Context) {
 
 	// Construct updated KYC model
 	updatedKyc := models.KYCRequest{
-		IDType:     request.IDType,
-		IssueDate:  request.IssueDate,
-		ExpiryDate: request.ExpiryDate,
-		FrontPhoto: frontBase64,
-		BackPhoto:  backBase64,
+		IDType:        request.IDType,
+		IssueDate:     request.IssueDate,
+		ExpiryDate:    request.ExpiryDate,
+		FrontPhoto:    frontBase64,
+		BackPhoto:     backBase64,
+		IdNumber:      request.IdNumber,
+		TaxId:         request.TaxId,
+		DateOfBirth:   request.DateOfBirth,
+		Phone:         request.Phone,
+		StreetAddress: request.StreetAddress,
+		City:          request.City,
+		State:         request.State,
+		PostalCode:    request.PostalCode,
+		Country:       request.Country,
 	}
 
 	if err := existingKyc.UpdateKYC(updatedKyc); err != nil {
@@ -453,8 +512,72 @@ func ApproveKYC(c *gin.Context) {
 		return
 	}
 
+	// Find the user this kyc belongs to
+	user, err := models.GetUserByID(existingKyc.UserID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// make call to Borderless to create individual identity
+	borderless := apis.NewBorderless()
+
+	borderlessIdentityAddress := models.BorderlessIdentityAddress{
+		Street1:    existingKyc.StreetAddress,
+		City:       existingKyc.City,
+		State:      existingKyc.State,
+		PostalCode: existingKyc.PostalCode,
+		Country:    existingKyc.Country,
+	}
+
+	borderlessIdentity := models.BorderlessIdentity{
+		FirstName:   user.FirstName,
+		LastName:    user.LastName,
+		Email:       user.Email,
+		Phone:       existingKyc.Phone,
+		TaxId:       existingKyc.TaxId,
+		DateOfBirth: existingKyc.DateOfBirth,
+		Address:     borderlessIdentityAddress,
+	}
+
+	response, err := borderless.CreateCustomerIdentity(borderlessIdentity)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Extract id field from the response
+	borderlessID, ok := response["id"].(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid response format",
+		})
+		return
+	}
+
+	// Upload documents to Borderless Identity
+	response, err = borderless.UploadCustomerIdentityDocument(borderlessID, *existingKyc)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// Extract id field from the response
+	borderlessID, ok = response["id"].(string)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid response format",
+		})
+		return
+	}
 	// Update the KYC request
-	if err := existingKyc.ApproveKYC(); err != nil {
+	if err := existingKyc.ApproveKYC(borderlessID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
