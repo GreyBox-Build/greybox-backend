@@ -1,5 +1,7 @@
 package serializers
 
+import "time"
+
 type Chain struct {
 	Celo    string `json:"celo"`
 	Stellar string `json:"stellar"`
@@ -70,4 +72,26 @@ type NetworkData struct {
 	CurrencyCode string   `json:"currencyCode"`
 	Networks     []string `json:"networks"`
 	MobileCode   string   `json:"mobileCode"`
+}
+
+type UserAccountRequest struct {
+	Asset string `json:"asset"`
+	Fiat  string `json:"fiat"`
+}
+
+type UserAccounts struct {
+	AccountId        string    `json:"account_id"`
+	Asset            string    `json:"asset"`
+	Fiat             string    `json:"fiat"`
+	Country          string    `json:"country"`
+	VirtualAccountId string    `json:"virtual_account_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type UserAccountsFilter struct {
+	UserId  *string `json:"user_id"`
+	Asset   *string `json:"asset"`
+	Fiat    *string `json:"fiat"`
+	Country *string `json:"country"`
 }

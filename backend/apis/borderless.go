@@ -220,7 +220,7 @@ func NewBorderless() *Borderless {
 		var token TokenResponse
 		err = json.Unmarshal(jsonData, &token)
 		if err != nil {
-			fmt.Println("Error unmarshalling JSON:", err)
+			fmt.Println("Error unmarshaling JSON:", err)
 			log.Fatal(err)
 		}
 
@@ -280,4 +280,51 @@ func (hc Borderless) UploadCustomerIdentityDocument(identityId string, kyc model
 
 	return response, nil
 
+}
+
+func (hc Borderless) CreateBorderlessAccount(name string, identityId string) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"name":       name,
+		"identityId": identityId,
+	}
+
+	response, err := hc.MakeRequest(
+		"POST",
+		fmt.Sprintf("%s/accounts", hc.BaseUrl),
+		requestData,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+
+}
+
+func (hc Borderless) CreateBorderlessVirtualAccount(
+	accountId string,
+	fiat string,
+	asset string,
+	countryCode string,
+	identityId string) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"fiat":                   fiat,
+		"country":                countryCode,
+		"asset":                  asset,
+		"counterPartyIdentityId": identityId,
+	}
+
+	hc.Headers["idempotency-key"] = uuid.New()
+	response, err := hc.MakeRequest(
+		"POST",
+		fmt.Sprintf("%s/accounts/%s/virtual-accounts", hc.BaseUrl, accountId),
+		requestData,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }

@@ -236,7 +236,11 @@ func FilterKYC(filter serializers.KYCFilterRequest) ([]KYC, error) {
 }
 
 // Helper function to convert serializers.KYCRequest to models.KYCRequest
-func KYCRequestFromSerializer(userId uint, status KYCStatus, kycRequest serializers.KYCRequest) KYCRequest {
+func KYCRequestFromSerializer(
+	userId uint,
+	status KYCStatus,
+	kycRequest serializers.KYCRequest,
+) KYCRequest {
 	return KYCRequest{
 		UserID:        userId,
 		IdNumber:      kycRequest.IdNumber,
