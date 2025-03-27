@@ -6,6 +6,7 @@ import (
 	"backend/serializers"
 	"backend/utils/tokens"
 	"encoding/base64"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -129,8 +130,6 @@ func CreateKYC(c *gin.Context) {
 		TaxId         string `form:"tax_id" binding:"required"`
 		IdNumber      string `form:"id_number" binding:"required"`
 		DateOfBirth   string `form:"date_of_birth" binding:"required"`
-		FrontPhoto    string `form:"front_photo" binding:"required"`
-		BackPhoto     string `form:"back_photo" binding:"required"`
 		Phone         string `form:"phone" binding:"required"`
 		StreetAddress string `form:"street_address" binding:"required"`
 		City          string `form:"city" binding:"required"`
@@ -243,7 +242,7 @@ func CreateKYC(c *gin.Context) {
 		})
 		return
 	}
-	frontBase64 := base64.StdEncoding.EncodeToString(frontBytes)
+	frontBase64 := fmt.Sprintf("data:%s;base64,%s", frontMimeType, base64.StdEncoding.EncodeToString(frontBytes))
 
 	// Convert back photo to base64
 	backSrc.Seek(0, 0)
@@ -254,7 +253,7 @@ func CreateKYC(c *gin.Context) {
 		})
 		return
 	}
-	backBase64 := base64.StdEncoding.EncodeToString(backBytes)
+	backBase64 := fmt.Sprintf("data:%s;base64,%s", backMimeType, base64.StdEncoding.EncodeToString(backBytes))
 
 	// Check if the user exists in the database
 	user, ok := models.FindUserByEmail(request.Email)
@@ -329,8 +328,6 @@ func UpdateKYC(c *gin.Context) {
 		TaxId         string `form:"tax_id" binding:"required"`
 		IdNumber      string `form:"id_number" binding:"required"`
 		DateOfBirth   string `form:"date_of_birth" binding:"required"`
-		FrontPhoto    string `form:"front_photo" binding:"required"`
-		BackPhoto     string `form:"back_photo" binding:"required"`
 		Phone         string `form:"phone" binding:"required"`
 		StreetAddress string `form:"street_address" binding:"required"`
 		City          string `form:"city" binding:"required"`

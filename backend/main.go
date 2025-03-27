@@ -90,9 +90,9 @@ func main() {
 		kyc.GET("", controllers.GetKYCS)
 		kyc.POST("", controllers.CreateKYC)
 		kyc.PATCH("", controllers.UpdateKYC)
-		kyc.Use(middlewares.IsAdmin()).PATCH("/:id/approve", controllers.ApproveKYC)
-		kyc.Use(middlewares.IsAdmin()).PATCH("/:id/reject", controllers.RejectKYC)
-		kyc.Use(middlewares.IsAdmin()).DELETE("/:id", controllers.DeleteKYC)
+		kyc.PATCH("/:id/approve", controllers.ApproveKYC)
+		kyc.PATCH("/:id/reject", controllers.RejectKYC)
+		kyc.DELETE("/:id", controllers.DeleteKYC)
 	}
 
 	user := r.Group("/api/v1/auth")

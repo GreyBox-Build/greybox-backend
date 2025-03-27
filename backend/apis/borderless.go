@@ -264,8 +264,8 @@ func (hc Borderless) UploadCustomerIdentityDocument(identityId string, kyc model
 		"type":           kyc.IDType,
 		"issuedDate":     kyc.IssueDate,
 		"expiryDate":     kyc.ExpiryDate,
-		"imageFront":     fmt.Sprintf("image/200*200;%s", kyc.FrontPhoto),
-		"imageBack":      fmt.Sprintf("image/200*200;%s", kyc.BackPhoto),
+		"imageFront":     kyc.FrontPhoto,
+		"imageBack":      kyc.BackPhoto,
 	}
 
 	response, err := hc.MakeRequest(
@@ -315,7 +315,8 @@ func (hc Borderless) CreateBorderlessVirtualAccount(
 		"counterPartyIdentityId": identityId,
 	}
 
-	hc.Headers["idempotency-key"] = uuid.New()
+	idempotencyKey := uuid.New()
+	hc.Headers["idempotency-key"] = idempotencyKey.String()
 	response, err := hc.MakeRequest(
 		"POST",
 		fmt.Sprintf("%s/accounts/%s/virtual-accounts", hc.BaseUrl, accountId),

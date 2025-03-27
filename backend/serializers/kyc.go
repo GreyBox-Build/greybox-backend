@@ -31,13 +31,13 @@ type KYCRequest struct {
 }
 
 type KYCFilterRequest struct {
-	ID              *uint      `json:"id,omitempty"`
-	UserID          *uint      `json:"user_id,omitempty"`
-	Status          *KYCStatus `json:"status,omitempty"`
-	RejectionReason *string    `json:"rejection_reason,omitempty"`
-	CreatedAt       *time.Time `json:"created_at,omitempty"`
-	ApprovedAt      *time.Time `json:"approved_at,omitempty"`
-	RejectedAt      *time.Time `json:"rejected_at,omitempty"`
+	ID              *uint      `form:"id,omitempty"`
+	UserID          *uint      `form:"user_id,omitempty"`
+	Status          *KYCStatus `form:"status,omitempty"`
+	RejectionReason *string    `form:"rejection_reason,omitempty"`
+	CreatedAt       *time.Time `form:"created_at,omitempty"`
+	ApprovedAt      *time.Time `form:"approved_at,omitempty"`
+	RejectedAt      *time.Time `form:"rejected_at,omitempty"`
 }
 
 type KYC struct {
