@@ -160,7 +160,9 @@ func main() {
 	payments := r.Group("/api/v1/payments")
 	{
 		payments.Use(middlewares.JwtAuthMiddleware())
+		payments.GET("/banks", controllers.FilterBank)
 		payments.POST("/borderless-onramp", controllers.BorderLessOnramp)
+		payments.POST("/borderless-offramp", controllers.BorderLessOffRamp)
 	}
 
 	webhook := r.Group("/api/v1/webhook")
