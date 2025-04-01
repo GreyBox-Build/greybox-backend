@@ -6,9 +6,11 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
-	"github.com/gin-gonic/gin"
+	"fmt"
 	"net/http"
 	"os"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CreateAccountV2(c *gin.Context) {
@@ -461,5 +463,117 @@ func MakeAdmin(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"status": "user is now an admin",
 		"errors": false,
+	})
+}
+
+func CreateBorderlessVirtualAccount(c *gin.Context) {
+	var input serializers.UserAccountRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	kyc, err := models.GetKYCByUserID(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "KYC not found for user"})
+		return
+	}
+
+	if kyc.BorderlessIdentityId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "KYC not submitted to Borderless"})
+		return
+	}
+
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+		return
+	}
+
+	borderless := apis.NewBorderless()
+	accountName := fmt.Sprintf("greybox-%s", models.GenerateAccountId())
+
+	accountResponse, err := borderless.CreateBorderlessAccount(accountName, kyc.BorderlessIdentityId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	accountId := accountResponse["id"].(string)
+	virtualAccountResponse, err := borderless.CreateBorderlessVirtualAccount(
+		accountId,
+		input.Fiat,
+		input.Asset,
+		user.CountryCode,
+		kyc.BorderlessIdentityId,
+	)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	virtualAccountId := virtualAccountResponse["id"].(string)
+
+	userAccount := models.UserAccounts{
+		UserId:           userId,
+		AccountId:        accountId,
+		VirtualAccountId: virtualAccountId,
+		Fiat:             input.Fiat,
+		Asset:            input.Asset,
+		Country:          user.Country,
+	}
+
+	if err := userAccount.CreateUserAccount(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create user account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "Virtual account created successfully",
+		"data":   userAccount,
+	})
+}
+
+func GetUserAccounts(c *gin.Context) {
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	accounts, err := models.GetUserAccountsByUserId(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "Fetched user accounts successfully",
+		"data":   accounts,
+	})
+}
+
+func FilterUserAccounts(c *gin.Context) {
+	var filters serializers.UserAccountsFilter
+	if err := c.ShouldBindJSON(&filters); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	accounts, err := models.FilterUserAccounts(filters)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "Filtered user accounts successfully",
+		"data":   accounts,
 	})
 }

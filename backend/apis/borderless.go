@@ -1,17 +1,19 @@
 package apis
 
 import (
+	"backend/models"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/patrickmn/go-cache"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/patrickmn/go-cache"
 )
 
 type PaymentAddress struct {
@@ -431,4 +433,97 @@ func NewWithdrawalRequest(fiat, country, asset, amount, accountID, paymentPurpos
 		PaymentPurpose:       paymentPurpose,
 		PaymentInstructionID: paymentInstructionID,
 	}
+}
+
+func (hc Borderless) CreateCustomerIdentity(identity models.BorderlessIdentity) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"firstName":   identity.FirstName,
+		"lastName":    identity.LastName,
+		"taxId":       identity.TaxId,
+		"dateOfBirth": identity.DateOfBirth,
+		"email":       identity.Email,
+		"phone":       identity.Phone,
+		"address":     identity.Address,
+	}
+	response, err := hc.MakeRequest(
+		"POST",
+		fmt.Sprintf("%s/identities/personal", hc.BaseUrl),
+		requestData,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (hc Borderless) UploadCustomerIdentityDocument(identityId string, kyc models.KYC) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"issuingCountry": "US",
+		"type":           kyc.IDType,
+		"issuedDate":     kyc.IssueDate,
+		"expiryDate":     kyc.ExpiryDate,
+		"imageFront":     kyc.FrontPhoto,
+		"imageBack":      kyc.BackPhoto,
+	}
+
+	response, err := hc.MakeRequest(
+		"PUT",
+		fmt.Sprintf("%s/identities/%s/documents", hc.BaseUrl, identityId),
+		requestData,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+
+}
+
+func (hc Borderless) CreateBorderlessAccount(name string, identityId string) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"name":       name,
+		"identityId": identityId,
+	}
+
+	response, err := hc.MakeRequest(
+		"POST",
+		fmt.Sprintf("%s/accounts", hc.BaseUrl),
+		requestData,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+
+}
+
+func (hc Borderless) CreateBorderlessVirtualAccount(
+	accountId string,
+	fiat string,
+	asset string,
+	countryCode string,
+	identityId string) (map[string]interface{}, error) {
+	requestData := map[string]interface{}{
+		"fiat":                   fiat,
+		"country":                countryCode,
+		"asset":                  asset,
+		"counterPartyIdentityId": identityId,
+	}
+
+	idempotencyKey := uuid.New()
+	hc.Headers["idempotency-key"] = idempotencyKey.String()
+	response, err := hc.MakeRequest(
+		"POST",
+		fmt.Sprintf("%s/accounts/%s/virtual-accounts", hc.BaseUrl, accountId),
+		requestData,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }
