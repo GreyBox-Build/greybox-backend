@@ -71,3 +71,13 @@ func FetchMasterWallet(chain string) (MasterWallet, error) {
 
 	return masterWallet, nil
 }
+
+// fetch all master wallets
+func FetchMasterWallets() ([]MasterWallet, error) {
+	var masterWallets []MasterWallet
+	if err := db.Find(&masterWallets).Error; err != nil {
+		return nil, fmt.Errorf("failed to fetch master wallets: %w", err)
+	}
+	return masterWallets, nil
+
+}

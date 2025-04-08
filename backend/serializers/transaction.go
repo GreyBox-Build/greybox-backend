@@ -167,10 +167,11 @@ type TransactionDetails struct {
 }
 
 type BorderlessOnramp struct {
-	Amount  string `json:"amount"`
-	Asset   string `json:"asset"`
-	Country string `json:"country"`
-	Fiat    string `json:"fiat"`
+	AccountId string `json:"accountId,omitempty"`
+	Amount    string `json:"amount"`
+	Asset     string `json:"asset"`
+	Country   string `json:"country"`
+	Fiat      string `json:"fiat"`
 }
 
 type MakeWithdrawalBorderless struct {
@@ -181,4 +182,7 @@ type MakeWithdrawalBorderless struct {
 	PaymentPurpose    string `json:"payment_purpose"`
 	AccountNumber     string `json:"account_number"`
 	AccountType       string `json:"account_type"`
+	Asset             string `json:"asset,omitempty"`
+	MasterWallet      string `json:"master_wallet,omitempty"`
+	AccountId         string `json:"account_id,omitempty"`
 }

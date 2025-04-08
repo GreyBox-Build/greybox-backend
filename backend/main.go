@@ -90,8 +90,8 @@ func main() {
 		kyc.GET("", controllers.GetKYCS)
 		kyc.POST("", controllers.CreateKYC)
 		kyc.PATCH("", controllers.UpdateKYC)
-		kyc.PATCH("/:id/approve", controllers.ApproveKYC)
-		kyc.PATCH("/:id/reject", controllers.RejectKYC)
+		kyc.Use(middlewares.IsAdmin()).PATCH("/:id/approve", controllers.ApproveKYC)
+		kyc.Use(middlewares.IsAdmin()).PATCH("/:id/reject", controllers.RejectKYC)
 		kyc.DELETE("/:id", controllers.DeleteKYC)
 	}
 
@@ -124,6 +124,7 @@ func main() {
 	master := r.Group("/api/v1")
 	{
 		//master.POST("/master-wallet", controllers.GenerateMasterWallet)
+		master.GET("/master-wallets", controllers.GetMasterWallets)
 		master.GET("/master-wallet", controllers.GetMasterWallet)
 
 	}
@@ -163,6 +164,8 @@ func main() {
 		payments.GET("/banks", controllers.FilterBank)
 		payments.POST("/borderless-onramp", controllers.BorderLessOnramp)
 		payments.POST("/borderless-offramp", controllers.BorderLessOffRamp)
+		payments.POST("/borderless-onramp/mobilemoney", controllers.BorderlessMobileMoneyOnRamp)
+		payments.POST("/borderless-offramp/mobilemoney", controllers.BorderlessMobileMoneyOffRamp)
 	}
 
 	webhook := r.Group("/api/v1/webhook")

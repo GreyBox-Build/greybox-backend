@@ -4,6 +4,7 @@ import (
 	"backend/apis"
 	"backend/models"
 	"backend/serializers"
+	"backend/utils"
 	"backend/utils/tokens"
 	"encoding/base64"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -141,6 +143,17 @@ func CreateKYC(c *gin.Context) {
 	if err := c.ShouldBind(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
+		})
+		return
+	}
+
+	// Make sure country is a valid ISO 3166-1 alpha-2 code
+	validCodes := utils.CreateValidCountryCodes()
+	country := strings.ToUpper(request.Country)
+
+	if !validCodes[country] {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "Invalid country code",
 		})
 		return
 	}

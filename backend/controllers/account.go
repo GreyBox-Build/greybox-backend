@@ -436,6 +436,21 @@ func GetMasterWallet(c *gin.Context) {
 	})
 }
 
+func GetMasterWallets(c *gin.Context) {
+	masterWallet, err := models.FetchMasterWallets()
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"status": "fetched master wallets succesfully",
+		"errors": false,
+		"data":   masterWallet,
+	})
+}
+
 func MakeAdmin(c *gin.Context) {
 	var input serializers.AdminForm
 	if err := c.ShouldBindJSON(&input); err != nil {
