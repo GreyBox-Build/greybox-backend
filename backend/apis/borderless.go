@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -46,17 +47,6 @@ type Payment struct {
 }
 
 var borderlessCache = cache.New(60*time.Minute, 100*time.Minute)
-
-type Deposit struct {
-	ID          string      `json:"id"`
-	Type        string      `json:"type"`
-	Status      string      `json:"status"`
-	Source      Source      `json:"source"`
-	Destination Destination `json:"destination"`
-	CreatedAt   time.Time   `json:"createdAt"`
-	TxHash      *[]string   `json:"txHash"`
-	FeeAmount   string      `json:"feeAmount"`
-}
 
 type Source struct {
 	Amount       string `json:"amount"`
@@ -134,6 +124,40 @@ type Borderless struct {
 	Timeout      time.Duration
 }
 
+type WithdrawalRequest struct {
+	Fiat                 string `json:"fiat"`
+	Country              string `json:"country"`
+	Asset                string `json:"asset"`
+	Amount               string `json:"amount"`
+	AccountID            string `json:"accountId"`
+	PaymentPurpose       string `json:"paymentPurpose"`
+	PaymentInstructionID string `json:"paymentInstructionId"`
+}
+
+type DepositOrWithdrawalOption struct {
+	ID     string `json:"id"`
+	Type   string `json:"type"`
+	Method string `json:"method"`
+	Fiat   string `json:"fiat"`
+	Asset  string `json:"asset"`
+}
+
+type Deposit struct {
+	ID                    string      `json:"id"`
+	SourceAccountId       string      `json:"sourceAccountId"`
+	DestinationAccountId  interface{} `json:"destinationAccountId"` // Can be null
+	Type                  string      `json:"type"`
+	Status                string      `json:"status"`
+	Source                Source      `json:"source"`
+	Destination           Destination `json:"destination"`
+	ProviderTransactionId interface{} `json:"providerTransactionId"` // Can be null
+	Instructions          interface{} `json:"instructions"`          // Can be null
+	FiatCurrency          string      `json:"fiatCurrency"`
+	CreatedAt             time.Time   `json:"createdAt"`
+	TxHash                *[]string   `json:"txHash"`
+	FeeAmount             string      `json:"feeAmount"`
+}
+
 // MakeRequest makes an HTTP request with retry logic and error handling
 func (hc Borderless) MakeRequest(method, url string, data map[string]interface{}) (map[string]interface{}, error) {
 	startTime := time.Now()
@@ -208,29 +232,35 @@ func (hc Borderless) MakeDeposit(amount, asset, country, fiat string) (Deposit, 
 		"fiat":          fiat,
 		"paymentMethod": "Wire",
 	}
+
 	idempotencyKey := uuid.New()
 	fmt.Println("Idempotency key:", idempotencyKey)
 	hc.Headers["idempotency-key"] = idempotencyKey.String()
+
 	// Make the request
 	response, err := hc.MakeRequest(
 		"POST",
 		fmt.Sprintf("%s/deposits", hc.BaseUrl),
 		requestData,
 	)
+
 	fmt.Println("Response:", response)
+
 	if err != nil {
 		return Deposit{}, err
 	}
+
 	responseByte, err := json.Marshal(response)
 	if err != nil {
 		return Deposit{}, fmt.Errorf("failed to serialize deposit response: %w", err)
 	}
+
 	depositResponse := Deposit{}
 	if err := json.Unmarshal(responseByte, &depositResponse); err != nil {
 		return Deposit{}, fmt.Errorf("failed to parse deposit response: %w", err)
 	}
-	return depositResponse, nil
 
+	return depositResponse, nil
 }
 
 func (hc Borderless) GetTransaction(txId string) (map[string]interface{}, error) {
@@ -413,16 +443,6 @@ func StructToMap[T any](s T) (map[string]interface{}, error) {
 	return result, nil
 }
 
-type WithdrawalRequest struct {
-	Fiat                 string `json:"fiat"`
-	Country              string `json:"country"`
-	Asset                string `json:"asset"`
-	Amount               string `json:"amount"`
-	AccountID            string `json:"accountId"`
-	PaymentPurpose       string `json:"paymentPurpose"`
-	PaymentInstructionID string `json:"paymentInstructionId"`
-}
-
 func NewWithdrawalRequest(fiat, country, asset, amount, accountID, paymentPurpose, paymentInstructionID string) WithdrawalRequest {
 	return WithdrawalRequest{
 		Fiat:                 fiat,
@@ -526,4 +546,118 @@ func (hc Borderless) CreateBorderlessVirtualAccount(
 	}
 
 	return response, nil
+}
+
+func (hc Borderless) GetAvailableCountries(entity string) ([]string, error) {
+	response, err := hc.MakeRequest("GET", fmt.Sprintf("%s/%s/countries", hc.BaseUrl, entity), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the response is of the expected type
+	fmt.Printf("Countries Response: %v", response)
+	responseBytes, err := json.Marshal(response)
+	fmt.Printf("Response Bytes: %v", responseBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response: %w", err)
+	}
+
+	var countries []string
+	err = json.Unmarshal(responseBytes, &countries)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal countries: %w", err)
+	}
+
+	return countries, nil
+}
+
+func (hc Borderless) GetDepositOrWithdrawalOption(
+	entity string,
+	countryCode string,
+	fiat string,
+	asset string,
+) (*DepositOrWithdrawalOption, error) {
+	response, err := hc.MakeRequest("GET", fmt.Sprintf("%s/%s/options?country=%s", hc.BaseUrl, entity, countryCode), nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the response is of the expected type
+	fmt.Printf("Country Options Response: %v", response)
+	responseBytes, err := json.Marshal(response)
+	fmt.Printf("Response Bytes: %v", responseBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal response: %w", err)
+	}
+
+	var options []DepositOrWithdrawalOption
+	err = json.Unmarshal(responseBytes, &options)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal %s options: %w", entity, err)
+	}
+
+	for _, option := range options {
+		if strings.EqualFold(option.Method, "mobile money") || strings.EqualFold(option.Method, "mobilemoney") {
+			if strings.EqualFold(option.Fiat, fiat) && strings.EqualFold(option.Asset, asset) {
+				if option.ID == "" {
+					return nil, errors.New(fmt.Sprintf("mobile money %s option found without ID", entity))
+				}
+				return &option, nil
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("No Mobile Money %s option found for %s: %s and %s", entity, countryCode, fiat, asset)
+}
+
+func (hc Borderless) MobileMoneyDeposit(
+	accountId string,
+	fiat string,
+	country string,
+	asset string,
+	amount string,
+	paymentMethod string,
+) (Deposit, error) {
+
+	// by default use greybox account ID but if an account ID is provided, use that instead
+	innerAccountId := hc.accountID
+	if accountId != "" {
+		innerAccountId = accountId
+	}
+
+	requestData := map[string]interface{}{
+		"accountId":     innerAccountId,
+		"amount":        amount,
+		"asset":         asset,
+		"country":       country,
+		"fiat":          fiat,
+		"paymentMethod": paymentMethod,
+	}
+
+	// Make the request
+	response, err := hc.MakeRequest(
+		"POST",
+		fmt.Sprintf("%s/deposits", hc.BaseUrl),
+		requestData,
+	)
+
+	fmt.Println("Response:", response)
+
+	if err != nil {
+		return Deposit{}, err
+	}
+
+	responseByte, err := json.Marshal(response)
+	if err != nil {
+		return Deposit{}, fmt.Errorf("failed to serialize deposit response: %w", err)
+	}
+
+	depositResponse := Deposit{}
+	if err := json.Unmarshal(responseByte, &depositResponse); err != nil {
+		return Deposit{}, fmt.Errorf("failed to parse deposit response: %w", err)
+	}
+
+	return depositResponse, nil
 }
