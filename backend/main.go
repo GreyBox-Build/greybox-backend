@@ -60,7 +60,7 @@ func main() {
 	//config.AllowOrigins = []string{"http://localhost:3000"}
 	r.Use(CORS())
 
-	r.Use(middlewares.AllowedHosts([]string{"localhost:8080", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
+	r.Use(middlewares.AllowedHosts([]string{"localhost:3000", "http://localhost:3000", "localhost:8080", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com"}))
 
 	chains := r.Group("/api/v1/chains")
 	{
