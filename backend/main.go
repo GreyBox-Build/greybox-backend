@@ -10,6 +10,8 @@ import (
 
 	//"github.com/gin-contrib/cors"
 
+	"slices"
+
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -17,13 +19,22 @@ import (
 func CORS() gin.HandlerFunc {
 	// TO allow CORS
 	return func(c *gin.Context) {
-		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		origin := c.Request.Header.Get("Origin")
+		allowedOrigins := []string{"http://localhost:3000", "localhost:8080", "34.227.150.136", "apis.greyboxpay.com", "wallet.greyboxpay.com", "https://wallet.greyboxpay.com", "https://apis.greyboxpay.com"} // Add other allowed origins if needed
+
+		if slices.Contains(allowedOrigins, origin) {
+			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
+			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
 		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE")
+
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
+
 		c.Next()
 	}
 }
