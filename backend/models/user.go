@@ -150,6 +150,14 @@ func (u *User) UpdateUser() {
 	db.Save(&u)
 }
 
+func (u *User) UpdateUserWithErrors() error {
+	err := db.Save(&u).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (u *User) BeforeSaveDetail() error {
 	if !ValidatePassword(u.Password) {
 		return errors.New("password must have at least 8 characters, have at least a digit and at least an Upper case letter")

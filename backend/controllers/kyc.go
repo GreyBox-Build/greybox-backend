@@ -586,6 +586,16 @@ func ApproveKYC(c *gin.Context) {
 		})
 		return
 	}
+
+	// Update User
+	user.IsVerified = true
+	if err := user.UpdateUserWithErrors(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
 	// Update the KYC request
 	if err := existingKyc.ApproveKYC(borderlessID); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
