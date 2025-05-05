@@ -94,24 +94,24 @@ type BorderlessIdentity struct {
 	Address     BorderlessIdentityAddress `json:"address"`
 }
 
-func (k *KYC) BeforeCreate(tx *gorm.DB) (err error) {
-	k.CreatedAt = time.Now()
-	k.UpdatedAt = time.Now()
+func (kyc *KYC) BeforeCreate(tx *gorm.DB) (err error) {
+	kyc.CreatedAt = time.Now()
+	kyc.UpdatedAt = time.Now()
 	return
 }
 
-func (k *KYC) BeforeUpdate(tx *gorm.DB) (err error) {
-	k.UpdatedAt = time.Now()
+func (kyc *KYC) BeforeUpdate(tx *gorm.DB) (err error) {
+	kyc.UpdatedAt = time.Now()
 	return
 }
 
-func (k *KYC) BeforeSave(tx *gorm.DB) (err error) {
-	k.UpdatedAt = time.Now()
+func (kyc *KYC) BeforeSave(tx *gorm.DB) (err error) {
+	kyc.UpdatedAt = time.Now()
 	return
 }
 
-func (k *KYC) CreateKYC() error {
-	err := db.Unscoped().Create(&k).Error // Use Unscoped() to include soft deleted records
+func (kyc *KYC) CreateKYC() error {
+	err := db.Unscoped().Create(&kyc).Error // Use Unscoped() to include soft deleted records
 	if err != nil {
 		return err
 	}
@@ -119,62 +119,56 @@ func (k *KYC) CreateKYC() error {
 	return nil
 }
 
-func (k *KYC) UpdateKYC(data KYCRequest) error {
+func (kyc *KYC) UpdateKYC(data KYCRequest) error {
 	// Only update if status is pending
-	if k.Status != Rejected {
+	if kyc.Status != Rejected {
 		return fmt.Errorf("KYC can only be updated when status is rejected")
 	}
 
-	k.IDType = data.IDType
-	k.IdNumber = data.IdNumber
-	k.IssueDate = data.IssueDate
-	k.ExpiryDate = data.ExpiryDate
-	k.FrontPhoto = data.FrontPhoto
-	k.BackPhoto = data.BackPhoto
-	k.TaxId = data.TaxId
-	k.Phone = data.Phone
-	k.StreetAddress = data.StreetAddress
-	k.City = data.City
-	k.State = data.State
-	k.PostalCode = data.PostalCode
-	k.Country = data.Country
-	k.DateOfBirth = data.DateOfBirth
-	k.Status = Pending // set status to pending during update
+	kyc.IDType = data.IDType
+	kyc.IdNumber = data.IdNumber
+	kyc.IssueDate = data.IssueDate
+	kyc.ExpiryDate = data.ExpiryDate
+	kyc.FrontPhoto = data.FrontPhoto
+	kyc.BackPhoto = data.BackPhoto
+	kyc.TaxId = data.TaxId
+	kyc.Phone = data.Phone
+	kyc.StreetAddress = data.StreetAddress
+	kyc.City = data.City
+	kyc.State = data.State
+	kyc.PostalCode = data.PostalCode
+	kyc.Country = data.Country
+	kyc.DateOfBirth = data.DateOfBirth
+	kyc.Status = Pending // set status to pending during update
 
-	return db.Save(k).Error
+	return db.Save(kyc).Error
 }
 
-func (k *KYC) DeleteKYC() error {
-	err := db.Where("id = ?", k.ID).Delete(k).Error
+func (kyc *KYC) DeleteKYC() error {
+	err := db.Where("id = ?", kyc.ID).Delete(kyc).Error
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (k *KYC) ApproveKYC(borderlessIdentityId string) error {
-	if err := db.Where("id = ?", k.ID).First(k).Error; err != nil {
-		return err
-	}
-
+func (kyc *KYC) ApproveKYC(borderlessIdentityId string) error {
 	// Only update if status is pending
-	if k.Status != Pending {
+	if kyc.Status != Pending {
 		return fmt.Errorf("KYC can only be approved when status is pending")
 	}
 
-	k.Status = Approved
-	k.BorderlessIdentityId = borderlessIdentityId
-	k.ApprovedAt = time.Now()
-	return db.Save(k).Error
+	kyc.Status = Approved
+	kyc.BorderlessIdentityId = borderlessIdentityId
+	kyc.ApprovedAt = time.Now()
+	return db.Save(kyc).Error
 }
 
 func (k *KYC) RejectKYC(rejectionReason string) error {
-	// Find the KYC record by the given user id
-	if err := db.Where("id = ?", k.ID).First(k).Error; err != nil {
-		return err
-	}
-
 	// Only update if status is pending
+	// Print kyc
+	fmt.Println(k.Status)
+	fmt.Println(Pending)
 	if k.Status != Pending {
 		return fmt.Errorf("KYC can only be rejected when status is pending")
 	}
@@ -194,6 +188,15 @@ func GetKYCByUserID(id uint) (*KYC, error) {
 func GetKYCByID(id uint) (*KYC, error) {
 	var kyc KYC
 	err := db.Where("id = ?", id).First(&kyc).Error
+	return &kyc, err
+}
+
+func GetKycByIDWithoutPhotos(id uint) (*KYC, error) {
+	var kyc KYC
+	err := db.
+		Omit("front_photo", "back_photo").
+		Where("id = ?", id).
+		First(&kyc).Error
 	return &kyc, err
 }
 

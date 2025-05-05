@@ -97,13 +97,13 @@ func main() {
 	kyc := r.Group("/api/v2/kyc")
 	{
 		kyc.Use(middlewares.JwtAuthMiddleware())
-		kyc.POST("/mine", controllers.GetUserKYC)
-		kyc.GET("", controllers.GetKYCS)
+		kyc.GET("/mine", controllers.GetUserKYC)
 		kyc.POST("", controllers.CreateKYC)
 		kyc.PATCH("", controllers.UpdateKYC)
+		kyc.DELETE("/:id", controllers.DeleteKYC)
+		kyc.Use(middlewares.IsAdmin()).GET("", controllers.GetKYCS)
 		kyc.Use(middlewares.IsAdmin()).PATCH("/:id/approve", controllers.ApproveKYC)
 		kyc.Use(middlewares.IsAdmin()).PATCH("/:id/reject", controllers.RejectKYC)
-		kyc.DELETE("/:id", controllers.DeleteKYC)
 	}
 
 	user := r.Group("/api/v1/auth")

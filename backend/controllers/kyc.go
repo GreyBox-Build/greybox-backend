@@ -73,6 +73,21 @@ func GetKYCS(c *gin.Context) {
 		return
 	}
 
+	// if email is provided then find user Id by the email
+	if request.Email != nil {
+		// find the user by their email
+		user, exists := models.FindUserByEmail(*request.Email)
+		if !exists {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "User not found",
+			})
+			return
+		}
+
+		// update request with user ID
+		request.UserID = &user.ID
+	}
+
 	m_kycs, err := models.FilterKYC(request)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -422,7 +437,7 @@ func UpdateKYC(c *gin.Context) {
 			})
 			return
 		}
-		frontBase64 = base64.StdEncoding.EncodeToString(frontBytes)
+		frontBase64 = fmt.Sprintf("data:%s;base64,%s", frontMimeType, base64.StdEncoding.EncodeToString(frontBytes))
 	}
 
 	// Process back photo if provided
@@ -469,7 +484,7 @@ func UpdateKYC(c *gin.Context) {
 			})
 			return
 		}
-		backBase64 = base64.StdEncoding.EncodeToString(backBytes)
+		backBase64 = fmt.Sprintf("data:%s;base64,%s", backMimeType, base64.StdEncoding.EncodeToString(backBytes))
 	}
 
 	// Construct updated KYC model
@@ -554,7 +569,7 @@ func ApproveKYC(c *gin.Context) {
 
 	response, err := borderless.CreateCustomerIdentity(borderlessIdentity)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadGateway, gin.H{
 			"error": err.Error(),
 		})
 		return
@@ -572,7 +587,7 @@ func ApproveKYC(c *gin.Context) {
 	// Upload documents to Borderless Identity
 	response, err = borderless.UploadCustomerIdentityDocument(borderlessID, *existingKyc)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusBadGateway, gin.H{
 			"error": err.Error(),
 		})
 		return
@@ -633,7 +648,7 @@ func RejectKYC(c *gin.Context) {
 	}
 
 	// Find the KYC
-	existingKyc, err := models.GetKYCByID(idUint)
+	existingKyc, err := models.GetKycByIDWithoutPhotos(idUint)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "KYC Not Found",
