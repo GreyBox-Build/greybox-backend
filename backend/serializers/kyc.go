@@ -33,6 +33,7 @@ type KYCRequest struct {
 type KYCFilterRequest struct {
 	ID              *uint      `form:"id,omitempty"`
 	UserID          *uint      `form:"user_id,omitempty"`
+	Email           *string    `form:"user_email,omitempty"`
 	Status          *KYCStatus `form:"status,omitempty"`
 	RejectionReason *string    `form:"rejection_reason,omitempty"`
 	CreatedAt       *time.Time `form:"created_at,omitempty"`

@@ -200,14 +200,24 @@ func (hc Borderless) MakeRequest(method, url string, data map[string]interface{}
 	log.Printf("getting %s repsonse from %s with data: %v", method, url, data)
 	if response.StatusCode >= 400 {
 		fmt.Println("Response status code:", response.StatusCode)
-		bodyBytes, _ := io.ReadAll(response.Body)
+
 		var failedResponse map[string]interface{}
+		bodyBytes, _ := io.ReadAll(response.Body)
+
 		if jsonErr := json.Unmarshal(bodyBytes, &failedResponse); jsonErr == nil {
-			log.Printf("HTTP error occurred: %s", failedResponse)
-			return failedResponse, errors.New("HTTP error")
+			log.Printf("HTTP error response: %+v", failedResponse)
+
+			// Try to extract an error message
+			msg := "HTTP error"
+			if m, ok := failedResponse["message"].(string); ok {
+				msg = m
+			}
+			return failedResponse, fmt.Errorf("HTTP error: %s", msg)
 		}
-		fmt.Println("Failed response:", failedResponse)
-		return failedResponse, errors.New("an unknown error occurred")
+
+		// Fallback: response was not valid JSON
+		log.Printf("HTTP error with unparseable body: %s", string(bodyBytes))
+		return nil, fmt.Errorf("HTTP error: %s", string(bodyBytes))
 	}
 
 	bodyBytes, err := io.ReadAll(response.Body)
