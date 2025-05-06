@@ -546,6 +546,14 @@ func ApproveKYC(c *gin.Context) {
 		return
 	}
 
+	// if user is verified, return error
+	if user.IsVerified {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "User is already verified",
+		})
+		return
+	}
+
 	// make call to Borderless to create individual identity
 	borderless := apis.NewBorderless()
 
@@ -567,7 +575,35 @@ func ApproveKYC(c *gin.Context) {
 		Address:     borderlessIdentityAddress,
 	}
 
-	response, err := borderless.CreateCustomerIdentity(borderlessIdentity)
+	// first we try to check if the customer already has an identity
+	response, err := borderless.GetCustomerIdentity(borderlessIdentity.Email, borderlessIdentity.LastName)
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	var borderlessID string
+
+	// check length of data field in response
+	// if customer has no identity then proceed to create one
+	if len(response["data"].([]interface{})) < 1 {
+		response, err := borderless.CreateCustomerIdentity(borderlessIdentity)
+		if err != nil {
+			c.JSON(http.StatusBadGateway, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+
+		borderlessID = response["id"].(string)
+	} else {
+		borderlessID = response["data"].([]interface{})[0].(map[string]interface{})["id"].(string)
+	}
+
+	// Upload documents to Borderless Identity
+	response, err = borderless.UploadCustomerIdentityDocument(borderlessID, *existingKyc)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{
 			"error": err.Error(),
@@ -584,25 +620,7 @@ func ApproveKYC(c *gin.Context) {
 		return
 	}
 
-	// Upload documents to Borderless Identity
-	response, err = borderless.UploadCustomerIdentityDocument(borderlessID, *existingKyc)
-	if err != nil {
-		c.JSON(http.StatusBadGateway, gin.H{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	// Extract id field from the response
-	borderlessID, ok = response["id"].(string)
-	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid response format",
-		})
-		return
-	}
-
-	// Update User
+	// set user to isVerified only if not already verified
 	user.IsVerified = true
 	if err := user.UpdateUserWithErrors(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
