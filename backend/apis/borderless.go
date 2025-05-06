@@ -467,7 +467,7 @@ func NewWithdrawalRequest(fiat, country, asset, amount, accountID, paymentPurpos
 
 func (hc Borderless) GetCustomerIdentity(email string, lastname string) (map[string]interface{}, error) {
 	response, err := hc.MakeRequest("GET",
-		fmt.Sprintf("%s/identities?namePrefix=%s&namePrefix=%s&type=%s", hc.BaseUrl, email, lastname, "Personal"),
+		fmt.Sprintf("%s/identities?emailPrefix=%s&namePrefix=%s&type=%s", hc.BaseUrl, email, lastname, "Personal"),
 		nil,
 	)
 
