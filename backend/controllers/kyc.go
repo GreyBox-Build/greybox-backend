@@ -581,9 +581,10 @@ func ApproveKYC(c *gin.Context) {
 		c.JSON(http.StatusBadGateway, gin.H{
 			"error": err.Error(),
 		})
+		return
 	}
 
-	borderlessID := ""
+	var borderlessID string
 
 	// check length of data field in response
 	// if customer has no identity then proceed to create one
@@ -620,14 +621,12 @@ func ApproveKYC(c *gin.Context) {
 	}
 
 	// set user to isVerified only if not already verified
-	if !user.IsVerified {
-		user.IsVerified = true
-		if err := user.UpdateUserWithErrors(); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
+	user.IsVerified = true
+	if err := user.UpdateUserWithErrors(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
 	}
 
 	// Update the KYC request
