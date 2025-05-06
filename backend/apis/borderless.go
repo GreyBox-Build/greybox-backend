@@ -465,6 +465,19 @@ func NewWithdrawalRequest(fiat, country, asset, amount, accountID, paymentPurpos
 	}
 }
 
+func (hc Borderless) GetCustomerIdentity(email string, lastname string) (map[string]interface{}, error) {
+	response, err := hc.MakeRequest("GET",
+		fmt.Sprintf("%s/identities?namePrefix=%s&lastName=%s&type=%s", hc.BaseUrl, email, lastname, "Personal"),
+		nil,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
 func (hc Borderless) CreateCustomerIdentity(identity models.BorderlessIdentity) (map[string]interface{}, error) {
 	requestData := map[string]interface{}{
 		"firstName":   identity.FirstName,

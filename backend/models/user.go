@@ -151,7 +151,7 @@ func (u *User) UpdateUser() {
 }
 
 func (u *User) UpdateUserWithErrors() error {
-	err := db.Save(&u).Error
+	err := db.Model(&User{}).Where("id = ?", u.ID).Updates(u).Error
 	if err != nil {
 		return err
 	}
