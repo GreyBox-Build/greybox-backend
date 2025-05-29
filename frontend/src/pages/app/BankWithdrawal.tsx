@@ -122,11 +122,11 @@ const BankWithdrawal = () => {
                 />
                 <InputInfoLabel
                   title="Buying Rate"
-                  value={`1${returnAsset(
-                    userData?.crypto_currency
-                  )} = ${parseFloat(rate?.data)?.toFixed(2)}${
-                    userData?.currency ? userData?.currency : ""
-                  }`}
+                  value={`1${returnAsset(userData?.crypto_currency)} = ${
+                    !isNaN(parseFloat(rate?.data))
+                      ? parseFloat(rate?.data)?.toFixed(2)
+                      : "0.0"
+                  }${userData?.currency ? userData?.currency : ""}`}
                 />
                 {isEquivalentError && (
                   <p className=" text-red-500 text-[10px]">
@@ -135,7 +135,7 @@ const BankWithdrawal = () => {
                 )}
               </div>
               <div>
-                <InputLabel text={`You will recieve`} />
+                <InputLabel text={`You will recieve (minus 1% service fee)`} />
                 <TextInput
                   name=""
                   control={control}

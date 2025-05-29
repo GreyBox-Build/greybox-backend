@@ -2,6 +2,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define our single API slice object
 // baseUrl: "https://apis.greyboxpay.com/api",
+//baseUrl: "http://localhost:8080/api",
 export const apiSlice = createApi({
   reducerPath: "api",
   refetchOnReconnect: true,
@@ -100,7 +101,7 @@ export const apiSlice = createApi({
     }),
     forgetPassword: builder.mutation({
       query: (user) => ({
-        url: "/v1/token/forget-password",
+        url: "/v1/user/forget-password",
         method: "POST",
         body: user,
       }),
@@ -110,6 +111,87 @@ export const apiSlice = createApi({
         url: "/v1/token/reset-password",
         method: "POST",
         body: user,
+      }),
+    }),
+
+    getMobileEquivAmount: builder.query({
+      query: ({ amount, currency, cryptoAsset, type }) => ({
+        url: `/v2/transaction/on-ramp/mobile/equivalent-amount?amount=${amount}&currency=${currency}&type=${type}&cryptoAsset=${cryptoAsset}`,
+      }),
+    }),
+
+    getNetworks: builder.query({
+      query: () => ({
+        url: "/v1/networks",
+      }),
+    }),
+    onrampMobile: builder.mutation({
+      query: (requestData) => ({
+        url: "/v2/transaction/on-ramp/mobile",
+        method: "POST",
+        body: requestData,
+      }),
+      invalidatesTags: ["User"],
+    }),
+
+    offrampMobile: builder.mutation({
+      query: (sentData) => ({
+        url: "/v2/transaction/off-ramp/mobile",
+        method: "POST",
+        body: sentData,
+      }),
+      invalidatesTags: ["User"],
+    }),
+
+    adminGetOffRampWithdrawalReq: builder.query({
+      query: () => ({
+        url: `/v1/requests/off-ramp?chain&hash&address&account_number&status`,
+      }),
+    }),
+    getTransHistory: builder.query({
+      query: () => ({
+        url: `/v1/transaction?chain=CELO`,
+      }),
+    }),
+    // adminGetOffRampWithdrawalReq: builder.query({
+    //   query: ({ chain, hash, address, account_number, status }) => ({
+    //     url: `/v1/requests/off-ramp?${chain}&${hash}&${address}}&${account_number}&${status}`,
+    //   }),
+    // }),
+    adminOffRampRetrieveData: builder.query({
+      query: (id) => ({
+        url: `v1/requests/off-ramp/:${id}`,
+      }),
+    }),
+    adminOnRampRetrieveDataReq: builder.query({
+      query: (id) => ({
+        url: `v1/requests/on-ramp/:${id}`,
+      }),
+    }),
+    adminOnRampRetrieveWithParams: builder.query({
+      query: () => ({
+        url: `v1/requests/on-ramp?$ref&$cu`,
+      }),
+    }),
+    // adminOnRampRetrieveWithParams: builder.query({
+    //   query: ({ ref, cu }) => ({
+    //     url: `v1/requests/on-ramp?${ref}&${cu}`,
+    //   }),
+    // }),
+
+    adminVerifyOnRampReqWithId: builder.mutation({
+      query: ({ id, action }) => ({
+        url: `v1/requests/on-ramp/${id}/verify`, // Make sure the `id` is used directly in the URL
+        method: "POST",
+        body: action, // Send the action payload
+      }),
+    }),
+
+    adminVerifyOffRampReqWithId: builder.mutation({
+      query: ({ id, actionBankRef }) => ({
+        url: `v1/requests/off-ramp/${id}/verify`,
+        method: "POST",
+        body: actionBankRef,
       }),
     }),
   }),
@@ -130,4 +212,14 @@ export const {
   useGetTransactionQuery,
   useGetExchangeRateQuery,
   useSignUrlMutation,
+  useGetMobileEquivAmountQuery,
+  useGetNetworksQuery,
+  useOnrampMobileMutation,
+  useOfframpMobileMutation,
+  useGetTransHistoryQuery,
+  useAdminGetOffRampWithdrawalReqQuery,
+  useAdminOnRampRetrieveDataReqQuery,
+  useAdminOnRampRetrieveWithParamsQuery,
+  useAdminVerifyOnRampReqWithIdMutation,
+  useAdminVerifyOffRampReqWithIdMutation,
 } = apiSlice;

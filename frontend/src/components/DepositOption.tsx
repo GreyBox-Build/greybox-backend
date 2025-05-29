@@ -16,10 +16,16 @@ const DepositOption = () => {
             onClick={() => navigate("/deposit-via-bank-transfer")}
           />
           <FlatButton
+            label="Deposit Via Mobile Money"
+            extraClass="bg-[transparent] mb-[8px]"
+            onClick={() => navigate("/deposit-mobile-money")}
+          />
+
+          {/* <FlatButton
             label="Deposit Via Exchange"
             extraClass="bg-[transparent] mb-[34px]"
             onClick={() => navigate("/deposit-via-exchange")}
-          />
+          /> */}
           <FormButton label="Cancel" onClick={() => navigate(-1)} />
         </div>
       }

@@ -109,3 +109,80 @@ type OffRamp struct {
 	AccountName    string `json:"accountName"`
 	CurrencyCode   string `json:"currencyCode"`
 }
+
+type Collection struct {
+	CustomerName  string `json:"customerName"`
+	CustomerEmail string `json:"customerEmail"`
+	PhoneNumber   string `json:"phoneNumber"`
+	CountryCode   string `json:"countryCode"`
+	Network       string `json:"network"`
+	Amount        int    `json:"amount"`
+}
+
+type Transfer struct {
+	DigitalNetwork string `json:"digitalNetwork"`
+	DigitalAsset   string `json:"digitalAsset"`
+	WalletAddress  string `json:"walletAddress"`
+	DeveloperFee   string `json:"developerFee"`
+}
+
+type Payment struct {
+	Collection   Collection `json:"collection"`
+	Transfer     Transfer   `json:"transfer"`
+	DeveloperFee string     `json:"developerFee"`
+}
+
+type TransactionRequest struct {
+	SendingAddress string `json:"sendingAddress"`
+	AmountSending  string `json:"amountSending"`
+	Network        string `json:"network"`
+	Token          string `json:"token"`
+}
+
+type MobileOffRamp struct {
+	SendingAddress string `json:"sendingAddress"`
+	AmountSending  string `json:"amountSending"`
+	Network        string `json:"network"`
+	Token          string `json:"token"`
+	CustomerName   string `json:"customerName"`
+	PhoneNumber    string `json:"phoneNumber"`
+	CountryCode    string `json:"countryCode"`
+	MobileProvider string `json:"mobileProvider"`
+}
+
+type TransactionDetails struct {
+	Collection struct {
+		TransactionHash string `json:"transactionHash"`
+		PayoutRequestID string `json:"payoutRequestId"`
+		Network         string `json:"network"`
+		Token           string `json:"token"`
+	} `json:"collection"`
+	Transfer struct {
+		CustomerName string `json:"customerName"`
+		PhoneNumber  string `json:"phoneNumber"`
+		CountryCode  string `json:"countryCode"`
+		Network      string `json:"network"`
+	} `json:"transfer"`
+	DeveloperFee string `json:"developerFee"`
+}
+
+type BorderlessOnramp struct {
+	AccountId string `json:"accountId,omitempty"`
+	Amount    string `json:"amount"`
+	Asset     string `json:"asset"`
+	Country   string `json:"country"`
+	Fiat      string `json:"fiat"`
+}
+
+type MakeWithdrawalBorderless struct {
+	Currency          string `json:"currency"`
+	BankId            uint64 `json:"bank_id"`
+	AccountHolderName string `json:"account_holder_name"`
+	Amount            string `json:"amount"`
+	PaymentPurpose    string `json:"payment_purpose"`
+	AccountNumber     string `json:"account_number"`
+	AccountType       string `json:"account_type"`
+	Asset             string `json:"asset,omitempty"`
+	MasterWallet      string `json:"master_wallet,omitempty"`
+	AccountId         string `json:"account_id,omitempty"`
+}

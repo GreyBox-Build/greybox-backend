@@ -10,21 +10,23 @@ import {
   TwitterIcon,
   WhatsappIcon,
 } from "../../../components/icons/Icons";
+import { FaLinkedin, FaFacebookSquare, FaWhatsapp } from "react-icons/fa";
+import { RiInstagramFill } from "react-icons/ri";
+import { FaSquareXTwitter } from "react-icons/fa6";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
+  const { t }: { t: any } = useTranslation();
   const navigate = useNavigate();
   return (
     <section className="min-h-[500px] bg-pink-1 pt-[100px] px-[25px] md:px-[5%] lg:px-[10%]">
       <section className="w-full p-[54px_25px] bg-orange-1 text-white rounded-[24px] flex flex-col items-center">
-        <h2 className="text-center text-[2.5rem] font-[600] leading-[51.43px]">
-          Get started with Greybox now !
+        <h2 className="text-center text-[2.5rem] font-[600] leading-[51.43px] mb-8">
+          {t("getStartedWithGreyBox")}
         </h2>
-        <p className=" text-center text-[1rem] leading-[22px] max-w-[631px] mt-[26px] mb-[65px]">
-          Ready to experience hassle-free cross-border payments? Sign up for a
-          Greybox account today and reimagine the way you move money.
-        </p>
+
         <HomeButton
-          label="Get Started"
+          label={t("getStarted")}
           onClick={() => navigate("/sign-up")}
           extraClass="border-white w-[204px]"
         />
@@ -37,10 +39,18 @@ const Footer = () => {
             Lorem Ipsum is a dummy text,Lorem Ipsum
           </p> */}
           <div className="flex items-center gap-x-[24px] mt-[14px]">
-            <FacebookIcon />
-            <InstagramIcon />
-            <TwitterIcon />
-            <WhatsappIcon />
+            <a href="https://instagram.com/greybox_">
+              <RiInstagramFill size={30} />
+            </a>
+            <a href="https://linkedin.com/company/greyboxpay">
+              <FaLinkedin size={30} />
+            </a>
+            <a href="https://facebook.com/profile.php?id=100089993932799">
+              <FaFacebookSquare size={30} />
+            </a>
+            <a href="https://x.com/@greyboxpay">
+              <FaSquareXTwitter size={30} />
+            </a>
           </div>
         </div>
 
@@ -90,9 +100,7 @@ const Footer = () => {
           <h3 className="text-[1.25rem] text-black-2 font-[600] leading-[20px] mb-[10px]">
             Contact
           </h3>
-          <div className="flex text-[1rem] text-black-3 leading-[22px] gap-x-[8px]">
-            <LocationIcon /> Denovo Plaza, Community 10. Tema
-          </div>
+
           <div className="flex text-[1rem] text-black-3 leading-[22px] gap-x-[8px]">
             <MailFIcon /> info@greyboxpay.com
           </div>

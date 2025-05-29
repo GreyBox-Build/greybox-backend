@@ -18,20 +18,15 @@ import {
   useGetTransactionReferenceQuery,
   useOnrampMutation,
 } from "../../appSlices/apiSlice";
-import {
-  assignLocalError,
-  removeLocalError,
-  returnAsset,
-} from "../../utils/Helpers";
-import { ZodIssue } from "zod";
-import { useState } from "react";
+import { returnAsset } from "../../utils/Helpers";
 import { useCopyTextToClipboard } from "../../utils/Copy";
 import { useSnackbar } from "notistack";
 
 const BankTransferDeposit = () => {
   const navigate = useNavigate();
   const { currentData: user } = useGetAuthUserQuery({});
-  const [localErrors, setLocalErrors] = useState<ZodIssue[]>([]);
+
+  const userData = user?.data?.personal_details;
   const copyText = useCopyTextToClipboard();
 
   const { enqueueSnackbar } = useSnackbar();
@@ -40,11 +35,12 @@ const BankTransferDeposit = () => {
     defaultValues: {
       amount: "0",
     },
-    resolver: zodResolver(depositViaBankTransferSchema),
+    resolver: zodResolver(
+      depositViaBankTransferSchema({ currency: userData?.currency })
+    ),
   });
 
   const amount = watch("amount");
-  const userData = user?.data?.personal_details;
 
   const { currentData: bank } = useGetBankDetailsQuery(userData?.country_code);
 
@@ -104,8 +100,9 @@ const BankTransferDeposit = () => {
         navigate("/dashboard");
       }, 3000);
     } catch (error: any) {
-      console.log(error);
-      enqueueSnackbar(error?.data?.error, { variant: "success" });
+      enqueueSnackbar(`Failed to perform transaction... ${error}`, {
+        variant: "success",
+      });
     }
   };
 
@@ -114,7 +111,10 @@ const BankTransferDeposit = () => {
       child={
         <div className="pt-[51px] w-full md:w-[50.33%] lg:w-[45.33%] min-h-[100vh] bg-grey-1">
           <div className="flex items-center justify-center relative ">
-            <span className="absolute left-[24px]" onClick={() => navigate(-1)}>
+            <span
+              className="absolute left-[15px] md:left-[24px]"
+              onClick={() => navigate(-1)}
+            >
               <CancelIcon />
             </span>
             <h2 className=" text-black text-[1.5rem] font-[600]">
@@ -127,22 +127,23 @@ const BankTransferDeposit = () => {
           >
             <section className="flex flex-col gap-y-[32px]">
               <div>
-                <InputLabel text={`Enter amount in ${userData?.currency}`} />
+                <InputLabel
+                  text={`Enter amount in ${
+                    userData?.currency ? userData?.currency : ""
+                  }`}
+                />
                 <TextInput
                   name="amount"
                   control={control}
                   placeholder="0"
                   localType="figure"
-                  onLocalChange={() => {
-                    parseFloat(amount) < 1500
-                      ? assignLocalError("amount", localErrors)
-                      : removeLocalError("amount", localErrors, setLocalErrors);
-                  }}
                 />
                 <InputInfoLabel
                   title="Buying Rate"
                   value={`1${returnAsset(userData?.crypto_currency)} = ${
-                    rate?.data
+                    !isNaN(parseFloat(rate?.data))
+                      ? parseFloat(rate?.data)?.toFixed(2)
+                      : "0.0"
                   }${userData?.currency ? userData?.currency : ""}`}
                 />
                 {isEquivalentError && (
@@ -152,7 +153,7 @@ const BankTransferDeposit = () => {
                 )}
               </div>
               <div>
-                <InputLabel text={`You will recieve`} />
+                <InputLabel text={`You will recieve (minus 1% service fee)`} />
                 <TextInput
                   name=""
                   control={control}

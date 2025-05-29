@@ -6,7 +6,7 @@ import {
   Withdraw,
 } from "../../components/icons/Icons";
 import AppLayout from "./AppLayout";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DateHead, DetailsCard, QuickLink } from "../../components/Cards";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,6 +15,7 @@ import {
 } from "../../appSlices/apiSlice";
 import moment from "moment";
 import { Oval } from "react-loader-spinner";
+import { findSubArray, groupByDate } from "../../utils/Helpers";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -23,17 +24,15 @@ const Dashboard = () => {
     "deposits"
   );
 
-  const { currentData: userData, isFetching } = useGetAuthUserQuery(undefined, {
-    refetchOnMountOrArgChange: true,
-  });
+  const { currentData: userData, isFetching } = useGetAuthUserQuery({});
 
-  const [cryptoCurrency, setCryptoCurrency] = useState(
-    userData?.data?.personal_details?.crypto_currency
-  );
   const { currentData: transactions, isFetching: isFetchingTransactions } =
-    useGetTransactionQuery(cryptoCurrency, {
-      refetchOnMountOrArgChange: true,
-    });
+    useGetTransactionQuery(
+      userData?.data?.personal_details?.crypto_currency.toLowerCase(),
+      {
+        refetchOnMountOrArgChange: true,
+      }
+    );
 
   const depositArray = transactions?.data?.filter(
     (transaction: any) => transaction?.transaction_sub_type === "Deposit"
@@ -44,38 +43,6 @@ const Dashboard = () => {
 
   const transactionArray = tab === "deposits" ? depositArray : withdrawalArray;
 
-  const groupByDate = (array: any[]) => {
-    const grouped: any = {};
-
-    array?.forEach((transaction) => {
-      const date = moment(transaction?.timestamp).format("D/MM/YY");
-      if (!grouped[date]) {
-        grouped[date] = [];
-      }
-      grouped[date].push(transaction);
-    });
-    return [
-      {
-        date: Object.keys(grouped),
-        transactions: Object.values(grouped),
-      },
-    ];
-  };
-
-  const findSubArray = (arr: any[], param: string) => {
-    for (let i = 0; i < arr.length; i++) {
-      if (moment(arr[i][0]?.timestamp).format("D/MM/YY") === param) {
-        return arr[i];
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (userData?.data) {
-      setCryptoCurrency(userData?.data?.personal_details?.crypto_currency);
-    }
-  }, [userData?.data]);
-
   const personInfo = userData?.data?.personal_details;
   const walletInfo = userData?.data?.wallet_details;
 
@@ -85,7 +52,7 @@ const Dashboard = () => {
         <div className="w-full md:w-[50.33%] lg:w-[45.33%] min-h-[100vh] bg-grey-2 px-[25px] pt-[51px] pb-[130px]">
           <section className="w-full flex justify-between items-center">
             <Notification
-              current={4}
+              current={0}
               onClick={() => navigate("/notifications")}
             />
             <div>
@@ -124,16 +91,15 @@ const Dashboard = () => {
 
             <section className="w-full flex justify-center px-[51px] gap-x-[55px] mt-[15px]">
               <QuickLink
-                icon={<Deposit />}
-                label="Deposit"
-                onClick={() => navigate("/deposit-options")}
-              />
-              <QuickLink
                 icon={<SendQ />}
                 label="Send"
                 onClick={() => navigate("/send-options")}
               />
-
+              <QuickLink
+                icon={<Deposit />}
+                label="Deposit"
+                onClick={() => navigate("/deposit-options")}
+              />
               <QuickLink
                 icon={<Withdraw />}
                 label="Withdraw"
@@ -183,47 +149,52 @@ const Dashboard = () => {
                         {findSubArray(
                           groupByDate(transactionArray)[0]?.transactions,
                           date
-                        )?.map((details: any, index: number) => {
-                          return (
-                            <DetailsCard
-                              key={index}
-                              label={details?.transaction_sub_type}
-                              time={moment(details?.timestamp).format(
-                                "hh:mm A"
-                              )}
-                              amount={`${details?.amount}cUSD`}
-                              index={index}
-                              length={date?.length}
-                              onClick={() => {}}
-                            />
-                          );
-                        })}
+                        )
+                          ?.reverse()
+                          ?.filter((details: any) => details?.amount) // This filters out transactions where amount is falsy (null, "", undefined, etc.)
+                          ?.map((details: any, index: number) => {
+                            return (
+                              <DetailsCard
+                                key={index}
+                                label={details?.transaction_sub_type}
+                                time={moment(details?.CreatedAt).format(
+                                  "DD/MMM/YY, hh:mm A"
+                                )}
+                                amount={`${details?.amount} ${details?.asset}`}
+                                index={index}
+                                length={date?.length}
+                                onClick={() => {}}
+                              />
+                            );
+                          })}
                       </div>
                     );
                   }
                 )}
 
-              {isFetchingTransactions && (
-                <div className=" w-full flex justify-center items-center p-[20px_0]">
-                  <Oval
-                    height={50}
-                    width={50}
-                    color="#fff"
-                    wrapperStyle={{}}
-                    wrapperClass=""
-                    visible={true}
-                    ariaLabel="oval-loading"
-                    secondaryColor="#22262B"
-                    strokeWidth={2}
-                    strokeWidthSecondary={2}
-                  />
-                </div>
-              )}
-              {transactionArray?.length === 0 && (
-                <p className="text-[0.875rem] text-center leading-[12px] mt-[24px]">
-                  No transaction here yet!
-                </p>
-              )}
+              {isFetchingTransactions ||
+                (isFetching && (
+                  <div className=" w-full flex justify-center items-center p-[20px_0]">
+                    <Oval
+                      height={50}
+                      width={50}
+                      color="#fff"
+                      wrapperStyle={{}}
+                      wrapperClass=""
+                      visible={true}
+                      ariaLabel="oval-loading"
+                      secondaryColor="#22262B"
+                      strokeWidth={2}
+                      strokeWidthSecondary={2}
+                    />
+                  </div>
+                ))}
+              {transactionArray?.length === 0 &&
+                userData?.data?.personal_details?.crypto_currency && (
+                  <p className="text-[0.875rem] text-center leading-[12px] mt-[24px]">
+                    No transaction here yet!
+                  </p>
+                )}
             </section>
           </section>
         </div>

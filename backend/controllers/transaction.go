@@ -9,6 +9,7 @@ import (
 	"backend/utils/signing"
 	"backend/utils/tokens"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stellar/go/support/log"
 )
 
 func RetrieveOnRampParamsV1(c *gin.Context) {
@@ -74,8 +76,7 @@ func GetUserTransactions(c *gin.Context) {
 		})
 		return
 	}
-	chain := c.Query("chain")
-	transactions, err := models.GetTransactionsByUserID(userId, strings.ToUpper(chain))
+	transactions, err := models.GetTransactionsByUserID(userId)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": err.Error(),
@@ -305,6 +306,28 @@ func GetDestinationBankAccount(c *gin.Context) {
 		}
 	}
 	c.JSON(http.StatusBadRequest, gin.H{"error": "no available bank found for region: " + countryCode})
+}
+
+func FetchNetwork(c *gin.Context) {
+
+	root, _ := os.Getwd()
+
+	jsonFilePath := filepath.Join(root, "/templates", "/network.json")
+
+	jsonData, err := os.ReadFile(jsonFilePath)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var data []serializers.NetworkData
+	err = json.Unmarshal(jsonData, &data)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse JSON"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": data, "status": "fetched accepted networks for mobile money", "errors": false})
 }
 
 func GenerateReference(c *gin.Context) {
@@ -592,6 +615,7 @@ func VerifyOnRamp(c *gin.Context) {
 	case "Reject":
 		deposit.Status = "Rejected"
 	}
+	_ = deposit.UpdateDepositRequest()
 	c.JSON(200, gin.H{
 		"errors": false,
 		"status": "request verified successfully",
@@ -779,6 +803,7 @@ func VerifyOffRamp(c *gin.Context) {
 		emails := []string{user.Email}
 		_ = mails.UserOffRampMail(emails, data)
 	}()
+	_ = withdrawal.UpdateWithdrawalRequest()
 	c.JSON(200, gin.H{
 		"errors": false,
 		"status": "request verified successfully",
@@ -811,4 +836,273 @@ func GetExchangeRate(c *gin.Context) {
 			"status": "Request timed out",
 		})
 	}
+}
+
+func MobileMoneyAmountToReceive(c *gin.Context) {
+	amount := c.Query("amount")
+	currency := c.Query("currency")
+	asset := c.Query("cryptoAsset")
+	transType := c.Query("type")
+	rateChan := make(chan string)
+	errChan := make(chan error)
+	go apis.GetMobileMoneyExhangeRate(currency, rateChan, errChan)
+	percent_reduction := utils.CalculateOnePercent(amount)
+	amountConv, _ := strconv.ParseFloat(amount, 32)
+	percentConv, _ := strconv.ParseFloat(percent_reduction, 32)
+	newAmount := amountConv - percentConv
+	select {
+	case rate := <-rateChan:
+		AssetAmount := ""
+		data := map[string]string{
+			"asset": strings.ToUpper(asset),
+		}
+		switch transType {
+		case "on-ramp":
+			AssetAmount = utils.ConvertTokenToNative(rate, strconv.FormatFloat(newAmount, 'f', 2, 64))
+		case "off-ramp":
+			AssetAmount = utils.ConvertAssetToFiat(rate, strconv.FormatFloat(newAmount, 'f', 2, 64))
+			data["asset"] = strings.ToUpper(currency)
+		}
+
+		data["amount"] = AssetAmount
+
+		c.JSON(200, gin.H{
+			"errors": false,
+			"status": "calculated amount to receive",
+			"data":   data,
+		})
+		return
+
+	case err := <-errChan:
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	case <-time.After(15 * time.Second):
+		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
+		return
+	}
+
+}
+
+func MobileMoneyOnRamp(c *gin.Context) {
+	var input serializers.Payment
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	input.DeveloperFee = "0.25" // update is needed
+
+	if input.Transfer.DigitalAsset == "CUSD" {
+		input.Transfer.DigitalAsset = "cUSD"
+	}
+
+	resp, err := apis.OnRampMobileMoney(input)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	var request models.HurupayRequest
+	request.Amount = strconv.FormatInt(int64(input.Collection.Amount), 10)
+	request.UserId = int32(user.ID)
+	request.AccountNumber = input.Collection.PhoneNumber
+	request.Status = "Pending"
+	request.RequestType = models.OnRamp
+	request.MobileNumber = input.Collection.PhoneNumber
+	request.Token = input.Transfer.DigitalAsset
+	request.MobileNetwork = input.Collection.Network
+	request.CryptoChain = input.Transfer.DigitalNetwork
+	request.RequestId = resp.Data.CollectionRequestID
+	request.CountryCurrency = input.Collection.CountryCode
+	if err := request.SaveHurupayRequest(); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(200, gin.H{
+		"errors": false,
+		"status": "mobile money on ramp initiated",
+		"data":   resp,
+	})
+
+}
+
+func MobileMoneyOffRamp(c *gin.Context) {
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		respondWithError(c, http.StatusNotFound, err.Error())
+		return
+	}
+
+	var input serializers.MobileOffRamp
+	if err := c.ShouldBindJSON(&input); err != nil {
+		respondWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if err := validateOffRampRequest(input, user); err != nil {
+		respondWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	data := createTransactionRequest(input)
+	resp, err := apis.OffRampMobileMoney(data)
+	if err != nil {
+		respondWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	if err := storeHurupayRequest(input, user, resp.Data.PayoutRequestID); err != nil {
+		respondWithError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	go handleOffRampTransaction(input, user, resp)
+
+	c.JSON(http.StatusOK, gin.H{
+		"errors": false,
+		"status": "mobile money off ramp initiated",
+	})
+}
+
+// Helper to send error responses
+func respondWithError(c *gin.Context, code int, message string) {
+	c.JSON(code, gin.H{"error": message})
+}
+
+// Validate the input and user's account address
+func validateOffRampRequest(input serializers.MobileOffRamp, user models.User) error {
+	if input.Token == "CUSD" {
+		input.Token = "cUSD"
+	}
+	if user.AccountAddress != input.SendingAddress {
+		return errors.New("invalid account address")
+	}
+	return nil
+}
+
+// Create the transaction request data
+func createTransactionRequest(input serializers.MobileOffRamp) serializers.TransactionRequest {
+	return serializers.TransactionRequest{
+		SendingAddress: input.SendingAddress,
+		AmountSending:  input.AmountSending,
+		Network:        input.Network,
+		Token:          input.Token,
+	}
+}
+
+// Handle the transaction in a goroutine
+func handleOffRampTransaction(input serializers.MobileOffRamp, user models.User, resp apis.PayoutResponse) {
+	var hash string
+	var err error
+
+	switch input.Network {
+	case "CELO":
+		hash, err = executeCeloTransaction(input, user, resp.Data.EscrowAddress)
+	case "XLM":
+		hash, err = executeXlmTransaction(input, user, resp.Data.EscrowAddress)
+	}
+
+	if err != nil {
+		log.Error(err)
+	}
+	fmt.Println("hash: ", hash)
+
+	transaction := prepareTransactionDetails(input, resp, hash)
+
+	output, err := apis.OffRampMobileFinalize(transaction)
+	if err != nil || output.Data.ResultCode != 0 {
+		log.Error("hurrupay failed to finalize", err)
+		return
+	}
+
+}
+
+// Execute the CELO transaction
+func executeCeloTransaction(input serializers.MobileOffRamp, user models.User, escrowAddress string) (string, error) {
+	hash, _, err := apis.PerformTransactionCelo(input.AmountSending, escrowAddress, user.PrivateKey, false)
+	return hash, err
+}
+
+// Execute the XLM transaction
+func executeXlmTransaction(input serializers.MobileOffRamp, user models.User, escrowAddress string) (string, error) {
+	transferData := serializers.TransferXLM{
+		Amount:        input.AmountSending,
+		To:            escrowAddress,
+		FromSecret:    user.PrivateKey,
+		Initialize:    false,
+		Token:         "USDC",
+		IssuerAccount: user.AccountAddress,
+		FromAccount:   user.AccountAddress,
+	}
+	txData, _, err := apis.PerformTransactionXLM(transferData)
+	if err != nil {
+		return "", err
+	}
+	txID := txData["txId"]
+	return txID, nil
+}
+
+// Prepare the transaction details
+func prepareTransactionDetails(input serializers.MobileOffRamp, resp apis.PayoutResponse, hash string) serializers.TransactionDetails {
+	return serializers.TransactionDetails{
+		Collection: struct {
+			TransactionHash string `json:"transactionHash"`
+			PayoutRequestID string `json:"payoutRequestId"`
+			Network         string `json:"network"`
+			Token           string `json:"token"`
+		}{
+			TransactionHash: hash,
+			PayoutRequestID: resp.Data.PayoutRequestID,
+			Network:         input.Network,
+			Token:           input.Token,
+		},
+		Transfer: struct {
+			CustomerName string `json:"customerName"`
+			PhoneNumber  string `json:"phoneNumber"`
+			CountryCode  string `json:"countryCode"`
+			Network      string `json:"network"`
+		}{
+			CustomerName: input.CustomerName,
+			PhoneNumber:  input.PhoneNumber,
+			CountryCode:  input.CountryCode,
+			Network:      input.MobileProvider,
+		},
+		DeveloperFee: "0.25",
+	}
+
+}
+
+// Store the Hurupay request to the database
+func storeHurupayRequest(input serializers.MobileOffRamp, user models.User, requestId string) error {
+	request := models.HurupayRequest{
+		Amount:          input.AmountSending,
+		UserId:          int32(user.ID),
+		AccountNumber:   input.PhoneNumber,
+		Status:          "Pending",
+		RequestType:     models.OffRamp,
+		MobileNumber:    input.PhoneNumber,
+		Token:           input.Token,
+		MobileNetwork:   input.MobileProvider,
+		CryptoChain:     input.Network,
+		RequestId:       requestId,
+		CountryCurrency: input.CountryCode,
+	}
+	return request.SaveHurupayRequest()
 }

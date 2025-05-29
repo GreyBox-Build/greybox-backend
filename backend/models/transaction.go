@@ -8,6 +8,14 @@ import (
 	"gorm.io/gorm"
 )
 
+type RequestType string
+
+// Define constants for the possible values of the enum
+const (
+	OnRamp  RequestType = "On-ramp"
+	OffRamp RequestType = "Off-ramp"
+)
+
 type Transaction struct {
 	gorm.Model
 	UserID             uint    `gorm:"index" json:"user_id"`
@@ -27,6 +35,7 @@ type Transaction struct {
 	CounterAddress     string  `json:"counter_address"`
 	TokenId            *string `json:"token_id"`
 	Asset              string  `json:"asset"`
+	RequestId          string  `json:"request_id"`
 }
 
 type DepositRequest struct {
@@ -67,6 +76,32 @@ type WithdrawalRequest struct {
 	Asset          string    `json:"asset"`
 	EquivalentFiat string    `json:"equivalent_fiat"`
 	FiatCurrency   string    `json:"fiat_currency"`
+}
+
+type HurupayRequest struct {
+	gorm.Model
+	Amount          string      `json:"amount"`
+	CountryCurrency string      `json:"country_currency"`
+	AccountNumber   string      `json:"account_number"`
+	UserId          int32       `json:"user_id"`
+	User            User        `gorm:"foreignKey:UserId" json:"user"`
+	RequestId       string      `json:"request_id"`
+	Status          string      `json:"status"`
+	MobileNetwork   string      `json:"mobile_network"`
+	ConfirmedAt     time.Time   `json:"confirmed_at"`
+	CryptoChain     string      `json:"crypto_chain"`
+	Token           string      `json:"token"`
+	CountryCode     string      `json:"country_code"`
+	MobileNumber    string      `json:"mobile_number"`
+	RequestType     RequestType `json:"request_type"`
+}
+
+func (h *HurupayRequest) SaveHurupayRequest() error {
+	return db.Create(h).Error
+}
+
+func (h *HurupayRequest) UpdateHurupayRequest() error {
+	return db.Save(h).Error
 }
 
 func (d *DepositRequest) SaveDepositRequest() error {
@@ -120,6 +155,9 @@ func (t *Transaction) SaveTransaction() error {
 	return db.Create(t).Error
 }
 
+func (t *Transaction) UpdateTransaction() error {
+	return db.Save(t).Error
+}
 func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 	var transaction Transaction
 	err := db.Preload("User").Where("hash = ? AND chain = ?", hash, chain).First(&transaction).Error
@@ -129,9 +167,10 @@ func GetTransactionByHash(hash, chain string) (*Transaction, error) {
 	return &transaction, nil
 }
 
-func GetTransactionsByUserID(userId uint, chain string) ([]*Transaction, error) {
+func GetTransactionsByUserID(userId uint) ([]*Transaction, error) {
 	var transactions []*Transaction
-	err := db.Preload("User").Where("user_id = ? AND chain = ?", userId, chain).Order("created_at desc").Find(&transactions).Error
+
+	err := db.Preload("User").Where("user_id = ?", userId).Find(&transactions).Error
 	if err != nil {
 		return nil, err
 	}
@@ -222,4 +261,177 @@ func GetWithdrawalRequest(id int) (*WithdrawalRequest, error) {
 		return nil, err
 	}
 	return &withdrawalRequest, nil
+}
+
+func GetHurupayRequestRequestId(requestId string) (*HurupayRequest, error) {
+	var hurupayRequest HurupayRequest
+	err := db.Preload("User").First(&hurupayRequest, "request_id = ?", requestId).Error
+	if err != nil {
+		return nil, err
+	}
+	return &hurupayRequest, nil
+}
+
+func GetTransactionByRequestId(requestId string) (*Transaction, error) {
+	var transaction Transaction
+	err := db.Preload("User").Where("request_id = ?", requestId).First(&transaction).Error
+	if err != nil {
+		return nil, err
+	}
+	return &transaction, nil
+}
+
+func GetHurupayRequest() ([]*HurupayRequest, error) {
+	var hurupayRequests []*HurupayRequest
+	err := db.Preload("User").Find(&hurupayRequests).Error
+	if err != nil {
+		return nil, err
+	}
+	return hurupayRequests, nil
+}
+
+func GetHurupayRequestById(id int) (*HurupayRequest, error) {
+	var hurupayRequest HurupayRequest
+	err := db.Preload("User").First(&hurupayRequest, id).Error
+	if err != nil {
+		return nil, err
+	}
+	return &hurupayRequest, nil
+}
+
+func GetHurupayStats() (map[string]int64, error) {
+	stats := make(map[string]int64)
+
+	var totalRequests int64
+	if err := db.Model(&HurupayRequest{}).Count(&totalRequests).Error; err != nil {
+		return nil, err
+	}
+	stats["total_requests"] = totalRequests
+
+	// Total successful requests with request type "on-ramp"
+	var successfulOnRamp int64
+	if err := db.Model(&HurupayRequest{}).
+		Where("status = ? AND request_type = ?", "Completed", OnRamp).
+		Count(&successfulOnRamp).Error; err != nil {
+		return nil, err
+	}
+	stats["successful_on_ramp"] = successfulOnRamp
+
+	// Total failed requests with request type "on-ramp"
+	var failedOnRamp int64
+	if err := db.Model(&HurupayRequest{}).
+		Where("status = ? AND request_type = ?", "CANCELLED", OnRamp).
+		Count(&failedOnRamp).Error; err != nil {
+		return nil, err
+	}
+	stats["failed_on_ramp"] = failedOnRamp
+
+	// Total pending requests for "off-ramp"
+	var pendingOffRamp int64
+	if err := db.Model(&HurupayRequest{}).
+		Where("status = ? AND request_type = ?", "Pending", OffRamp).
+		Count(&pendingOffRamp).Error; err != nil {
+		return nil, err
+	}
+	stats["pending_off_ramp"] = pendingOffRamp
+
+	var pendingOnRamp int64
+	if err := db.Model(&HurupayRequest{}).
+		Where("status = ? AND request_type = ?", "Pending", OnRamp).
+		Count(&pendingOnRamp).Error; err != nil {
+		return nil, err
+	}
+	stats["pending_on_ramp"] = pendingOnRamp
+	// Total successful requests with request type "off-ramp"
+	var successfulOffRamp int64
+	if err := db.Model(&HurupayRequest{}).
+		Where("status = ? AND request_type = ?", "Completed", OffRamp).
+		Count(&successfulOffRamp).Error; err != nil {
+		return nil, err
+	}
+	stats["successful_off_ramp"] = successfulOffRamp
+
+	var failedOffRamp int64
+	if err := db.Model(&HurupayRequest{}).
+		Where("status = ? AND request_type = ?", "declined", OffRamp).
+		Count(&failedOffRamp).Error; err != nil {
+		return nil, err
+	}
+	stats["failed_off_ramp"] = failedOffRamp
+
+	var CreatedOnramp int64
+
+	if err := db.Model(&HurupayRequest{}).
+		Where("status = ? AND request_type = ?", "CREATED", OnRamp).
+		Count(&CreatedOnramp).Error; err != nil {
+		return nil, err
+	}
+	stats["created_onramp"] = CreatedOnramp
+
+	return stats, nil
+}
+
+type HurupayRequestSerializer struct {
+	Amount             string      `json:"amount"`
+	CountryCurrency    string      `json:"country_currency"`
+	AccountNumber      string      `json:"account_number"`
+	UserId             int32       `json:"user_id"`
+	RequestId          string      `json:"request_id"`
+	Status             string      `json:"status"`
+	MobileNetwork      string      `json:"mobile_network"`
+	ConfirmedAt        time.Time   `json:"confirmed_at"`
+	CryptoChain        string      `json:"crypto_chain"`
+	Token              string      `json:"token"`
+	CountryCode        string      `json:"country_code"`
+	MobileNumber       string      `json:"mobile_number"`
+	RequestType        RequestType `json:"request_type"`
+	UserFirstname      string      `json:"user_firstname"`
+	UserLastname       string      `json:"user_lastname"`
+	UserEmail          string      `json:"user_email"`
+	UserAccountAddress string      `json:"user_account_address"`
+	UserCryptoCurrency string      `json:"user_crypto_currency"`
+	UserCountry        string      `json:"user_country_code"`
+	Id                 uint        `json:"id"`
+}
+
+// ConvertToSerializer Function to convert HurupayRequest to HurupayRequestSerializer
+func ConvertToSerializer(input interface{}) interface{} {
+	switch v := input.(type) {
+	case *HurupayRequest:
+		return serializeRequest(*v)
+	case []*HurupayRequest:
+		var result []HurupayRequestSerializer
+		for _, req := range v {
+			result = append(result, serializeRequest(*req))
+		}
+		return result
+	default:
+		panic("Unsupported type")
+	}
+}
+
+// Helper function to serialize a single HurupayRequest
+func serializeRequest(request HurupayRequest) HurupayRequestSerializer {
+	return HurupayRequestSerializer{
+		Amount:             request.Amount,
+		CountryCurrency:    request.CountryCurrency,
+		AccountNumber:      request.AccountNumber,
+		UserId:             request.UserId,
+		RequestId:          request.RequestId,
+		Status:             request.Status,
+		MobileNetwork:      request.MobileNetwork,
+		ConfirmedAt:        request.ConfirmedAt,
+		CryptoChain:        request.CryptoChain,
+		Token:              request.Token,
+		CountryCode:        request.CountryCode,
+		MobileNumber:       request.MobileNumber,
+		RequestType:        request.RequestType,
+		UserFirstname:      request.User.FirstName,
+		UserLastname:       request.User.LastName,
+		UserEmail:          request.User.Email,
+		UserAccountAddress: request.User.AccountAddress,
+		UserCryptoCurrency: request.User.CryptoCurrency,
+		UserCountry:        request.User.CountryCode,
+		Id:                 request.ID,
+	}
 }

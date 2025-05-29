@@ -1,3 +1,4 @@
+import LanguageSelector from "../../../components/LanguageSelector";
 import { useScrollToTop } from "../../../utils/ScrollToTop";
 import About from "./About";
 import Footer from "./Footer";

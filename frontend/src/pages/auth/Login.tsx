@@ -8,6 +8,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { obtainTokenSchema } from "../../utils/Validations";
 import { useObtainTokenMutation } from "../../appSlices/apiSlice";
 import { useSnackbar } from "notistack";
+import { FaRegEye } from "react-icons/fa";
+import { IoEyeOffOutline } from "react-icons/io5";
+import InputTextRem from "../../components/InputTextRem";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -58,13 +61,8 @@ const Login = () => {
                 type="email"
                 img={<Mail />}
               />
-              <TextInput
-                control={control}
-                name="password"
-                placeholder="Password"
-                type="password"
-                img={<LockOpen />}
-              />
+
+              <InputTextRem control={control} name="password" />
             </section>
             <Link
               to={"/forgot-password"}

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"backend/serializers"
 	"backend/utils/tokens"
 	"errors"
 	"fmt"
@@ -8,6 +9,7 @@ import (
 	"math/rand"
 	"net/mail"
 	"strings"
+	"time"
 	"unicode"
 
 	"sync/atomic"
@@ -18,25 +20,38 @@ import (
 
 type User struct {
 	gorm.Model
-	FirstName       string  `json:"first_name"`
-	LastName        string  `json:"last_name"`
-	Email           string  `gorm:"unique;not null" json:"email"`
-	Password        string  `json:"-"`
-	Currency        string  `json:"currency"`
-	Country         string  `json:"country"`
-	Mnemonic        string  `json:"-"`
-	Xpub            string  `json:"-"`
-	CountryCode     string  `json:"country_code"`
-	IsVerified      bool    `gorm:"default:false" json:"is_verified"`
-	AccountAddress  string  `json:"account_address"`
-	PrivateKey      string  `json:"-"`
-	CryptoCurrency  string  `gorm:"default:CELO" json:"crypto_currency"`
-	UserImage       string  `json:"user_image"`
-	SignatureId     string  `json:"-"`
-	TokenAddress    string  `json:"token_address"`
-	Index           uint64  `json:"-"`
-	PreviousBalance float32 `json:"-"`
-	Role            string  `gorm:"default:Customer" json:"role"`
+	FirstName       string         `json:"first_name"`
+	LastName        string         `json:"last_name"`
+	Email           string         `gorm:"unique;not null" json:"email"`
+	Password        string         `json:"-"`
+	Currency        string         `json:"currency"`
+	Country         string         `json:"country"`
+	Mnemonic        string         `json:"-"`
+	Xpub            string         `json:"-"`
+	CountryCode     string         `json:"country_code"`
+	IsVerified      bool           `gorm:"default:false" json:"is_verified"`
+	AccountAddress  string         `json:"account_address"`
+	PrivateKey      string         `json:"-"`
+	CryptoCurrency  string         `gorm:"default:CELO" json:"crypto_currency"`
+	UserImage       string         `json:"user_image"`
+	SignatureId     string         `json:"-"`
+	TokenAddress    string         `json:"token_address"`
+	Index           uint64         `json:"-"`
+	PreviousBalance float32        `json:"-"`
+	Role            string         `gorm:"default:Customer" json:"role"`
+	UserAccounts    []UserAccounts `gorm:"foreignKey:UserId" json:"user_accounts"`
+}
+
+type UserAccounts struct {
+	gorm.Model
+	UserId           uint      `json:"user_id"`
+	AccountId        string    `json:"account_id"`
+	Asset            string    `json:"asset"`
+	Fiat             string    `json:"fiat"`
+	Country          string    `json:"country"`
+	VirtualAccountId string    `json:"virtual_account_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
 }
 
 var counter uint64
@@ -70,7 +85,7 @@ func GenerateAccountNumber() string {
 	accountId := random
 
 	// Check if account ID already exists
-	if AccountNuberExists(accountId) {
+	if AccountNumberExists(accountId) {
 		// Generate a new random string and check again if needed
 		return GenerateAccountNumber()
 	}
@@ -108,7 +123,7 @@ func AlreadyExists(id string) bool {
 
 }
 
-func AccountNuberExists(id string) bool {
+func AccountNumberExists(id string) bool {
 	fmt.Println("id: ", id)
 	var user User
 
@@ -133,6 +148,14 @@ func (u *User) SaveUser() error {
 
 func (u *User) UpdateUser() {
 	db.Save(&u)
+}
+
+func (u *User) UpdateUserWithErrors() error {
+	err := db.Model(&User{}).Where("id = ?", u.ID).Updates(u).Error
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (u *User) BeforeSaveDetail() error {
@@ -171,7 +194,7 @@ func GetUserByID(uid uint) (User, error) {
 func CheckEmail(address string) string {
 	addr, err := mail.ParseAddress(address)
 	if err != nil {
-		return "invalid email adress"
+		return "invalid email address"
 	}
 	return addr.Address
 }
@@ -279,4 +302,74 @@ func FindAdmins() ([]User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (ua *UserAccounts) BeforeCreate(tx *gorm.DB) (err error) {
+	ua.CreatedAt = time.Now()
+	return
+}
+
+func (ua *UserAccounts) BeforeSave(tx *gorm.DB) (err error) {
+	ua.UpdatedAt = time.Now()
+	return
+}
+
+func (ua *UserAccounts) CreateUserAccount() error {
+	err := db.Create(&ua).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (ua *UserAccounts) UpdateUserAccount() error {
+	err := db.Save(&ua).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func GetUserAccountsByUserId(userId uint) ([]UserAccounts, error) {
+	var userAccounts []UserAccounts
+	err := db.Where("user_id = ?", userId).Find(&userAccounts).Error
+	if err != nil {
+		return nil, err
+	}
+	return userAccounts, nil
+}
+
+func GetUserAccountById(id uint) (UserAccounts, error) {
+	var userAccount UserAccounts
+	err := db.First(&userAccount, id).Error
+	if err != nil {
+		return userAccount, err
+	}
+	return userAccount, nil
+}
+
+func FilterUserAccounts(filter serializers.UserAccountsFilter) ([]UserAccounts, error) {
+	var userAccounts []UserAccounts
+	query := db
+
+	// Build the query dynamically based on provided filters
+	if filter.UserId != nil {
+		query = query.Where("user_id = ?", filter.UserId)
+	}
+
+	if filter.Asset != nil {
+		query = query.Where("asset = ?", filter.Asset)
+	}
+
+	if filter.Country != nil {
+		query = query.Where("country = ?", filter.Country)
+	}
+
+	if filter.Fiat != nil {
+		query = query.Where("fiat = ?", filter.Fiat)
+	}
+
+	// Execute the query
+	err := query.Find(&userAccounts).Error
+	return userAccounts, err
 }

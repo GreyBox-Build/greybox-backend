@@ -1,18 +1,23 @@
 package serializers
 
+import "time"
+
 type Chain struct {
 	Celo    string `json:"celo"`
 	Stellar string `json:"stellar"`
+	Polygon string `json:"polygon"`
 }
 
 const (
 	ChainCelo    = "CELO"
 	ChainStellar = "XLM"
+	ChainPolygon = "MATIC"
 )
 
 var Chains = Chain{
 	Celo:    ChainCelo,
 	Stellar: ChainStellar,
+	Polygon: ChainPolygon,
 }
 
 type User struct {
@@ -59,4 +64,34 @@ type Account struct {
 type AdminForm struct {
 	Key       string `json:"key"`
 	UserEmail string `json:"user_email"`
+}
+
+type NetworkData struct {
+	CountryCode  string   `json:"countryCode"`
+	CountryName  string   `json:"countryName"`
+	CurrencyCode string   `json:"currencyCode"`
+	Networks     []string `json:"networks"`
+	MobileCode   string   `json:"mobileCode"`
+}
+
+type UserAccountRequest struct {
+	Asset string `json:"asset"`
+	Fiat  string `json:"fiat"`
+}
+
+type UserAccounts struct {
+	AccountId        string    `json:"account_id"`
+	Asset            string    `json:"asset"`
+	Fiat             string    `json:"fiat"`
+	Country          string    `json:"country"`
+	VirtualAccountId string    `json:"virtual_account_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+}
+
+type UserAccountsFilter struct {
+	UserId  *string `json:"user_id"`
+	Asset   *string `json:"asset"`
+	Fiat    *string `json:"fiat"`
+	Country *string `json:"country"`
 }

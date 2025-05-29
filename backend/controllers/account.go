@@ -6,6 +6,7 @@ import (
 	"backend/serializers"
 	"backend/utils/mails"
 	"backend/utils/tokens"
+	"fmt"
 	"net/http"
 	"os"
 
@@ -86,27 +87,50 @@ func CreateAccountV2(c *gin.Context) {
 		address, secret := data["address"], data["secret"]
 		user.AccountAddress = address
 		user.PrivateKey = secret
+	case serializers.Chains.Polygon:
+		polygon := apis.NewTatumPolygon()
+		walletResponse, err := polygon.CreateWallet()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon wallet failed",
+			})
+			return
+		}
+		xPub, mnemenic := walletResponse.Xpub, walletResponse.Mnemonic
+		user.Xpub = xPub
+		user.Mnemonic = mnemenic
+		privResponse, err := polygon.GeneratePrivateKey(mnemenic, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon private key failed",
+			})
+			return
+		}
+		user.PrivateKey = privResponse.Key
+		addressResponse, err := polygon.GenerateAddress(xPub, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon address failed",
+			})
+			return
+		}
+		user.AccountAddress = addressResponse.Address
 
 	}
 
 	if err := user.SaveUser(); err != nil {
 		c.JSON(400, gin.H{
 			"error":   err.Error(),
-			"message": "creating user falied",
+			"message": "creating user failed",
 		})
 		return
 	}
-	//if user.CryptoCurrency == "CELO" {
-	//	go func() {
-	//		err := apis.CreateNotificationSubscription(user.AccountAddress, input.Chain)
-	//		if err != nil {
-	//			fmt.Println("Error creating notification subscription:", err)
-	//		}
-	//	}()
-	//}
 
 	c.JSON(200, gin.H{
-		"message": "created account successfuly",
+		"message": "created account successfully",
 	})
 }
 
@@ -252,6 +276,15 @@ func GetAuthenticatedUser(c *gin.Context) {
 			}
 			balanceChan <- balance
 		}()
+	case serializers.Chains.Polygon:
+		go func() {
+			balance, err := apis.FetchWalletBalance(user.AccountAddress, "polygon", 10)
+			if err != nil {
+				errorChan <- err
+				return
+			}
+			balanceChan <- balance
+		}()
 	}
 
 	// Wait for balance or error
@@ -340,6 +373,37 @@ func GenerateMasterWallet(c *gin.Context) {
 		address, secret := data["address"], data["secret"]
 		masterWallet.PublicAddress = address
 		masterWallet.PrivateKey = secret
+	case serializers.Chains.Polygon:
+		polygon := apis.NewTatumPolygon()
+		walletResponse, err := polygon.CreateWallet()
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon wallet failed",
+			})
+			return
+		}
+		xPub, mnemenic := walletResponse.Xpub, walletResponse.Mnemonic
+		masterWallet.XpublicAddress = xPub
+		masterWallet.Mnemonic = mnemenic
+		privResponse, err := polygon.GeneratePrivateKey(mnemenic, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon private key failed",
+			})
+			return
+		}
+		masterWallet.PrivateKey = privResponse.Key
+		addressResponse, err := polygon.GenerateAddress(xPub, 0)
+		if err != nil {
+			c.JSON(400, gin.H{
+				"error":   err.Error(),
+				"message": "generating polygon address failed",
+			})
+			return
+		}
+		masterWallet.PublicAddress = addressResponse.Address
 	}
 	masterWallet.WalletChain = input.Asset
 	if err := masterWallet.CreateMasterWallet(); err != nil {
@@ -372,6 +436,21 @@ func GetMasterWallet(c *gin.Context) {
 	})
 }
 
+func GetMasterWallets(c *gin.Context) {
+	masterWallet, err := models.FetchMasterWallets()
+	if err != nil {
+		c.JSON(400, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	c.JSON(200, gin.H{
+		"status": "fetched master wallets succesfully",
+		"errors": false,
+		"data":   masterWallet,
+	})
+}
+
 func MakeAdmin(c *gin.Context) {
 	var input serializers.AdminForm
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -399,5 +478,117 @@ func MakeAdmin(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"status": "user is now an admin",
 		"errors": false,
+	})
+}
+
+func CreateBorderlessVirtualAccount(c *gin.Context) {
+	var input serializers.UserAccountRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	kyc, err := models.GetKYCByUserID(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "KYC not found for user"})
+		return
+	}
+
+	if kyc.BorderlessIdentityId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "KYC not submitted to Borderless"})
+		return
+	}
+
+	user, err := models.GetUserByID(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User not found"})
+		return
+	}
+
+	borderless := apis.NewBorderless()
+	accountName := fmt.Sprintf("greybox-%s", models.GenerateAccountId())
+
+	accountResponse, err := borderless.CreateBorderlessAccount(accountName, kyc.BorderlessIdentityId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	accountId := accountResponse["id"].(string)
+	virtualAccountResponse, err := borderless.CreateBorderlessVirtualAccount(
+		accountId,
+		input.Fiat,
+		input.Asset,
+		user.CountryCode,
+		kyc.BorderlessIdentityId,
+	)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	virtualAccountId := virtualAccountResponse["id"].(string)
+
+	userAccount := models.UserAccounts{
+		UserId:           userId,
+		AccountId:        accountId,
+		VirtualAccountId: virtualAccountId,
+		Fiat:             input.Fiat,
+		Asset:            input.Asset,
+		Country:          user.Country,
+	}
+
+	if err := userAccount.CreateUserAccount(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to create user account"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "Virtual account created successfully",
+		"data":   userAccount,
+	})
+}
+
+func GetUserAccounts(c *gin.Context) {
+	userId, err := tokens.ExtractUserID(c)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+
+	accounts, err := models.GetUserAccountsByUserId(userId)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "Fetched user accounts successfully",
+		"data":   accounts,
+	})
+}
+
+func FilterUserAccounts(c *gin.Context) {
+	var filters serializers.UserAccountsFilter
+	if err := c.ShouldBindJSON(&filters); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	accounts, err := models.FilterUserAccounts(filters)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status": "Filtered user accounts successfully",
+		"data":   accounts,
 	})
 }

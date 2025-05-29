@@ -29,6 +29,11 @@ import AMLPolicy from "./pages/app/AMLPolicy";
 import AppLayout from "./pages/app/AppLayout";
 import BankTransferDeposit from "./pages/app/BankTransferDeposit";
 import BankWithdrawal from "./pages/app/BankWithdrawal";
+import MobileDeposit from "./pages/app/MobileDeposit";
+import AdminSignIn from "./pages/admin/Sign-in";
+import AdminDashboard from "./pages/admin/Dashboard";
+import DashboardInner from "./pages/admin/DashboardInner";
+import Summary from "./pages/admin/Summary";
 
 export const routes = createBrowserRouter([
   {
@@ -91,10 +96,15 @@ export const routes = createBrowserRouter([
     path: "/deposit-via-bank-transfer",
     element: <BankTransferDeposit />,
   },
+
   {
-    path: "/deposit-via-exchange",
-    element: <ExchangeDeposit />,
+    path: "/deposit-mobile-money",
+    element: <MobileDeposit />,
   },
+  // {
+  //   path: "/deposit-via-exchange",
+  //   element: <ExchangeDeposit />,
+  // },
   {
     path: "/withdrawal-options",
     element: <WithdrawalOption />,
@@ -103,10 +113,7 @@ export const routes = createBrowserRouter([
     path: "/withdraw-via-bank",
     element: <BankWithdrawal />,
   },
-  {
-    path: "/withdraw-via-paychant",
-    element: <PaychantWithdrawal />,
-  },
+
   {
     path: "/notifications",
     element: <Notifications />,
@@ -146,6 +153,21 @@ export const routes = createBrowserRouter([
   {
     path: "/payment-details",
     element: <PaymentDetails />,
+  },
+  {
+    path: "/admin",
+    element: <AdminSignIn />,
+  },
+  {
+    path: "/adminDashboard",
+    element: <AdminDashboard />,
+    children: [
+      {
+        path: "",
+        element: <DashboardInner />,
+      },
+      { path: "summary", element: <Summary /> },
+    ],
   },
   {
     path: "*",
