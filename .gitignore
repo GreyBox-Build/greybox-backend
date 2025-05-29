@@ -1,2 +1,4 @@
 grey-box-api.pem
 csr.pem
+.env
+.gitignore
