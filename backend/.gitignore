@@ -1,1 +1,9 @@
 test.txt
+migrate
+.env
+GreyBox.*.json
+test.db
+backend
+/tmp
+.DS_Store
+.air.toml

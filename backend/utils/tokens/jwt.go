@@ -1,8 +1,8 @@
 package tokens
 
 import (
+	"backend/state"
 	"fmt"
-	"os"
 	"strings"
 	"time"
 
@@ -15,25 +15,22 @@ type CustomClaims struct {
 	jwt.StandardClaims
 }
 
-var (
-	apiSecret = []byte(os.Getenv("API_SECRET"))
-)
-
 func GenerateToken(userID uint) (string, error) {
 	claims := CustomClaims{
 		userID,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Hour * 24).Unix(), // Example: 1 day expiration
+			IssuedAt:  time.Now().Unix(),
+			ExpiresAt: time.Now().Add(time.Minute * time.Duration(state.AppConfig.TokenExpirationInMinutes)).Unix(), // Example: 1 day expiration
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(apiSecret)
+	return token.SignedString(state.ApiSecret)
 }
 
 func IsTokenValid(tokenString string) bool {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return apiSecret, nil
+		return state.ApiSecret, nil
 	})
 
 	return err == nil && token.Valid
@@ -64,7 +61,7 @@ func ExtractToken(c *gin.Context) string {
 func ExtractUserID(c *gin.Context) (uint, error) {
 	tokenString := ExtractToken(c)
 	token, err := jwt.ParseWithClaims(tokenString, &CustomClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return apiSecret, nil
+		return state.ApiSecret, nil
 	})
 
 	if err != nil {

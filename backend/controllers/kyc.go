@@ -1,7 +1,7 @@
 package controllers
 
 import (
-	"backend/apis"
+	"backend/apis/borderless"
 	"backend/models"
 	"backend/serializers"
 	"backend/utils"
@@ -30,6 +30,45 @@ func GetUserKYC(c *gin.Context) {
 		return
 	}
 
+	includePhotos := c.GetHeader("include_photos") == "true"
+
+	if includePhotos {
+		// Struct returned includes photo data
+		kycWithPhotos, err := models.GetKycByUserIDWithPhotos(user.ID)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+
+		kycResponse := serializers.KYC{
+			ID:              kycWithPhotos.Kyc.ID,
+			IDType:          kycWithPhotos.Kyc.IDType,
+			IssueDate:       kycWithPhotos.Kyc.IssueDate,
+			ExpiryDate:      kycWithPhotos.Kyc.ExpiryDate,
+			TaxId:           kycWithPhotos.Kyc.TaxId,
+			IdNumber:        kycWithPhotos.Kyc.IdNumber,
+			DateOfBirth:     kycWithPhotos.Kyc.DateOfBirth,
+			StreetAddress:   kycWithPhotos.Kyc.StreetAddress,
+			City:            kycWithPhotos.Kyc.City,
+			State:           kycWithPhotos.Kyc.State,
+			PostalCode:      kycWithPhotos.Kyc.PostalCode,
+			Country:         kycWithPhotos.Kyc.Country,
+			Phone:           kycWithPhotos.Kyc.Phone,
+			Status:          serializers.KYCStatus(kycWithPhotos.Kyc.Status),
+			RejectionReason: kycWithPhotos.Kyc.RejectionReason,
+			CreatedAt:       kycWithPhotos.Kyc.CreatedAt,
+			UpdatedAt:       kycWithPhotos.Kyc.UpdatedAt,
+			RejectedAt:      kycWithPhotos.Kyc.RejectedAt,
+			ApprovedAt:      kycWithPhotos.Kyc.ApprovedAt,
+			FrontPhoto:      kycWithPhotos.FrontPhoto,
+			BackPhoto:       kycWithPhotos.BackPhoto,
+		}
+
+		c.JSON(http.StatusOK, gin.H{"kyc": kycResponse})
+		return
+	}
+
+	// Fallback: basic KYC struct
 	kyc, err := models.GetKYCByUserID(user.ID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -58,9 +97,7 @@ func GetUserKYC(c *gin.Context) {
 		ApprovedAt:      kyc.ApprovedAt,
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"kyc": kycResponse,
-	})
+	c.JSON(http.StatusOK, gin.H{"kyc": kycResponse})
 }
 
 func GetKYCS(c *gin.Context) {
@@ -168,7 +205,7 @@ func CreateKYC(c *gin.Context) {
 
 	if !validCodes[country] {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "Invalid country code",
+			"message": "Invalid country code, must be a valid alpha-2 country code",
 		})
 		return
 	}
@@ -310,8 +347,6 @@ func CreateKYC(c *gin.Context) {
 		IDType:        request.IDType,
 		IssueDate:     request.IssueDate,
 		ExpiryDate:    request.ExpiryDate,
-		FrontPhoto:    frontBase64,
-		BackPhoto:     backBase64,
 		Status:        models.Pending,
 		IdNumber:      request.IdNumber,
 		TaxId:         request.TaxId,
@@ -324,11 +359,24 @@ func CreateKYC(c *gin.Context) {
 		Country:       request.Country,
 	}
 
+	// Construct KYCdata model object
+	kycData := &models.KYCData{
+		UserID:     user.ID,
+		FrontPhoto: frontBase64,
+		BackPhoto:  backBase64,
+	}
+
 	if err := kyc.CreateKYC(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
 		return
+	}
+
+	if err := kycData.CreateKYCData(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
@@ -389,9 +437,18 @@ func UpdateKYC(c *gin.Context) {
 		return
 	}
 
+	// Find corresponding KYC Data
+	existingKycData, err := models.GetKYCDataByUserId(user.ID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "KYC Data Not Found",
+		})
+		return
+	}
+
 	// Initialize update data with existing values
-	frontBase64 := existingKyc.FrontPhoto
-	backBase64 := existingKyc.BackPhoto
+	frontBase64 := existingKycData.FrontPhoto
+	backBase64 := existingKycData.BackPhoto
 
 	// Process front photo if provided
 	if frontFile, err := c.FormFile("front_photo"); err == nil {
@@ -492,8 +549,6 @@ func UpdateKYC(c *gin.Context) {
 		IDType:        request.IDType,
 		IssueDate:     request.IssueDate,
 		ExpiryDate:    request.ExpiryDate,
-		FrontPhoto:    frontBase64,
-		BackPhoto:     backBase64,
 		IdNumber:      request.IdNumber,
 		TaxId:         request.TaxId,
 		DateOfBirth:   request.DateOfBirth,
@@ -505,7 +560,20 @@ func UpdateKYC(c *gin.Context) {
 		Country:       request.Country,
 	}
 
+	// Construct updated KYCData model
+	updatedKycData := models.KYCDataRequest{
+		FrontPhoto: frontBase64,
+		BackPhoto:  backBase64,
+	}
+
 	if err := existingKyc.UpdateKYC(updatedKyc); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	if err := existingKycData.UpdateKYCData(existingKyc.Status, updatedKycData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
 		})
@@ -537,6 +605,15 @@ func ApproveKYC(c *gin.Context) {
 		return
 	}
 
+	// Find kyc data
+	existingKycData, err := models.GetKYCDataByUserId(existingKyc.UserID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "KYC Data Not Found",
+		})
+		return
+	}
+
 	// Find the user this kyc belongs to
 	user, err := models.GetUserByID(existingKyc.UserID)
 	if err != nil {
@@ -555,7 +632,7 @@ func ApproveKYC(c *gin.Context) {
 	}
 
 	// make call to Borderless to create individual identity
-	borderless := apis.NewBorderless()
+	borderless := borderless.NewBorderless()
 
 	borderlessIdentityAddress := models.BorderlessIdentityAddress{
 		Street1:    existingKyc.StreetAddress,
@@ -603,7 +680,7 @@ func ApproveKYC(c *gin.Context) {
 	}
 
 	// Upload documents to Borderless Identity
-	response, err = borderless.UploadCustomerIdentityDocument(borderlessID, *existingKyc)
+	response, err = borderless.UploadCustomerIdentityDocument(borderlessID, *existingKyc, *existingKycData)
 	if err != nil {
 		c.JSON(http.StatusBadGateway, gin.H{
 			"error": err.Error(),
@@ -666,7 +743,7 @@ func RejectKYC(c *gin.Context) {
 	}
 
 	// Find the KYC
-	existingKyc, err := models.GetKycByIDWithoutPhotos(idUint)
+	existingKyc, err := models.GetKYCByID(idUint)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "KYC Not Found",
@@ -707,7 +784,24 @@ func DeleteKYC(c *gin.Context) {
 		return
 	}
 
-	// Update the KYC request
+	// Find kyc data
+	existingKycData, err := models.GetKYCDataByUserId(existingKyc.UserID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "KYC Data Not Found",
+		})
+		return
+	}
+
+	// Delete the KYC Data
+	if err := existingKycData.DeleteKYCData(); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to delete KYC data",
+		})
+		return
+	}
+
+	// Delete the KYC request
 	if err := existingKyc.DeleteKYC(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to delete KYC request",

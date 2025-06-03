@@ -4,6 +4,7 @@ import (
 	"backend/apis"
 	"backend/models"
 	"backend/serializers"
+	"backend/state"
 	"backend/utils"
 	"backend/utils/mails"
 	"backend/utils/signing"
@@ -11,6 +12,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -19,7 +21,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stellar/go/support/log"
 )
 
 func RetrieveOnRampParamsV1(c *gin.Context) {
@@ -46,14 +47,14 @@ func RetrieveOnRampParamsV1(c *gin.Context) {
 		"external_customer_id": user.ID,
 		"network":              "CELO",
 		"country":              user.Country,
-		"source_param":         os.Getenv("SOURCE_PARAM"),
+		"source_param":         state.AppConfig.SourceParam,
 	}
 	switch user.CryptoCurrency {
 	case serializers.Chains.Celo:
 		data["asset"] = "CUSD"
 		data["network"] = "CELO"
-		data["x-client-id"] = os.Getenv("X_CLIENT_ID")
-		data["x-client-secret"] = os.Getenv("X_CLIENT_SECRET")
+		data["x-client-id"] = state.AppConfig.XClientId
+		data["x-client-secret"] = state.AppConfig.XClientSecret
 	case serializers.Chains.Stellar:
 		data["asset"] = "USDC"
 		data["network"] = "XLM"
@@ -195,12 +196,12 @@ func SignUrl(c *gin.Context) {
 		return
 	}
 
-	signedUrl, err = signing.GenerateSignedURL(input.Url, os.Getenv("MOONPAY_API_TEST_KEY"))
+	signedUrl, err = signing.GenerateSignedURL(input.Url, state.AppConfig.MoonpayTestApiKey)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
-	// fmt.Println(signedUrl)
+	// log.Println(signedUrl)
 	c.JSON(200, gin.H{
 		"signedUrl": signedUrl,
 	})
@@ -388,7 +389,7 @@ func OnRampV2(c *gin.Context) {
 		for _, admin := range admins {
 			adminEmails = append(adminEmails, admin.Email)
 		}
-		fmt.Println("emails:", adminEmails)
+		log.Println("emails:", adminEmails)
 		onRamp := serializers.AdminOnRampSerializer{
 			Name:          "Admin",
 			BankName:      input.BankName,
@@ -400,7 +401,7 @@ func OnRampV2(c *gin.Context) {
 		}
 		_ = mails.AdminOnRampMail(adminEmails, onRamp)
 	}()
-	// fmt.Println(deposit)
+	// log.Println(deposit)
 	c.JSON(200, gin.H{
 		"errors": false,
 		"status": "deposit request submitted successfully",
@@ -422,7 +423,7 @@ func FetchOnRampRequests(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	// fmt.Println(requests)
+	// log.Println(requests)
 	c.JSON(200, gin.H{
 		"errors": false,
 		"status": "requests fetched successfully",
@@ -442,7 +443,7 @@ func FetchOffRampRequests(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	// fmt.Println(requests)
+	// log.Println(requests)
 	c.JSON(200, gin.H{
 		"errors": false,
 		"status": "requests fetched successfully",
@@ -506,7 +507,7 @@ func VerifyOnRamp(c *gin.Context) {
 		return
 	}
 	nativeAmount, err := utils.PerformDepositofNativeCalculation(deposit.AssetEquivalent, "USD", user.CryptoCurrency)
-	// fmt.Println(nativeAmount)
+	// log.Println(nativeAmount)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -1020,15 +1021,15 @@ func handleOffRampTransaction(input serializers.MobileOffRamp, user models.User,
 	}
 
 	if err != nil {
-		log.Error(err)
+		log.Println(err)
 	}
-	fmt.Println("hash: ", hash)
+	log.Println("hash: ", hash)
 
 	transaction := prepareTransactionDetails(input, resp, hash)
 
 	output, err := apis.OffRampMobileFinalize(transaction)
 	if err != nil || output.Data.ResultCode != 0 {
-		log.Error("hurrupay failed to finalize", err)
+		log.Println("hurrupay failed to finalize", err)
 		return
 	}
 

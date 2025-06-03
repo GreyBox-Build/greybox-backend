@@ -2,9 +2,11 @@ package models
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"backend/serializers"
+	"backend/state"
 
 	"crypto/hmac"
 	"crypto/rand"
@@ -12,7 +14,6 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
-	"os"
 
 	"encoding/json"
 
@@ -77,16 +78,16 @@ func NewHmac() *Hmac {
 	h := &Hmac{
 		Secret: secret,
 	}
-	fmt.Println("HMAC secret: ", h.Secret)
+	// log.Println("HMAC secret: ", h.Secret)
 	return h
 }
 
 func VerifyWebhookAuthenticity(secret string, payload serializers.Webhook) bool {
-	hmacSecret := os.Getenv("HMAC_SECRET")
+	hmacSecret := state.AppConfig.HmacSecret
 
 	Json, err := json.Marshal(payload)
 	if err != nil {
-		fmt.Println("Error marshalling payload: ", err)
+		log.Println("Error marshalling payload: ", err)
 		return false
 	}
 	h := hmac.New(sha512.New, []byte(hmacSecret))

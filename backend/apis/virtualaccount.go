@@ -2,13 +2,14 @@ package apis
 
 import (
 	"backend/serializers"
+	"backend/state"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"os"
 	"strconv"
 )
 
@@ -54,7 +55,7 @@ func GenerateCelloAddress(xpub string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	apiKey := state.AppConfig.TatumTestApiKey
 
 	req.Header.Set("x-api-key", apiKey)
 
@@ -91,7 +92,7 @@ func GenerateStellarAddress() (map[string]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	apiKey := state.AppConfig.TatumTestApiKey
 	req.Header.Set("x-api-key", apiKey)
 
 	resp, err := client.Do(req)
@@ -117,7 +118,7 @@ func GenerateCelloWallet() (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	apiKey := state.AppConfig.TatumTestApiKey
 
 	req.Header.Set("x-api-key", apiKey)
 
@@ -149,7 +150,7 @@ func GenerateCelloWallet() (string, string, error) {
 
 func GeneratePrivateKey(privData serializers.PrivGeneration) (string, error) {
 	privURL := "https://api.tatum.io/v3/celo/wallet/priv"
-	key := os.Getenv("TATUM_API_KEY_TEST")
+	key := state.AppConfig.TatumTestApiKey
 
 	jsonData, err := json.Marshal(privData)
 	if err != nil {
@@ -299,7 +300,7 @@ func FetchAccountBalance(id string, apiKey string) (map[string]interface{}, erro
 		}
 		errorData, ok := errData["data"].([]interface{})
 		if ok {
-			fmt.Println("error data: ", errorData)
+			log.Println("error data: ", errorData)
 		}
 		// Return the error message
 		return errData, fmt.Errorf(errorMessage)
@@ -351,7 +352,7 @@ func CreateDepositWallet(accountId string) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	apiKey := state.AppConfig.TatumTestApiKey
 	req.Header.Set("x-api-key", apiKey)
 
 	resp, err := client.Do(req)
@@ -384,7 +385,7 @@ func FetchWalletBalance(address, chain string, pageSize int32) (float32, error) 
 	if err != nil {
 		return 0, err
 	}
-	apiKey := os.Getenv("TATUM_API_KEY_TEST")
+	apiKey := state.AppConfig.TatumTestApiKey
 	req.Header.Add("x-api-key", apiKey)
 	req.Header.Set("Content-type", "application/json")
 
@@ -420,7 +421,7 @@ func GenerateXlmAccount() (map[string]string, int, error) {
 	if err != nil {
 		return nil, 500, err
 	}
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("Content-type", "application/json")
 
 	resp, err := client.Do(req)
@@ -459,7 +460,7 @@ func FetchAccountBalanceXLM(address string) (float32, error) {
 		return 0, err
 	}
 
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("content-type", "application/json")
 	req.Header.Add("accept", "application/json")
 
@@ -470,7 +471,7 @@ func FetchAccountBalanceXLM(address string) (float32, error) {
 
 	defer resp.Body.Close()
 	respData := serializers.Account{}
-	fmt.Println("code: ", resp.StatusCode)
+	log.Println("code: ", resp.StatusCode)
 	if err := json.NewDecoder(resp.Body).Decode(&respData); err != nil {
 		return 0, err
 	}
@@ -489,7 +490,7 @@ func FetchAccountBalanceXLM(address string) (float32, error) {
 	default:
 		amount := 0.0
 		for _, balance := range respData.Balances {
-			fmt.Println("balance: ", balance.Balance, balance.AssetType)
+			log.Println("balance: ", balance.Balance, balance.AssetType)
 			if balance.AssetType != "native" {
 				a, _ := strconv.ParseFloat(balance.Balance, 32)
 				amount += a
@@ -511,7 +512,7 @@ func FetchAccountBalanceCUSD(address string) (float32, error) {
 		return 0, err
 	}
 
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("content-type", "application/json")
 	req.Header.Add("accept", "application/json")
 

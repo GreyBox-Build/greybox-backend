@@ -3,11 +3,11 @@ package apis
 import (
 	"backend/models"
 	"backend/serializers"
+	"backend/state"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 )
 
 func RegisterHmac() error {
@@ -22,7 +22,7 @@ func RegisterHmac() error {
 	}
 
 	req, err := http.NewRequest("PUT", apiUrl, bytes.NewBuffer(json))
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("content-type", "application/json")
 	if err != nil {
 		return err
@@ -43,8 +43,8 @@ func RegisterHmac() error {
 
 func CreateNotificationSubscription(address, chain string) error {
 	apiUrl := "https://api-eu1.tatum.io/v4/subscription"
-	webhookUrl := os.Getenv("WEBHOOK_URL")
-	subType := os.Getenv("SUBSCRIPTION_TYPE")
+	webhookUrl := state.AppConfig.TatumWebhookUrl
+	subType := state.AppConfig.TatumSubscriptionType
 	data := serializers.Subscription{Type: subType, Attr: serializers.SubscriptionAttr{Chain: chain, Url: webhookUrl, Address: address}}
 	json, err := json.Marshal(data)
 	if err != nil {
@@ -54,7 +54,7 @@ func CreateNotificationSubscription(address, chain string) error {
 	if err != nil {
 		return err
 	}
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("content-type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

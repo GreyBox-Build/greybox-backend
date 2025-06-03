@@ -2,136 +2,73 @@ package controllers
 
 import (
 	"backend/apis"
+	"backend/apis/borderless"
 	"backend/models"
 	"backend/serializers"
+	"backend/state"
+	"backend/utils"
 	"backend/utils/mails"
 	"backend/utils/tokens"
+	"errors"
 	"fmt"
 	"net/http"
-	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
 
 func CreateAccountV2(c *gin.Context) {
-
 	var input serializers.User
-
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(400, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-	var user models.User
-	user.FirstName = input.FirstName
-	user.Email = input.Email
-	user.Password = input.Password
-	user.LastName = input.LastName
-	user.Country = input.Country
-	user.LastName = input.LastName
-	user.Currency = input.Currency
-	user.CountryCode = input.CountryCode
-	if err := user.BeforeSaveDetail(); err != nil {
-		c.JSON(400, gin.H{
-			"error": err.Error(),
-		})
+		utils.BadRequest(c, err, "invalid request payload")
 		return
 	}
 
-	user.CryptoCurrency = input.Chain
-	switch input.Chain {
+	// check if user already exists
+	_, exists := models.FindUserByEmail(input.Email)
+	if exists {
+		utils.BadRequest(c, errors.New("DUPLICATE USER"), "User already exists")
+		return
+	}
+
+	user := models.User{
+		FirstName:      input.FirstName,
+		LastName:       input.LastName,
+		Email:          input.Email,
+		Password:       input.Password,
+		Country:        input.Country,
+		Currency:       input.Currency,
+		CountryCode:    input.CountryCode,
+		CryptoCurrency: input.Chain,
+	}
+
+	switch strings.ToUpper(input.Chain) {
 	case serializers.Chains.Celo:
-		meumnic, xpub, err := apis.GenerateCelloWallet()
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating cello wallet failed",
-			})
+		if err := apis.SetupCeloAccount(&user); err != nil {
+			utils.BadRequest(c, err, "celo wallet setup failed")
 			return
 		}
-		address, err := apis.GenerateCelloAddress(xpub)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating address failed",
-			})
-			return
-		}
-		user.AccountAddress = address
-		user.Xpub = xpub
-		user.Mnemonic = meumnic
-		privData := serializers.PrivGeneration{
-			Index:    1,
-			Mnemonic: meumnic,
-		}
-		privKey, err := apis.GeneratePrivateKey(privData)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating private key failed",
-			})
-			return
-		}
-
-		user.PrivateKey = privKey
 	case serializers.Chains.Stellar:
-		data, code, err := apis.GenerateXlmAccount()
-		if err != nil {
-			c.JSON(code, gin.H{
-				"error":   err.Error(),
-				"message": "generating address failed",
-			})
+		if err := apis.SetupStellarAccount(&user); err != nil {
+			utils.BadRequest(c, err, "stellar account setup failed")
 			return
 		}
-		address, secret := data["address"], data["secret"]
-		user.AccountAddress = address
-		user.PrivateKey = secret
 	case serializers.Chains.Polygon:
-		polygon := apis.NewTatumPolygon()
-		walletResponse, err := polygon.CreateWallet()
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating polygon wallet failed",
-			})
+		if err := apis.SetupPolygonAccount(&user); err != nil {
+			utils.BadRequest(c, err, "polygon account setup failed")
 			return
 		}
-		xPub, mnemenic := walletResponse.Xpub, walletResponse.Mnemonic
-		user.Xpub = xPub
-		user.Mnemonic = mnemenic
-		privResponse, err := polygon.GeneratePrivateKey(mnemenic, 0)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating polygon private key failed",
-			})
-			return
-		}
-		user.PrivateKey = privResponse.Key
-		addressResponse, err := polygon.GenerateAddress(xPub, 0)
-		if err != nil {
-			c.JSON(400, gin.H{
-				"error":   err.Error(),
-				"message": "generating polygon address failed",
-			})
-			return
-		}
-		user.AccountAddress = addressResponse.Address
-
+	default:
+		utils.BadRequest(c, fmt.Errorf("unsupported chain: %s", input.Chain), "unsupported chain type")
+		return
 	}
 
 	if err := user.SaveUser(); err != nil {
-		c.JSON(400, gin.H{
-			"error":   err.Error(),
-			"message": "creating user failed",
-		})
+		utils.BadRequest(c, err, "creating user failed")
 		return
 	}
 
-	c.JSON(200, gin.H{
-		"message": "created account successfully",
-	})
+	c.JSON(http.StatusOK, gin.H{"message": "created account successfully"})
 }
 
 func FetchAuthenticatedUserToken(c *gin.Context) {
@@ -227,9 +164,10 @@ func ResetPassword(c *gin.Context) {
 		return
 	}
 	user.Password = requestData.Password
-	if err := user.BeforeSaveDetail(); err != nil {
+	if err := user.HashPassword(); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
+			"error":   err.Error(),
+			"message": "Password reset failed",
 		})
 	}
 
@@ -459,7 +397,7 @@ func MakeAdmin(c *gin.Context) {
 		})
 		return
 	}
-	key := os.Getenv("ADMIN_KEY")
+	key := state.AppConfig.AdminKey
 	if key != input.Key {
 		c.JSON(400, gin.H{
 			"error": "invalid admin key",
@@ -511,8 +449,13 @@ func CreateBorderlessVirtualAccount(c *gin.Context) {
 		return
 	}
 
-	borderless := apis.NewBorderless()
-	accountName := fmt.Sprintf("greybox-%s", models.GenerateAccountId())
+	borderless := borderless.NewBorderless()
+	userAccountId, err := models.GenerateAccountId()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	accountName := fmt.Sprintf("greybox-%s", userAccountId)
 
 	accountResponse, err := borderless.CreateBorderlessAccount(accountName, kyc.BorderlessIdentityId)
 	if err != nil {
@@ -520,12 +463,24 @@ func CreateBorderlessVirtualAccount(c *gin.Context) {
 		return
 	}
 
+	// check if user is allowed to create a virtual account in their country
+	if utils.IsBlockedCountry(user.CountryCode) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Virtual accounts are not available in user's country"})
+		return
+	}
+
 	accountId := accountResponse["id"].(string)
+
+	// Here we hardcode US as the country for the virtual accounts
+	// this is because the virtual accounts only opperate in USA
+	//
+	// Above we already make the check to be sure the user is allowed to operate
+	// a virtual account from their country of registration
 	virtualAccountResponse, err := borderless.CreateBorderlessVirtualAccount(
 		accountId,
 		input.Fiat,
 		input.Asset,
-		user.CountryCode,
+		"US",
 		kyc.BorderlessIdentityId,
 	)
 	if err != nil {

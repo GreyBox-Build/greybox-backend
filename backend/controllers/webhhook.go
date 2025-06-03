@@ -5,7 +5,7 @@ import (
 	"backend/models"
 	"backend/serializers"
 	"backend/utils"
-	"fmt"
+	"log"
 	"strings"
 	"time"
 
@@ -15,23 +15,23 @@ import (
 func OnRampNotification(c *gin.Context) {
 	var input serializers.Event
 	if err := c.ShouldBindJSON(&input); err != nil {
-		fmt.Println("error", err.Error())
+		log.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println("onramp request body: ", input)
+	log.Println("onramp request body: ", input)
 
 	// Fetch the request based on the EventObject ID
 	request, err := models.GetHurupayRequestRequestId(input.EventObject.ID)
 	if err != nil {
-		fmt.Println("error", err.Error())
+		log.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
 	trans, err := createTransaction(request, input)
 	if err != nil {
-		fmt.Println("error", err.Error())
+		log.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -39,14 +39,14 @@ func OnRampNotification(c *gin.Context) {
 	// Fetch the master wallet for the user's cryptocurrency
 	masterWallet, err := models.FetchMasterWallet(request.User.CryptoCurrency)
 	if err != nil {
-		fmt.Println("error", err.Error())
+		log.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
 	// Process the event based on the event type
 	if err = processEvent(input.EventType, *request, *trans, masterWallet); err != nil {
-		fmt.Println("error", err.Error())
+		log.Println("error", err.Error())
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -198,7 +198,7 @@ func OffRampNotification(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println("offramp request body: ", input)
+	log.Println("offramp request body: ", input)
 
 	// Fetch the request based on the EventObject ID
 	request, err := models.GetHurupayRequestRequestId(input.EventObject.ID)
@@ -224,7 +224,7 @@ func BorderlessNotification(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	fmt.Println("borderless request body: ", input)
+	log.Println("borderless request body: ", input)
 	flag, err := utils.BorderlessWebhookHandler(input)
 	if err != nil {
 		c.JSON(500, gin.H{"error": err.Error()})

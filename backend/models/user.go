@@ -2,11 +2,14 @@ package models
 
 import (
 	"backend/serializers"
+	"backend/state"
 	"backend/utils/tokens"
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"html"
-	"math/rand"
+	"log"
+	"math/big"
 	"net/mail"
 	"strings"
 	"time"
@@ -54,149 +57,69 @@ type UserAccounts struct {
 	UpdatedAt        time.Time `json:"updated_at"`
 }
 
-var counter uint64
+const maxRetry = 5
 
 // generateAccountCode generates a new account code
 func GenerateAccountCode(prefix string) string {
 	// Increment counter atomically and format it
-	num := atomic.AddUint64(&counter, 1)
+	num := atomic.AddUint64(&state.AccountCodeCounter, 1)
 	return fmt.Sprintf("%02d_%s_%02d", num, prefix, num)
 }
 
-func GenerateAccountId() string {
-	// Generate a random string of 6 characters
-	random := randString(10)
-
-	accountId := random
-
-	// Check if account ID already exists
-	if AlreadyExists(accountId) {
-		// Generate a new random string and check again if needed
-		return GenerateAccountId()
+func GenerateAccountId() (string, error) {
+	for range maxRetry {
+		id, err := randString(10)
+		if err != nil {
+			return "", err
+		}
+		if !AlreadyExists(id) {
+			return id, nil
+		}
 	}
-
-	return accountId
+	return "", errors.New("failed to generate unique account ID after multiple attempts")
 }
 
-func GenerateAccountNumber() string {
-	// Generate a random string of 6 characters
-	random := RandNumber(10)
-
-	accountId := random
-
-	// Check if account ID already exists
-	if AccountNumberExists(accountId) {
-		// Generate a new random string and check again if needed
-		return GenerateAccountNumber()
+func GenerateAccountNumber() (string, error) {
+	for range maxRetry {
+		num, err := randNumber(10)
+		if err != nil {
+			return "", err
+		}
+		if !AccountNumberExists(num) {
+			return num, nil
+		}
 	}
-
-	return accountId
+	return "", errors.New("failed to generate unique account number after multiple attempts")
 }
 
-func randString(n int) string {
-	letters := "abcdefghijklmnopqrstuvwxyz1234567890"
-
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
+func secureRandomString(charset string, n int) (string, error) {
+	result := make([]byte, n)
+	for i := range result {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
+		if err != nil {
+			return "", fmt.Errorf("secure random generation failed: %w", err)
+		}
+		result[i] = charset[num.Int64()]
 	}
-	return string(b)
+	return string(result), nil
 }
 
-func RandNumber(n int) string {
-	letters := "1234567890"
-
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
+func randString(n int) (string, error) {
+	const letters = "abcdefghijklmnopqrstuvwxyz1234567890"
+	return secureRandomString(letters, n)
 }
 
-func AlreadyExists(id string) bool {
-
-	var user User
-
-	result := db.Where("account_id = ?", id).First(&user)
-
-	return result.Error == nil
-
+func randNumber(n int) (string, error) {
+	const numbers = "1234567890"
+	return secureRandomString(numbers, n)
 }
 
-func AccountNumberExists(id string) bool {
-	fmt.Println("id: ", id)
-	var user User
-
-	result := db.Where("account_number = ?", id).First(&user)
-
-	return result.Error == nil
-
-}
-
-func (u *User) PrepareGive() {
-	u.Password = ""
-}
-
-func (u *User) SaveUser() error {
-	//var err error
-	err := db.Create(&u).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *User) UpdateUser() {
-	db.Save(&u)
-}
-
-func (u *User) UpdateUserWithErrors() error {
-	err := db.Model(&User{}).Where("id = ?", u.ID).Updates(u).Error
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (u *User) BeforeSaveDetail() error {
-	if !ValidatePassword(u.Password) {
-		return errors.New("password must have at least 8 characters, have at least a digit and at least an Upper case letter")
-	}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return err
-	}
-	u.Password = string(hashedPassword)
-
-	u.FirstName = html.EscapeString(strings.TrimSpace(u.FirstName))
-	u.LastName = html.EscapeString(strings.TrimSpace(u.LastName))
-	u.Email = CheckEmail(u.Email)
-
-	return nil
-
-}
-
-func GetUserByID(uid uint) (User, error) {
-
-	var u User
-
-	if err := db.First(&u, uid).Error; err != nil {
-		return u, errors.New("user not found")
-	}
-
-	u.PrepareGive()
-
-	return u, nil
-
-}
-
-func CheckEmail(address string) string {
+func CheckEmail(address string) (string, error) {
 	addr, err := mail.ParseAddress(address)
 	if err != nil {
-		return "invalid email address"
+		return "", errors.New("invalid email address format")
 	}
-	return addr.Address
+	return addr.Address, nil
 }
 
 func ValidatePassword(password string) bool {
@@ -246,7 +169,7 @@ func LoginCheck(email, password string) (string, error) {
 	err = VerifyPassword(password, u.Password)
 
 	if err != nil && err == bcrypt.ErrMismatchedHashAndPassword {
-		return "", err
+		return "", errors.New("Invalid password")
 	}
 	token, err := tokens.GenerateToken(u.ID)
 	//fmt.Print("token: ", token)
@@ -256,6 +179,92 @@ func LoginCheck(email, password string) (string, error) {
 	}
 
 	return token, nil
+}
+
+func AlreadyExists(id string) bool {
+
+	var user User
+
+	result := db.Where("account_id = ?", id).First(&user)
+
+	return result.Error == nil
+
+}
+
+func AccountNumberExists(id string) bool {
+	log.Println("id: ", id)
+	var user User
+
+	result := db.Where("account_number = ?", id).First(&user)
+
+	return result.Error == nil
+
+}
+
+func (u *User) PrepareGive() {
+	u.Password = ""
+}
+
+func (u *User) SaveUser() error {
+	if err := u.SanitizeAndValidate(); err != nil {
+		return err
+	}
+	if err := u.HashPassword(); err != nil {
+		return err
+	}
+	return db.Create(&u).Error
+}
+
+func (u *User) UpdateUser() {
+	db.Save(&u)
+}
+
+func (u *User) UpdateUserWithErrors() error {
+	err := db.Model(&User{}).Where("id = ?", u.ID).Updates(u).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (u *User) SanitizeAndValidate() error {
+	u.FirstName = html.EscapeString(strings.TrimSpace(u.FirstName))
+	u.LastName = html.EscapeString(strings.TrimSpace(u.LastName))
+
+	email, err := CheckEmail(u.Email)
+	if err != nil {
+		return err
+	}
+	u.Email = email
+
+	if !ValidatePassword(u.Password) {
+		return errors.New("password must be at least 8 characters long, contain a digit, and an uppercase letter")
+	}
+
+	return nil
+}
+
+func (u *User) HashPassword() error {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	u.Password = string(hashedPassword)
+	return nil
+}
+
+func GetUserByID(uid uint) (User, error) {
+
+	var u User
+
+	if err := db.First(&u, uid).Error; err != nil {
+		return u, errors.New("user not found")
+	}
+
+	u.PrepareGive()
+
+	return u, nil
+
 }
 
 func DeleteUserByID(userID uint) error {
@@ -315,19 +324,11 @@ func (ua *UserAccounts) BeforeSave(tx *gorm.DB) (err error) {
 }
 
 func (ua *UserAccounts) CreateUserAccount() error {
-	err := db.Create(&ua).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	return db.Create(&ua).Error
 }
 
 func (ua *UserAccounts) UpdateUserAccount() error {
-	err := db.Save(&ua).Error
-	if err != nil {
-		return err
-	}
-	return nil
+	return db.Save(&ua).Error
 }
 
 func GetUserAccountsByUserId(userId uint) ([]UserAccounts, error) {

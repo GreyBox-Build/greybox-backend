@@ -3,9 +3,8 @@ package main
 import (
 	"backend/controllers"
 	"backend/middlewares"
-
 	"backend/models"
-	"log"
+	"backend/state"
 	"time"
 
 	//"github.com/gin-contrib/cors"
@@ -13,7 +12,6 @@ import (
 	"slices"
 
 	"github.com/gin-gonic/gin"
-	"github.com/joho/godotenv"
 )
 
 func CORS() gin.HandlerFunc {
@@ -46,10 +44,10 @@ func main() {
 		panic(err)
 	}
 	time.Local = lagos
-	err = godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
+
+	// load env
+	state.LoadEnv()
+
 	//gin.SetMode(gin.ReleaseMode)
 
 	db := models.InitializeDB()

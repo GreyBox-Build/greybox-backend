@@ -1,14 +1,13 @@
 package apis
 
 import (
+	"backend/state"
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -109,68 +108,85 @@ type GeneratePrivateKeyResponse struct {
 
 // MakeRequest makes an HTTP request with retry logic and error handling
 func (hc *TatumPolygon) MakeRequest(method, url string, data map[string]interface{}) (map[string]interface{}, error) {
-	startTime := time.Now()
+	start := time.Now()
+
+	// Marshal request body if data is present
 	var requestBody []byte
-	var err error
 	if data != nil {
+		var err error
 		requestBody, err = json.Marshal(data)
 		if err != nil {
 			return nil, fmt.Errorf("failed to serialize request body: %w", err)
 		}
 	}
+
+	// Create HTTP request
 	req, err := http.NewRequest(method, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
+	// Add headers
 	for key, value := range hc.Headers {
-		req.Header.Set(key, value.(string))
+		if strVal, ok := value.(string); ok {
+			req.Header.Set(key, strVal)
+		}
 	}
+
 	log.Printf("Making %s request to %s with data: %v", method, url, data)
-	var response *http.Response
-	retries := 3
-	for i := 0; i < retries; i++ {
-		response, err = hc.Client.Do(req)
+
+	// Attempt with retries
+	const maxRetries = 3
+	var resp *http.Response
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		resp, err = hc.Client.Do(req)
 		if err == nil {
 			break
 		}
-		if i < retries-1 {
-			log.Printf("Retrying request to %s (attempt %d)", url, i+2)
+		if attempt < maxRetries {
+			log.Printf("Retrying request to %s (attempt %d)", url, attempt+1)
 			time.Sleep(2 * time.Second)
 		}
 	}
-	// Handle errors from retries
-	if err != nil {
-		return nil, errors.New("an error occurred while making the request")
-	}
-	defer response.Body.Close()
-	// Check for timeout or status code errors
-	if response.StatusCode >= 400 {
-		bodyBytes, _ := io.ReadAll(response.Body)
-		var failedResponse map[string]interface{}
-		if jsonErr := json.Unmarshal(bodyBytes, &failedResponse); jsonErr == nil {
-			log.Printf("HTTP error occurred: %s", failedResponse)
-			return failedResponse, errors.New("HTTP error")
-		}
-		return failedResponse, errors.New("an unknown error occurred")
-	}
 
-	bodyBytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("request failed after %d attempts: %w", maxRetries, err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	var responseData map[string]interface{}
-	if err := json.Unmarshal(bodyBytes, &responseData); err != nil {
-		return nil, fmt.Errorf("failed to parse response body: %w", err)
+	// Handle non-2xx status codes
+	if resp.StatusCode >= 400 {
+		var errorResponse map[string]interface{}
+		if jsonErr := json.Unmarshal(body, &errorResponse); jsonErr == nil {
+			log.Printf("HTTP %d error response: %v", resp.StatusCode, errorResponse)
+			msg := "HTTP error"
+			if m, ok := errorResponse["message"].(string); ok {
+				msg = m
+			}
+			return errorResponse, fmt.Errorf("HTTP error: %s", msg)
+		}
+		log.Printf("Unparseable HTTP %d error body: %s", resp.StatusCode, string(body))
+		return nil, fmt.Errorf("HTTP error: %s", string(body))
 	}
-	log.Printf("Successfully retrieved response in %v: %v", time.Since(startTime), responseData)
-	return responseData, nil
+
+	// Parse success response
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		return nil, fmt.Errorf("failed to parse response JSON: %w", err)
+	}
+
+	log.Printf("Successfully completed %s request to %s in %v", method, url, time.Since(start))
+	return result, nil
 }
 
 func NewTatumPolygon() *TatumPolygon {
-	baseUrl := os.Getenv("TATUM_BASE_URL")
-	authKeys := os.Getenv("TATUM_API_KEY_TEST")
+	baseUrl := state.AppConfig.TatumBaseUrl
+	authKeys := state.AppConfig.TatumTestApiKey
 	return &TatumPolygon{
 		BaseUrl: baseUrl,
 		Client:  &http.Client{},

@@ -2,12 +2,13 @@ package controllers
 
 import (
 	"backend/apis"
+	"backend/apis/borderless"
 	"backend/models"
 	"backend/serializers"
+	"backend/state"
 	"backend/utils"
 	"backend/utils/tokens"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -29,7 +30,7 @@ func BorderLessOnramp(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	borderless := apis.NewBorderless()
+	borderless := borderless.NewBorderless()
 	response, err := borderless.MakeDeposit(
 		input.Amount, input.Asset, input.Country, input.Fiat)
 	if err != nil {
@@ -91,13 +92,14 @@ func BorderLessOffRamp(c *gin.Context) {
 		return
 	}
 	polygon := apis.NewTatumPolygon()
-	borderless := apis.NewBorderless()
-	paymentInstruction := apis.NewPayment(
+	paymentInstruction := borderless.NewPayment(
 		bank.Country, input.Currency, fmt.Sprintf("%s %s", user.FirstName, user.LastName),
 		"Wire", input.AccountHolderName, input.AccountNumber,
 		input.AccountType, bank.Name, *bank.Street, *bank.City, bank.Country, *bank.ZipCode, *bank.SwiftCode,
 		input.AccountNumber, *bank.SwiftCode, *bank.Street, *bank.State)
-	paymentInstructionResponse, err := borderless.MakePaymentInstruction(paymentInstruction)
+
+	borderlessHandler := borderless.NewBorderless()
+	paymentInstructionResponse, err := borderlessHandler.MakePaymentInstruction(paymentInstruction)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -139,11 +141,11 @@ func BorderLessOffRamp(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	accountID := os.Getenv("BORDERLESS_ACCOUNT_ID")
-	withdraw := apis.NewWithdrawalRequest(
+	accountID := state.AppConfig.BorderlessAccountId
+	withdraw := borderless.NewWithdrawalRequest(
 		input.Currency, bank.Country, "USDC_POLYGON", input.Amount,
 		accountID, input.PaymentPurpose, paymentInstructionResponse.ID)
-	res, err := borderless.MakeWithdrawal(withdraw)
+	res, err := borderlessHandler.MakeWithdrawal(withdraw)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -154,7 +156,7 @@ func BorderLessOffRamp(c *gin.Context) {
 		return
 	}
 
-	transactionInstruction, err := borderless.GetTransaction(res.ID)
+	transactionInstruction, err := borderlessHandler.GetTransaction(res.ID)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -191,7 +193,7 @@ func BorderlessMobileMoneyOnRamp(c *gin.Context) {
 		return
 	}
 
-	borderless := apis.NewBorderless()
+	borderless := borderless.NewBorderless()
 	availableCountries, err := borderless.GetAvailableCountries("deposits")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
@@ -289,9 +291,9 @@ func BorderlessMobileMoneyOffRamp(c *gin.Context) {
 		return
 	}
 
-	borderless := apis.NewBorderless()
+	borderlessHandler := borderless.NewBorderless()
 
-	availableCountries, err := borderless.GetAvailableCountries("withdrawals")
+	availableCountries, err := borderlessHandler.GetAvailableCountries("withdrawals")
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -307,7 +309,7 @@ func BorderlessMobileMoneyOffRamp(c *gin.Context) {
 	}
 
 	// find mobile money withdrawal option
-	withdrawalOption, err := borderless.GetDepositOrWithdrawalOption("withdrawals", bank.Country, input.Currency, input.Asset)
+	withdrawalOption, err := borderlessHandler.GetDepositOrWithdrawalOption("withdrawals", bank.Country, input.Currency, input.Asset)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -319,13 +321,13 @@ func BorderlessMobileMoneyOffRamp(c *gin.Context) {
 	}
 
 	// create payment instruction
-	paymentInstruction := apis.NewPayment(
+	paymentInstruction := borderless.NewPayment(
 		bank.Country, input.Currency, fmt.Sprintf("%s %s", user.FirstName, user.LastName),
 		withdrawalOption.Method, input.AccountHolderName, input.AccountNumber, input.AccountType,
 		bank.Name, *bank.Street, *bank.City, bank.Country, *bank.ZipCode,
 		*bank.SwiftCode, input.AccountNumber, *bank.SwiftCode, *bank.Street, *bank.State)
 
-	paymentInstructionResponse, err := borderless.MakePaymentInstruction(paymentInstruction)
+	paymentInstructionResponse, err := borderlessHandler.MakePaymentInstruction(paymentInstruction)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -378,15 +380,15 @@ func BorderlessMobileMoneyOffRamp(c *gin.Context) {
 		return
 	}
 
-	accountID := os.Getenv("BORDERLESS_ACCOUNT_ID")
+	accountID := state.AppConfig.BorderlessAccountId
 	if input.AccountId != "" {
 		accountID = input.AccountId
 	}
 
-	withdraw := apis.NewWithdrawalRequest(
+	withdraw := borderless.NewWithdrawalRequest(
 		input.Currency, bank.Country, input.Asset,
 		input.Amount, accountID, input.PaymentPurpose, paymentInstructionResponse.ID)
-	res, err := borderless.MakeWithdrawal(withdraw)
+	res, err := borderlessHandler.MakeWithdrawal(withdraw)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
@@ -398,7 +400,7 @@ func BorderlessMobileMoneyOffRamp(c *gin.Context) {
 		return
 	}
 
-	transactionInstruction, err := borderless.GetTransaction(res.ID)
+	transactionInstruction, err := borderlessHandler.GetTransaction(res.ID)
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return

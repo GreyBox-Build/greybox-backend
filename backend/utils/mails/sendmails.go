@@ -2,18 +2,20 @@ package mails
 
 import (
 	"backend/serializers"
+	"backend/state"
 	"bytes"
 	"crypto/tls"
 	"fmt"
 	"html/template"
+	"log"
 	"os"
 
 	"gopkg.in/gomail.v2"
 )
 
 func SendMail(header string, message *gomail.Message, receiver []string) error {
-	from := os.Getenv("EMAIL_USER")
-	password := os.Getenv("EMAIL_PASSWORD")
+	from := state.AppConfig.EmailUser
+	password := state.AppConfig.EmailPassword
 	message.SetHeader("From", from)
 	message.SetHeader("To", receiver...)
 	message.SetHeader("Subject", header)
@@ -23,10 +25,10 @@ func SendMail(header string, message *gomail.Message, receiver []string) error {
 
 	// Send the email
 	if err := dialer.DialAndSend(message); err != nil {
-		fmt.Println(err)
+		log.Println(err)
 		return err
 	}
-	fmt.Println("Email Sent Successfully!")
+	log.Println("Email Sent Successfully!")
 	return nil
 }
 
@@ -44,7 +46,7 @@ func SendForgetPasswordMail(receiver []string, name, token string) error {
 		PasswordResetLink string
 	}{
 		Name:              name,
-		PasswordResetLink: "http://localhost:3000/reset-password?token=" + token,
+		PasswordResetLink: fmt.Sprintf("%s?token=%s", state.AppConfig.PasswordResetLink, token),
 	})
 
 	// Attach the HTML body to the email

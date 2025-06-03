@@ -3,10 +3,14 @@ package utils
 import (
 	"backend/apis"
 	"fmt"
+	"log"
 	"math"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func ConvertTokenToNative(currentNativeUsdEquivalent, TokenAmount string) string {
@@ -17,7 +21,7 @@ func ConvertTokenToNative(currentNativeUsdEquivalent, TokenAmount string) string
 	// Perform the conversion
 	nativeAmount := cusdAmountFloat / currentCeloUsdPriceFloat
 	nativeAmount = math.Round(nativeAmount*100) / 100
-	fmt.Println("nativeAmount: ", nativeAmount)
+	log.Println("nativeAmount: ", nativeAmount)
 
 	// Convert the result back to a string
 	nativeAmountStr := strconv.FormatFloat(nativeAmount, 'f', -1, 64)
@@ -132,6 +136,14 @@ func LastPart(url, sep string) string {
 	return parts[len(parts)-1]
 }
 
+func BadRequest(c *gin.Context, err error, msg string) {
+	c.JSON(http.StatusBadRequest, gin.H{
+		"error":   err.Error(),
+		"message": msg,
+	})
+}
+
+// Valid and Invalid Countries
 func CreateValidCountryCodes() map[string]bool {
 	validCodes := map[string]bool{
 		"AF": true, "AX": true, "AL": true, "DZ": true, "AS": true, "AD": true, "AO": true, "AI": true,
@@ -168,4 +180,46 @@ func CreateValidCountryCodes() map[string]bool {
 		"ZW": true,
 	}
 	return validCodes
+}
+
+var blockedCountriesForVirtualAccounts = map[string]bool{
+	"AF": true, // Afghanistan
+	"BD": true, // Bangladesh
+	"BI": true, // Burundi
+	"BT": true, // Bhutan
+	"CD": true, // Democratic Republic of the Congo
+	"CN": true, // China
+	"CU": true, // Cuba
+	"DZ": true, // Algeria
+	"GW": true, // Guinea-Bissau
+	"HT": true, // Haiti
+	"IQ": true, // Iraq
+	"IR": true, // Iran
+	"KE": true, // Kenya
+	"KP": true, // North Korea
+	"LB": true, // Lebanon
+	"LY": true, // Libya
+	"MA": true, // Morocco
+	"MK": true, // North Macedonia
+	"ML": true, // Mali
+	"MM": true, // Myanmar
+	"MZ": true, // Mozambique
+	"NE": true, // Niger
+	"NI": true, // Nicaragua
+	"NP": true, // Nepal
+	"PK": true, // Pakistan
+	"QA": true, // Qatar
+	"RU": true, // Russia
+	"SD": true, // Sudan
+	"SI": true, // Slovenia
+	"SO": true, // Somalia
+	"SS": true, // South Sudan
+	"SY": true, // Syria
+	"VE": true, // Venezuela
+	"YE": true, // Yemen
+	"ZW": true, // Zimbabwe
+}
+
+func IsBlockedCountry(alpha2Code string) bool {
+	return blockedCountriesForVirtualAccounts[strings.ToUpper(alpha2Code)]
 }

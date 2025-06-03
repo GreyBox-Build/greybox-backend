@@ -2,14 +2,15 @@ package apis
 
 import (
 	"backend/serializers"
+	"backend/state"
 	"backend/utils/tokens"
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
-	"os"
 )
 
 type TransactionRequest struct {
@@ -92,7 +93,7 @@ func GetUserTransactions(chain, walletAddress, category string, pageSize uint64)
 		return nil, err
 	}
 
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -123,7 +124,7 @@ func GetTransactionByHash(chain, hash string) ([]map[string]interface{}, error) 
 		return nil, err
 	}
 
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -172,7 +173,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey string, isNative boo
 		return "", 500, err
 	}
 
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -191,7 +192,7 @@ func PerformTransactionCelo(amount, accountAddress, privKey string, isNative boo
 		if err = json.Unmarshal(body, &result); err != nil {
 			return "", 500, err
 		}
-		fmt.Println("result:", result)
+		log.Println("result:", result)
 
 		errMsg = "failed to perform transaction. most likely insufficient funds"
 
@@ -244,7 +245,7 @@ func CalculateEstimatedFeeCelo(amount, to, from string) (map[string]interface{},
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -280,7 +281,7 @@ func PerformTransactionXLM(data serializers.TransferXLM) (map[string]string, int
 		if err != nil {
 			return nil, err
 		}
-		req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+		req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 		req.Header.Set("Content-type", "application/json")
 
 		return client.Do(req)
@@ -343,7 +344,7 @@ func GetUserTransactionXLM(address, pagination string) ([]serializers.Transactio
 	if err != nil {
 		return []serializers.TransactionXLM{}, err
 	}
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("Content-type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -351,7 +352,7 @@ func GetUserTransactionXLM(address, pagination string) ([]serializers.Transactio
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("status code: ", resp.StatusCode)
+	log.Println("status code: ", resp.StatusCode)
 	switch resp.StatusCode {
 	case 200:
 		respData := []serializers.TransactionXLM{}
@@ -408,7 +409,7 @@ func GetTransactionByHashXLM(hash string) (serializers.TransactionXLM, error) {
 	if err != nil {
 		return serializers.TransactionXLM{}, err
 	}
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("Content-type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
@@ -454,7 +455,7 @@ type MobilePayoutResponse struct {
 func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 	apiUrl := "https://api.hurupay.com/v1/collections/mobile/initialize_transaction"
 	client := &http.Client{}
-	fmt.Println("onramp data: ", data)
+	log.Println("onramp data: ", data)
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -465,7 +466,7 @@ func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 	if err != nil {
 		return MobileMoneyResponse{}, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", state.AppConfig.HurupayApiKey))
 	req.Header.Set("Content-type", "application/json")
 
 	resp, err := client.Do(req)
@@ -479,7 +480,7 @@ func OnRampMobileMoney(data serializers.Payment) (MobileMoneyResponse, error) {
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			return MobileMoneyResponse{}, err
 		}
-		fmt.Println("error response: ", errorResponse)
+		log.Println("error response: ", errorResponse)
 		return MobileMoneyResponse{}, errors.New(errorResponse.Message)
 	}
 
@@ -504,7 +505,7 @@ func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, er
 	if err != nil {
 		return PayoutResponse{}, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", state.AppConfig.HurupayApiKey))
 	req.Header.Set("Content-type", "application/json")
 
 	resp, err := client.Do(req)
@@ -513,14 +514,14 @@ func OffRampMobileMoney(data serializers.TransactionRequest) (PayoutResponse, er
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("status code: ", resp.StatusCode)
+	log.Println("status code: ", resp.StatusCode)
 	if resp.StatusCode != 200 && resp.StatusCode != 201 {
 		errorResponse := HurupayErrorResponse{}
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
-			fmt.Println("error response: ", errorResponse)
+			log.Println("error response: ", errorResponse)
 			return PayoutResponse{}, err
 		}
-		fmt.Println("error response: ", errorResponse)
+		log.Println("error response: ", errorResponse)
 		return PayoutResponse{}, errors.New(errorResponse.Message)
 	}
 
@@ -536,7 +537,7 @@ func OffRampMobileFinalize(data serializers.TransactionDetails) (MobilePayoutRes
 	apiUrl := "https://api.hurupay.com/v1/payouts/mobile/initialize_transaction"
 	client := &http.Client{}
 
-	fmt.Println("data: ", data)
+	log.Println("data: ", data)
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return MobilePayoutResponse{}, err
@@ -546,7 +547,7 @@ func OffRampMobileFinalize(data serializers.TransactionDetails) (MobilePayoutRes
 	if err != nil {
 		return MobilePayoutResponse{}, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", state.AppConfig.HurupayApiKey))
 	req.Header.Set("Content-type", "application/json")
 
 	resp, err := client.Do(req)
@@ -560,7 +561,7 @@ func OffRampMobileFinalize(data serializers.TransactionDetails) (MobilePayoutRes
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
 			return MobilePayoutResponse{}, err
 		}
-		fmt.Println("error response finalize: ", errorResponse)
+		log.Println("error response finalize: ", errorResponse)
 		return MobilePayoutResponse{}, errors.New("failed to perform transaction")
 	}
 	var output MobilePayoutResponse

@@ -1,10 +1,11 @@
 package apis
 
 import (
+	"backend/state"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func GetExchangeRate(fiatCurrency, cryptoCurrency string, resultChan chan<- stri
 		errChan <- err
 		return
 	}
-	req.Header.Add("x-api-key", os.Getenv("TATUM_API_KEY_TEST"))
+	req.Header.Add("x-api-key", state.AppConfig.TatumTestApiKey)
 	req.Header.Set("content-type", "application/json")
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -44,7 +45,7 @@ func GetExchangeRate(fiatCurrency, cryptoCurrency string, resultChan chan<- stri
 		return
 	}
 	defer resp.Body.Close()
-	fmt.Println("status code", resp.StatusCode)
+	log.Println("status code", resp.StatusCode)
 	if resp.StatusCode != http.StatusOK {
 		errChan <- fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 		return
@@ -72,7 +73,7 @@ func GetMobileMoneyExhangeRate(fiatCurrency string, resultChan chan<- string, er
 		errChan <- err
 		return
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", os.Getenv("HURUPAY_API_KEY")))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", state.AppConfig.HurupayApiKey))
 	// Send the request
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

@@ -2,8 +2,8 @@ package middlewares
 
 import (
 	"bytes"
-	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 
@@ -16,7 +16,7 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		bodyBytes, err := io.ReadAll(c.Request.Body)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Unable to read request body"})
-			fmt.Println("Unable to read request body")
+			log.Println("Unable to read request body")
 			return
 		}
 
@@ -27,7 +27,7 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		signature := c.GetHeader("x-webhook-signature")
 		if signature == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing signature"})
-			fmt.Println("Missing signature")
+			log.Println("Missing signature")
 			return
 		}
 		dir, _ := os.Getwd()
@@ -40,7 +40,7 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 			pemFilePath = dir + "/offramp-public.pem"
 		default:
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid webhook path"})
-			fmt.Println("Invalid webhook path")
+			log.Println("Invalid webhook path")
 			return
 		}
 
@@ -48,17 +48,17 @@ func WebhookSignatureMiddleware() gin.HandlerFunc {
 		_, err = os.ReadFile(pemFilePath)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Unable to read public key file"})
-			fmt.Println("Unable to read public key file", err)
+			log.Println("Unable to read public key file", err)
 			return
 		}
 
-		fmt.Println("signature", signature)
+		log.Println("signature", signature)
 
 		// Verify the webhook signature
 		//flag, err := signing.VerifyWebhookSignature(bodyString, signature, publicKey)
 		//if err != nil || !flag {
 		//		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid signature"})
-		//	fmt.Println("Invalid signature", err)
+		//	log.Println("Invalid signature", err)
 		//		return
 		//	}
 

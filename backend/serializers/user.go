@@ -21,26 +21,26 @@ var Chains = Chain{
 }
 
 type User struct {
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	Email       string `gorm:"unique;not null" json:"email"`
-	Password    string `json:"password"`
-	Currency    string `json:"currency"`
-	Country     string `json:"country"`
-	CountryCode string `json:"country_code"`
+	FirstName   string `json:"first_name" binding:"required"`
+	LastName    string `json:"last_name" binding:"required"`
+	Email       string `gorm:"unique;not null" json:"email" binding:"required,email"`
+	Password    string `json:"password" binding:"required"`
+	Currency    string `json:"currency" binding:"required"`
+	Country     string `json:"country" binding:"required"`
+	CountryCode string `json:"country_code" binding:"required"`
 	Chain       string `json:"chain"`
 }
 
 type LoginSerializer struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
 }
 
 type Data struct {
-	Chain          string `json:"chain"`
-	Name           string `json:"name"`
-	ImageURL       string `json:"image_url"`
-	AvailableToken string `json:"availableToken"`
+	Chain          string `json:"chain" binding:"required"`
+	Name           string `json:"name" binding:"required"`
+	ImageURL       string `json:"image_url" binding:"required"`
+	AvailableToken string `json:"availableToken" binding:"required"`
 }
 
 type Account struct {
@@ -62,21 +62,21 @@ type Account struct {
 }
 
 type AdminForm struct {
-	Key       string `json:"key"`
-	UserEmail string `json:"user_email"`
+	Key       string `json:"key" binding:"required"`
+	UserEmail string `json:"user_email" binding:"required,email"`
 }
 
 type NetworkData struct {
-	CountryCode  string   `json:"countryCode"`
-	CountryName  string   `json:"countryName"`
-	CurrencyCode string   `json:"currencyCode"`
-	Networks     []string `json:"networks"`
-	MobileCode   string   `json:"mobileCode"`
+	CountryCode  string   `json:"countryCode" binding:"required"`
+	CountryName  string   `json:"countryName" binding:"required"`
+	CurrencyCode string   `json:"currencyCode" binding:"required"`
+	Networks     []string `json:"networks" binding:"required"`
+	MobileCode   string   `json:"mobileCode" binding:"required"`
 }
 
 type UserAccountRequest struct {
-	Asset string `json:"asset"`
-	Fiat  string `json:"fiat"`
+	Asset string `json:"asset" binding:"required"`
+	Fiat  string `json:"fiat" binding:"required"`
 }
 
 type UserAccounts struct {

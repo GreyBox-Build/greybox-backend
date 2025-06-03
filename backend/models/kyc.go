@@ -27,8 +27,6 @@ type KYC struct {
 	DateOfBirth          string    `json:"date_of_birth"`
 	IssueDate            string    `json:"issue_date"`
 	ExpiryDate           string    `json:"expiry_date"`
-	FrontPhoto           string    `json:"front_photo"`
-	BackPhoto            string    `json:"back_photo"`
 	Status               KYCStatus `gorm:"default:Pending" json:"status"`
 	Phone                string    `json:"phone"`
 	StreetAddress        string    `json:"street_address"`
@@ -44,14 +42,25 @@ type KYC struct {
 	UpdatedAt            time.Time `json:"updated_at"`
 }
 
+type KYCWithData struct {
+	Kyc        KYC
+	FrontPhoto string `json:"front_photo"`
+	BackPhoto  string `json:"back_photo"`
+}
+
+type KYCData struct {
+	gorm.Model
+	UserID     uint   `gorm:"uniqueIndex" json:"user_id"`
+	FrontPhoto string `json:"front_photo"`
+	BackPhoto  string `json:"back_photo"`
+}
+
 type KYCRequest struct {
 	UserID        uint      `json:"user_id"`
 	IDType        string    `json:"id_type"`
 	IdNumber      string    `json:"id_number"`
 	IssueDate     string    `json:"issue_date"`
 	ExpiryDate    string    `json:"expiry_date"`
-	FrontPhoto    string    `json:"front_photo"`
-	BackPhoto     string    `json:"back_photo"`
 	Status        KYCStatus `gorm:"default:Pending" json:"status"`
 	DateOfBirth   string    `json:"date_of_birth"`
 	TaxId         string    `json:"tax_id"`
@@ -61,6 +70,11 @@ type KYCRequest struct {
 	State         string    `json:"state"`
 	PostalCode    string    `json:"postal_code"`
 	Country       string    `json:"country"`
+}
+
+type KYCDataRequest struct {
+	FrontPhoto string `json:"front_photo"`
+	BackPhoto  string `json:"back_photo"`
 }
 
 type ApproveOrDeleteKYC struct {
@@ -119,8 +133,17 @@ func (kyc *KYC) CreateKYC() error {
 	return nil
 }
 
+func (kycData *KYCData) CreateKYCData() error {
+	err := db.Unscoped().Create(&kycData).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (kyc *KYC) UpdateKYC(data KYCRequest) error {
-	// Only update if status is pending
+	// Only update if status is rejected
 	if kyc.Status != Rejected {
 		return fmt.Errorf("KYC can only be updated when status is rejected")
 	}
@@ -129,8 +152,6 @@ func (kyc *KYC) UpdateKYC(data KYCRequest) error {
 	kyc.IdNumber = data.IdNumber
 	kyc.IssueDate = data.IssueDate
 	kyc.ExpiryDate = data.ExpiryDate
-	kyc.FrontPhoto = data.FrontPhoto
-	kyc.BackPhoto = data.BackPhoto
 	kyc.TaxId = data.TaxId
 	kyc.Phone = data.Phone
 	kyc.StreetAddress = data.StreetAddress
@@ -144,11 +165,32 @@ func (kyc *KYC) UpdateKYC(data KYCRequest) error {
 	return db.Save(kyc).Error
 }
 
+func (kycData *KYCData) UpdateKYCData(status KYCStatus, data KYCDataRequest) error {
+	// Only update if status of kyc is pending
+	if status != Rejected {
+		return fmt.Errorf("KYC can only be updated when status is rejected")
+	}
+
+	kycData.FrontPhoto = data.FrontPhoto
+	kycData.BackPhoto = data.BackPhoto
+
+	return db.Save(kycData).Error
+}
+
 func (kyc *KYC) DeleteKYC() error {
 	err := db.Where("id = ?", kyc.ID).Delete(kyc).Error
 	if err != nil {
 		return err
 	}
+	return nil
+}
+
+func (kycData *KYCData) DeleteKYCData() error {
+	err := db.Where("id = ?", kycData.ID).Delete(kycData).Error
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -166,9 +208,6 @@ func (kyc *KYC) ApproveKYC(borderlessIdentityId string) error {
 
 func (k *KYC) RejectKYC(rejectionReason string) error {
 	// Only update if status is pending
-	// Print kyc
-	fmt.Println(k.Status)
-	fmt.Println(Pending)
 	if k.Status != Pending {
 		return fmt.Errorf("KYC can only be rejected when status is pending")
 	}
@@ -185,19 +224,36 @@ func GetKYCByUserID(id uint) (*KYC, error) {
 	return &kyc, err
 }
 
+func GetKYCDataByUserId(id uint) (*KYCData, error) {
+	var kycData KYCData
+	err := db.Where("user_id = ?", id).First(&kycData).Error
+	return &kycData, err
+}
+
 func GetKYCByID(id uint) (*KYC, error) {
 	var kyc KYC
 	err := db.Where("id = ?", id).First(&kyc).Error
 	return &kyc, err
 }
 
-func GetKycByIDWithoutPhotos(id uint) (*KYC, error) {
+func GetKycByUserIDWithPhotos(id uint) (*KYCWithData, error) {
 	var kyc KYC
 	err := db.
-		Omit("front_photo", "back_photo").
-		Where("id = ?", id).
+		Where("user_id = ?", id).
 		First(&kyc).Error
-	return &kyc, err
+
+	kycData, err := GetKYCDataByUserId(kyc.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	fullKyc := KYCWithData{
+		Kyc:        kyc,
+		FrontPhoto: kycData.FrontPhoto,
+		BackPhoto:  kycData.BackPhoto,
+	}
+
+	return &fullKyc, err
 }
 
 func FilterKYC(filter serializers.KYCFilterRequest) ([]KYC, error) {
@@ -250,8 +306,6 @@ func KYCRequestFromSerializer(
 		IDType:        kycRequest.IDType,
 		IssueDate:     kycRequest.IssueDate,
 		ExpiryDate:    kycRequest.ExpiryDate,
-		FrontPhoto:    kycRequest.FrontPhoto,
-		BackPhoto:     kycRequest.BackPhoto,
 		Status:        status,
 		DateOfBirth:   kycRequest.DateOfBirth,
 		TaxId:         kycRequest.TaxId,
