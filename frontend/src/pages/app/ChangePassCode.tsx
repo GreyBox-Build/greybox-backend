@@ -11,7 +11,7 @@ const ChangePassCode = () => {
   const handleChange = (element: any, index: number) => {
     if (isNaN(element.value)) return false;
     setOtp([...otp.map((d, idx) => (idx === index ? element.value : d))]);
-    console.log(otp);
+  
     if (element.nextSibling) {
       element.nextSibling.focus();
     }

@@ -5,13 +5,20 @@ import { Outlet } from "react-router-dom";
 
 import { useSnackbar } from "notistack";
 
-import { useAdminOnRampRetrieveWithParamsQuery } from "../../../appSlices/apiSlice";
+import {
+  useAdminOnRampRetrieveWithParamsQuery,
+  useGetHurupayStatsQuery,
+} from "../../../appSlices/apiSlice";
 import Dashboard from "../../app/Dashboard";
 
 const AdminDashboard = () => {
   const { data, isError, isLoading } = useAdminOnRampRetrieveWithParamsQuery(
     {}
   );
+
+  const { data: hurupay } = useGetHurupayStatsQuery({});
+
+ 
 
   const { enqueueSnackbar } = useSnackbar();
 

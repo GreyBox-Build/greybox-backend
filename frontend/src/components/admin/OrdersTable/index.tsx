@@ -167,7 +167,7 @@ const OrdersTable = () => {
   const confirmTransForWithdrawal = () => {
     if (transactionID && bankRef) {
       confirmWithdrawalOrder(transactionID, bankRef);
-      console.log("Confirming withdrawal:", transactionID, bankRef);
+     
     } else {
       enqueueSnackbar("Transaction ID or Bank Reference is missing", {
         variant: "error",
@@ -177,7 +177,7 @@ const OrdersTable = () => {
   const cancelTransForWithdrawal = () => {
     if (transactionID && bankRef) {
       cancelWithdrawalOrder(transactionID, bankRef);
-      console.log("Cancelling withdrawal:", transactionID, bankRef);
+   
     } else {
       enqueueSnackbar("Transaction ID or Bank Reference is missing", {
         variant: "error",
@@ -340,15 +340,15 @@ const OrdersTable = () => {
           </div>
         </div>
       )}
-      <div className="w-full bg-white py-8 px-10 rounded-2xl flex flex-col gap-4">
+      <div className="w-full bg-white py-8 px-4 md:px-10 rounded-2xl flex flex-col gap-4">
         <p className="text-2xl font-bold ml-3">Transactions</p>
 
         {/* Tab buttons */}
-        <div className="flex space-x-4 mb-4">
+        <div className="flex space-x-2 mb-4">
           {tabs.map((tab) => (
             <button
               key={tab.value}
-              className={`px-4 py-2 capitalize rounded-[8px] ${
+              className={`px-2 py-2 capitalize rounded-[8px] ${
                 activeTab === tab.value
                   ? "bg-orange-1 text-white"
                   : "bg-[#FDF9F6]"
@@ -360,7 +360,7 @@ const OrdersTable = () => {
           ))}
 
           <select
-            className="outline-none border-none bg-[#FDF9F6]"
+            className="outline-none border-none  bg-[#FDF9F6]"
             onChange={(e) => {
               setType(e.target.value);
             }}

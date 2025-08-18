@@ -1,14 +1,14 @@
-import { Oval } from "react-loader-spinner";
+import { Oval } from 'react-loader-spinner'
 
 interface FormButtonProps
   extends React.DetailedHTMLProps<
     React.ButtonHTMLAttributes<HTMLButtonElement>,
     HTMLButtonElement
   > {
-  label: React.ReactNode;
-  onClick?: React.MouseEventHandler<HTMLButtonElement> | undefined;
-  extraClass?: string;
-  loading?: boolean;
+  label: React.ReactNode
+  onClick?: React.MouseEventHandler<HTMLButtonElement> | undefined
+  extraClass?: string
+  loading?: boolean
 }
 
 export const FormButton = ({
@@ -22,7 +22,7 @@ export const FormButton = ({
     disabled={loading}
     onClick={onClick}
     {...props}
-    className={`w-full h-[52px] bg-grey-2 rounded-[48px] flex items-center justify-center text-white text-[0.875rem] font-[700] ${extraClass}`}
+    className={`w-full h-[52px] bg-red-600 rounded-md flex items-center justify-center text-white text-[1rem] font-[700] ${extraClass}`}
   >
     {loading ? (
       <Oval
@@ -41,4 +41,4 @@ export const FormButton = ({
       label
     )}
   </button>
-);
+)

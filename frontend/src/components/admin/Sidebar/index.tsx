@@ -12,7 +12,7 @@ const Sidebar = () => {
       to: "/adminDashboard",
       img: <AiOutlineHome size={24} />,
     },
-    { name: "Report", to: "summary", img: <FiSend size={24} /> },
+    { name: "KYC", to: "kyc", img: <FiSend size={24} /> },
     { name: "Confirmed", to: "Set", img: <FiSend size={24} /> },
     { name: "Setting", to: "setting", img: <FiSend size={24} /> },
   ];

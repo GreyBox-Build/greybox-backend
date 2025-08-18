@@ -1,5 +1,6 @@
 import React from "react";
 import BarChart from "../BarChart";
+import PieChart from "../../../pages/admin/PieChart";
 
 const MonthlyOrders = () => {
   return (
@@ -8,17 +9,18 @@ const MonthlyOrders = () => {
         <div className="overflow-x-auto lg:w-3/4 md:2/3  w-full p-3 rounded-2xl bg-white pl-10 overflow-hidden">
           <BarChart />
         </div>
-        <div className="bg-orange-1 p-4 lg:w-1/4 md:1/3 w-full flex flex-col gap-3 text-white rounded-2xl">
-          <h2 className="text-base font-bold text-center mt-3">
-            Lorem ipsum is a dummy{" "}
+        <div className="bg-white max-w-full mx-auto p-4 lg:w-1/4 md:1/3 w-full flex flex-col gap-3 text-orange-1 rounded-2xl">
+          <h2 className="text-base font-extrabold text-center mt-3">
+            HURUPAY STATS
           </h2>
-          <p>
+          {/* <p>
             Lorem ipsum is a dummy text, Lorem ipsum is a dummy text, Lorem
             ipsum is a dummy text,Lorem{" "}
           </p>
           <button className="bg-white mt-4 !text-orange-1 font-medium block w-full rounded-full py-2 ">
             Get Started
-          </button>
+          </button> */}
+          <PieChart />
         </div>
       </div>
     </div>

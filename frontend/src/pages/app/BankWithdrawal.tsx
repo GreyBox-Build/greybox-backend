@@ -81,7 +81,7 @@ const BankWithdrawal = () => {
         navigate("/dashboard");
       }, 3000);
     } catch (error: any) {
-      console.log(error);
+     
       enqueueSnackbar(error?.data?.error, { variant: "success" });
     }
   };

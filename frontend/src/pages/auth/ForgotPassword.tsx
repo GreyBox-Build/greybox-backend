@@ -25,7 +25,7 @@ const ForgotPassword = () => {
       const response = await forgetPassword(data).unwrap();
       enqueueSnackbar(response?.message, { variant: "success" });
     } catch (error) {
-      console.log(error);
+      enqueueSnackbar("An error occured", { variant: "error" });
     }
   };
   return (

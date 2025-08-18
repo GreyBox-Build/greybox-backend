@@ -1,10 +1,10 @@
-import { useNavigate } from "react-router-dom";
-import { HomeButton } from "../../../components/buttons/HomeButton";
-import { IntroLady } from "../../../components/icons/Icons";
-import { useTranslation } from "react-i18next";
+import { useNavigate } from 'react-router-dom'
+import { HomeButton } from '../../../components/buttons/HomeButton'
+import { IntroLady } from '../../../components/icons/Icons'
+import { useTranslation } from 'react-i18next'
 const Intro = () => {
-  const { t }: { t: any } = useTranslation();
-  const navigate = useNavigate();
+  const { t }: { t: any } = useTranslation()
+  const navigate = useNavigate()
   // const Stat = ({
   //   text,
   //   subText,
@@ -29,23 +29,23 @@ const Intro = () => {
   // );
   return (
     <section className="pb-[100px] bg-white px-[25px] md:px-[5%] lg:px-[10%]">
-      <div className="w-full flex flex-col-reverse md:flex-row items-center justify-center gap-x-[2%]">
+      <div className="w-full flex flex-col md:flex-row items-center justify-center gap-x-[2%]">
         <section>
           <h2 className="max-w-[597px] text-[3rem] font-[700] leading-[66px]">
-            {t("simplifying")}{" "}
-            <span className=" text-orange-1">{t("crossBorder")} </span>
-            {t("payment")}
+            {t('simplifying')}{' '}
+            <span className=" text-orange-1">{t('crossBorder')} </span>
+            {t('payment')}
           </h2>
 
           <div className="mt-[78px] flex flex-col md:flex-row md:items-center gap-[28px]">
             <HomeButton
-              label={`${t("learnMore")}`}
+              label={`${t('learnMore')}`}
               onClick={() => {}}
               extraClass="w-full md:w-[225px] bg-[#fff] text-orange-1"
             />
             <HomeButton
-              label={`${t("getStarted")}`}
-              onClick={() => navigate("/sign-up")}
+              label={`${t('getStarted')}`}
+              onClick={() => navigate('/sign-up')}
               extraClass="w-full md:w-[225px] bg-orange-1 text-[#fff]"
             />
           </div>
@@ -55,12 +55,12 @@ const Intro = () => {
             <Stat text="150k" subText="Lorem Ipsum" last />
           </div> */}
         </section>
-        <section>
+        <section className="flex justify-center mt-10 md:mt-auto">
           <IntroLady />
         </section>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default Intro;
+export default Intro

@@ -1,47 +1,61 @@
 // Import the RTK Query methods from the React-specific entry point
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
 // Define our single API slice object
 // baseUrl: "https://apis.greyboxpay.com/api",
-//baseUrl: "http://localhost:8080/api",
+// baseUrl: "http://localhost:8080/api",
+
+interface RejectKycPayload {
+  id: string | number | undefined // The KYC ID from the URL
+  email: string
+  rejection_reason: string
+}
+
+// Define the shape of the success response (adjust as per your API's actual response)
+interface RejectKycSuccess {
+  message: string
+  // Add any other data your API returns on success, e.g., the updated KYC status
+}
 export const apiSlice = createApi({
-  reducerPath: "api",
+  reducerPath: 'api',
   refetchOnReconnect: true,
+
   baseQuery: fetchBaseQuery({
-    baseUrl: "https://apis.greyboxpay.com/api",
+    baseUrl:
+      'http://greygo-env.eba-g4cj2keb.us-east-1.elasticbeanstalk.com/api',
     prepareHeaders: (headers, { endpoint }) => {
-      const token = localStorage.getItem("access_token");
+      const token = localStorage.getItem('access_token')
 
       if (
         token &&
-        endpoint !== "createUser" &&
-        endpoint !== "obtainToken" &&
-        endpoint !== "forgetPassword" &&
-        endpoint !== "resetPassword" &&
-        endpoint !== "getChains"
+        endpoint !== 'createUser' &&
+        endpoint !== 'obtainToken' &&
+        endpoint !== 'forgetPassword' &&
+        endpoint !== 'resetPassword' &&
+        endpoint !== 'getChains'
       ) {
-        headers.set("Authorization", `Bearer ${token}`);
+        headers.set('Authorization', `Bearer ${token}`)
       }
-      return headers;
+      return headers
     },
   }),
-  tagTypes: ["User"],
+  tagTypes: ['User', 'Kyc', 'Virtual'],
   endpoints: (builder) => ({
     createUser: builder.mutation({
       query: (user) => ({
-        url: "/v2/user/register",
-        method: "POST",
+        url: '/v2/user/register',
+        method: 'POST',
         body: user,
       }),
     }),
     getChains: builder.query({
       query: () => ({
-        url: "/v1/chains",
+        url: '/v1/chains',
       }),
     }),
     obtainToken: builder.mutation({
       query: (user) => ({
-        url: "/v1/user/login",
-        method: "POST",
+        url: '/v1/user/login',
+        method: 'POST',
         body: user,
       }),
     }),
@@ -67,32 +81,32 @@ export const apiSlice = createApi({
     }),
     offramp: builder.mutation({
       query: (details) => ({
-        url: "/v2/transaction/off-ramp",
-        method: "POST",
+        url: '/v2/transaction/off-ramp',
+        method: 'POST',
         body: details,
       }),
-      invalidatesTags: ["User"],
+      invalidatesTags: ['User'],
     }),
     signUrl: builder.mutation({
       query: (url) => ({
-        url: "/v1/transaction/sign-url",
-        method: "POST",
+        url: '/v1/transaction/sign-url',
+        method: 'POST',
         body: url,
       }),
     }),
     getAuthUser: builder.query({
       query: () => ({
-        url: "/v1/auth/user",
+        url: '/v1/auth/user',
       }),
-      providesTags: ["User"],
+      providesTags: ['User'],
     }),
     onramp: builder.mutation({
       query: (details) => ({
-        url: "/v2/transaction/on-ramp",
-        method: "POST",
+        url: '/v2/transaction/on-ramp',
+        method: 'POST',
         body: details,
       }),
-      invalidatesTags: ["User"],
+      invalidatesTags: ['User'],
     }),
     getTransaction: builder.query({
       query: (chain) => ({
@@ -101,15 +115,15 @@ export const apiSlice = createApi({
     }),
     forgetPassword: builder.mutation({
       query: (user) => ({
-        url: "/v1/user/forget-password",
-        method: "POST",
+        url: '/v1/user/forget-password',
+        method: 'POST',
         body: user,
       }),
     }),
     resetPassword: builder.mutation({
       query: (user) => ({
-        url: "/v1/token/reset-password",
-        method: "POST",
+        url: '/v1/token/reset-password',
+        method: 'POST',
         body: user,
       }),
     }),
@@ -122,25 +136,61 @@ export const apiSlice = createApi({
 
     getNetworks: builder.query({
       query: () => ({
-        url: "/v1/networks",
+        url: '/v1/networks',
       }),
     }),
     onrampMobile: builder.mutation({
       query: (requestData) => ({
-        url: "/v2/transaction/on-ramp/mobile",
-        method: "POST",
+        url: '/v2/transaction/on-ramp/mobile',
+        method: 'POST',
         body: requestData,
       }),
-      invalidatesTags: ["User"],
+      invalidatesTags: ['User'],
+    }),
+
+    kyc: builder.mutation({
+      query: (data) => ({
+        url: '/v2/kyc',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Kyc'],
+    }),
+
+    createVirtualAccount: builder.mutation({
+      query: (data) => ({
+        url: '/v2/user/account',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Virtual'],
+    }),
+
+    getKyc: builder.query({
+      query: () => ({
+        url: '/v2/kyc',
+      }),
+      providesTags: ['Kyc'],
+    }),
+    approveKyc: builder.mutation({
+      query: (id) => ({
+        url: `/v2/kyc/${id}/approve`,
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      }),
+      invalidatesTags: ['Kyc'],
     }),
 
     offrampMobile: builder.mutation({
       query: (sentData) => ({
-        url: "/v2/transaction/off-ramp/mobile",
-        method: "POST",
+        url: '/v2/transaction/off-ramp/mobile',
+        method: 'POST',
         body: sentData,
       }),
-      invalidatesTags: ["User"],
+      invalidatesTags: ['User'],
     }),
 
     adminGetOffRampWithdrawalReq: builder.query({
@@ -153,11 +203,14 @@ export const apiSlice = createApi({
         url: `/v1/transaction?chain=CELO`,
       }),
     }),
-    // adminGetOffRampWithdrawalReq: builder.query({
-    //   query: ({ chain, hash, address, account_number, status }) => ({
-    //     url: `/v1/requests/off-ramp?${chain}&${hash}&${address}}&${account_number}&${status}`,
-    //   }),
-    // }),
+    rejectKyc: builder.mutation<RejectKycSuccess, RejectKycPayload>({
+      query: ({ id, email, rejection_reason }) => ({
+        url: `kyc/${id}/reject`, // Endpoint path relative to baseUrl
+        method: 'POST',
+        body: { email, rejection_reason },
+      }),
+      invalidatesTags: [{ type: 'Kyc' }],
+    }),
     adminOffRampRetrieveData: builder.query({
       query: (id) => ({
         url: `v1/requests/off-ramp/:${id}`,
@@ -173,16 +226,38 @@ export const apiSlice = createApi({
         url: `v1/requests/on-ramp?$ref&$cu`,
       }),
     }),
+
+    getHurupayStats: builder.query({
+      query: () => ({
+        url: `v1/requests/hurupay-requests/stats`,
+      }),
+    }),
+    getMyKyc: builder.query({
+      query: () => ({
+        url: `/v2/user/account`,
+      }),
+    }),
     // adminOnRampRetrieveWithParams: builder.query({
     //   query: ({ ref, cu }) => ({
     //     url: `v1/requests/on-ramp?${ref}&${cu}`,
     //   }),
     // }),
-
+    getVirtualAccountStatus: builder.query({
+      query: () => ({
+        url: 'v2/user/virtual-account-status',
+      }),
+      providesTags: ['Virtual'],
+    }),
+    getUserAccountdetails: builder.query({
+      query: () => ({
+        url: 'v2/user/account',
+      }),
+      providesTags: ['Virtual'],
+    }),
     adminVerifyOnRampReqWithId: builder.mutation({
       query: ({ id, action }) => ({
         url: `v1/requests/on-ramp/${id}/verify`, // Make sure the `id` is used directly in the URL
-        method: "POST",
+        method: 'POST',
         body: action, // Send the action payload
       }),
     }),
@@ -190,12 +265,26 @@ export const apiSlice = createApi({
     adminVerifyOffRampReqWithId: builder.mutation({
       query: ({ id, actionBankRef }) => ({
         url: `v1/requests/off-ramp/${id}/verify`,
-        method: "POST",
+        method: 'POST',
         body: actionBankRef,
       }),
     }),
+    onrampBorderlessPayment: builder.mutation({
+      query: ({ countryChange }) => ({
+        url: `v1/payments/borderless-onramp/variable`,
+        method: 'POST',
+        body: countryChange,
+      }),
+    }),
+    offrampBorderlessPayment: builder.mutation({
+      query: ({ countryChange }) => ({
+        url: `v1/payments/borderless-oframp/variable`,
+        method: 'POST',
+        body: countryChange,
+      }),
+    }),
   }),
-});
+})
 
 export const {
   useCreateUserMutation,
@@ -222,4 +311,15 @@ export const {
   useAdminOnRampRetrieveWithParamsQuery,
   useAdminVerifyOnRampReqWithIdMutation,
   useAdminVerifyOffRampReqWithIdMutation,
-} = apiSlice;
+  useGetHurupayStatsQuery,
+  useOnrampBorderlessPaymentMutation,
+  useKycMutation,
+  useGetKycQuery,
+  useCreateVirtualAccountMutation,
+  useApproveKycMutation,
+  useGetMyKycQuery,
+  useRejectKycMutation,
+  useGetVirtualAccountStatusQuery,
+  useGetUserAccountdetailsQuery,
+  useOfframpBorderlessPaymentMutation,
+} = apiSlice
